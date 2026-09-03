@@ -1,16 +1,33 @@
 import { StatusBar } from 'expo-status-bar';
 import { Text, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { useEffect } from 'react';
+import { getAnalytics, logEvent } from '@react-native-firebase/analytics';
 import Board from './src/components/Board';
 import Keypad from './src/components/Keypad';
 import TopBar from './src/components/TopBar';
 import { useGameStore } from './src/store/useGameStore';
 
 export default function App() {
-  const { startNewGame, mistakes, board, screen, setScreen, history } = useGameStore();
+  const { startNewGame, mistakes, board, screen, setScreen, history, timer, fetchRemoteConfig } = useGameStore();
 
   const isGameOver = mistakes >= 3;
   const isGameWon = board.length > 0 && board.every(cell => cell.value !== null && !cell.isError) && mistakes < 3;
+
+  useEffect(() => {
+    fetchRemoteConfig();
+  }, []);
+
+  useEffect(() => {
+    const analytics = getAnalytics();
+    if (isGameWon) {
+      console.log(`🔥 [Firebase Analytics] Logging Event: game_won (Time: ${timer}s)`);
+      logEvent(analytics, 'game_won', { time_taken: timer });
+    } else if (isGameOver) {
+      console.log(`🔥 [Firebase Analytics] Logging Event: game_lost (Time: ${timer}s)`);
+      logEvent(analytics, 'game_lost', { time_taken: timer });
+    }
+  }, [isGameWon, isGameOver, timer]);
 
   if (screen === 'home') {
     return (

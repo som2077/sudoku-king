@@ -1,0 +1,10 @@
+const { generatePuzzle } = require('./src/utils/sudokuLogic');
+console.time('Medium');
+generatePuzzle('Medium');
+console.timeEnd('Medium');
+console.time('Hard');
+generatePuzzle('Hard');
+console.timeEnd('Hard');
+console.time('Expert');
+generatePuzzle('Expert');
+console.timeEnd('Expert');
