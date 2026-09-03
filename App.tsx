@@ -3,17 +3,23 @@ import { Text, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-na
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 import { getAnalytics, logEvent } from '@react-native-firebase/analytics';
-import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+import Purchases from 'react-native-purchases';
+import RevenueCatUI from 'react-native-purchases-ui';
 import mobileAds, { BannerAd, BannerAdSize, TestIds, RewardedAd, RewardedAdEventType, AdEventType } from 'react-native-google-mobile-ads';
 import Board from './src/components/Board';
 import Keypad from './src/components/Keypad';
 import TopBar from './src/components/TopBar';
 import { useGameStore } from './src/store/useGameStore';
 
+import { getBannerAdUnitId, getRewardedAdUnitId, getRevenueCatApiKey } from './src/utils/secrets';
+
 // Initialize Ads
 mobileAds().initialize().then(() => console.log('🔥 [AdMob] Initialized'));
 
-const rewarded = RewardedAd.createForAdRequest(TestIds.REWARDED);
+const bannerAdUnitId = __DEV__ ? TestIds.BANNER : getBannerAdUnitId();
+const rewardedAdUnitId = __DEV__ ? TestIds.REWARDED : getRewardedAdUnitId();
+
+const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId);
 
 export default function App() {
   const { startNewGame, mistakes, board, screen, setScreen, history, timer, fetchRemoteConfig, isPremium, setPremium, secondChance, addHint, useHint } = useGameStore();
@@ -27,19 +33,28 @@ export default function App() {
 
   useEffect(() => {
     fetchRemoteConfig();
-    
+
     // RevenueCat Initialization
-    Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-    Purchases.configure({ apiKey: "goog_REPLACE_WITH_REAL_API_KEY" });
+    // Disable debug logs to stop terminal spam
+    // Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+
+    const rcKey = getRevenueCatApiKey();
+    if (rcKey && rcKey !== "goog_REPLACE_WITH_REAL_API_KEY") {
+      Purchases.configure({ apiKey: rcKey });
+    } else {
+      console.log("⚠️ [RevenueCat] Skipping initialization: Real API key not set yet.");
+    }
 
     const checkPremiumStatus = async () => {
       try {
-        const customerInfo = await Purchases.getCustomerInfo();
-        if (typeof customerInfo.entitlements.active['Premium'] !== "undefined") {
-          setPremium(true);
+        if (rcKey && rcKey !== "goog_REPLACE_WITH_REAL_API_KEY") {
+          const customerInfo = await Purchases.getCustomerInfo();
+          if (typeof customerInfo.entitlements.active['Premium'] !== "undefined") {
+            setPremium(true);
+          }
         }
       } catch (e) {
-        console.log("Error fetching customer info", e);
+        // Silently ignore if not configured properly
       }
     };
     checkPremiumStatus();
@@ -51,13 +66,16 @@ export default function App() {
     const unsubscribeLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
       setRewardedLoaded(true);
     });
-    const unsubscribeEarned = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
-      if (adCallback) adCallback();
+    const unsubscribeEarned = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
+      console.log('User earned reward of ', reward);
+      if (adCallback) {
+        adCallback();
+        setAdCallback(null);
+      }
     });
     const unsubscribeClosed = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
       setRewardedLoaded(false);
       setAdShowing(false);
-      setAdCallback(null);
       rewarded.load(); // preload next
     });
 
@@ -87,37 +105,45 @@ export default function App() {
 
   const buyPremium = async () => {
     try {
-      const offerings = await Purchases.getOfferings();
-      if (offerings.current !== null && offerings.current.lifetime !== null) {
-        const purchaseMade = await Purchases.purchasePackage(offerings.current.lifetime);
-        if (typeof purchaseMade.customerInfo.entitlements.active['Premium'] !== "undefined") {
-          setPremium(true);
-          Alert.alert("Success", "Thank you! You are now Premium.");
-        }
-      } else {
-        // Fallback for development/testing when products aren't set up
-        Alert.alert("Store Not Ready", "Products are not configured in Google Play Console yet. Unlocking for testing.", [
-          { text: "OK", onPress: () => setPremium(true) }
+      const rcKey = getRevenueCatApiKey();
+      if (!rcKey || rcKey === "goog_REPLACE_WITH_REAL_API_KEY") {
+        Alert.alert("Store Not Ready", "RevenueCat API Key not set. Unlocking for testing.", [
+          { text: "OK", onPress: () => { setPremium(true); } }
         ]);
+        return;
+      }
+
+      const paywallResult = await RevenueCatUI.presentPaywall();
+
+      if (paywallResult === RevenueCatUI.PAYWALL_RESULT.PURCHASED) {
+        setPremium(true);
+        Alert.alert("Success", "Thank you! You are now Premium.");
+      } else if (paywallResult === RevenueCatUI.PAYWALL_RESULT.RESTORED) {
+        setPremium(true);
+        Alert.alert("Success", "Purchases successfully restored.");
       }
     } catch (e: any) {
-      if (!e.userCancelled) {
-        Alert.alert("Error", "Purchase failed. Please try again.");
-      }
+      Alert.alert("Error", "Something went wrong loading the paywall.");
     }
   };
 
   const restorePurchases = async () => {
     try {
-      const restore = await Purchases.restorePurchases();
-      if (typeof restore.entitlements.active['Premium'] !== "undefined") {
+      const rcKey = getRevenueCatApiKey();
+      if (!rcKey || rcKey === "goog_REPLACE_WITH_REAL_API_KEY") {
+        Alert.alert("Dev Mode", "Skipping restore (No API Key).");
+        return;
+      }
+
+      const customerInfo = await Purchases.restorePurchases();
+      if (typeof customerInfo.entitlements.active['Premium'] !== "undefined") {
         setPremium(true);
-        Alert.alert("Success", "Purchases restored successfully!");
+        Alert.alert("Success", "Purchases successfully restored.");
       } else {
-        Alert.alert("Info", "No previous purchases found.");
+        Alert.alert("Not Found", "No previous purchases found.");
       }
     } catch (e) {
-      Alert.alert("Error", "Restore failed.");
+      Alert.alert("Error", "Failed to restore purchases.");
     }
   };
 
@@ -144,9 +170,6 @@ export default function App() {
               <TouchableOpacity onPress={buyPremium} className="bg-yellow-400 w-full py-4 rounded-2xl mb-3 shadow-sm items-center border border-yellow-500">
                 <Text className="text-yellow-900 font-bold text-lg">👑 Get Premium</Text>
                 <Text className="text-yellow-800 text-xs mt-1">No Ads & Unlimited Hints</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={restorePurchases}>
-                <Text className="text-gray-400 text-sm font-medium underline">Restore Purchases</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -205,10 +228,10 @@ export default function App() {
                 <Text className="text-gray-600 text-lg mb-8 text-center">
                   {isGameWon ? 'Excellent job solving this puzzle!' : 'You made 3 mistakes.'}
                 </Text>
-                
+
                 {isGameOver && (
-                  <TouchableOpacity 
-                    onPress={() => showRewardedAd(() => secondChance())} 
+                  <TouchableOpacity
+                    onPress={() => showRewardedAd(() => secondChance())}
                     className="bg-blue-500 px-8 py-3 rounded-full mb-4 w-full items-center"
                   >
                     <Text className="text-white font-bold text-xl">Second Chance {isPremium ? '' : '📺'}</Text>
@@ -221,12 +244,12 @@ export default function App() {
               </View>
             </View>
           )}
-          
+
           {/* AdMob Banner at bottom */}
           {!isPremium && (
             <View className="absolute bottom-0 w-full items-center pb-2 bg-gray-50">
               <BannerAd
-                unitId={TestIds.BANNER}
+                unitId={bannerAdUnitId}
                 size={BannerAdSize.BANNER}
                 requestOptions={{
                   requestNonPersonalizedAdsOnly: true,
