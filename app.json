@@ -27,10 +27,19 @@
       "@react-native-firebase/app",
       "@react-native-firebase/crashlytics",
       [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713"
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "ios": {
             "useFrameworks": "static"
+          },
+          "android": {
+            "kotlinVersion": "2.1.20"
           }
         }
       ]

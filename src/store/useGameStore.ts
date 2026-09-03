@@ -29,11 +29,13 @@ type GameState = {
   timer: number;
   hintsRemaining: number;
   initialHints: number; // Stored from remote config
+  isPremium: boolean;
   history: CellState[][];
   screen: 'home' | 'playing';
 
   // Actions
   setScreen: (screen: 'home' | 'playing') => void;
+  setPremium: (status: boolean) => void;
   selectCell: (index: number) => void;
   toggleNotesMode: () => void;
   placeNumber: (num: number) => void;
@@ -41,6 +43,8 @@ type GameState = {
   erase: () => void;
   undo: () => void;
   useHint: () => void; // Added hint action
+  addHint: () => void;
+  secondChance: () => void;
   startNewGame: (difficulty: Difficulty) => void;
   fetchRemoteConfig: () => Promise<void>;
 };
@@ -63,8 +67,12 @@ export const useGameStore = create<GameState>()(
       timer: 0,
       hintsRemaining: 3,
       initialHints: 3,
+      isPremium: false,
       history: [],
       screen: 'home',
+
+      setScreen: (screen) => set({ screen }),
+      setPremium: (status) => set({ isPremium: status }),
 
       fetchRemoteConfig: async () => {
         try {
@@ -77,29 +85,28 @@ export const useGameStore = create<GameState>()(
         } catch (e) { console.log('🔥 [Firebase Remote Config Error]:', e); }
       },
 
-      setScreen: (screen) => set({ screen }),
       selectCell: (index) => set({ selectedCell: index }),
 
       toggleNotesMode: () => set((state) => ({ isNotesMode: !state.isNotesMode })),
 
       placeNumber: (num) => set((state) => {
-        if (state.selectedCell === null) return state;
-        if (state.board[state.selectedCell].isLocked) return state;
-        if (state.board[state.selectedCell].value === num) return state;
+        if (state.selectedCell === null || state.mistakes >= 3) return state;
+        const cell = state.board[state.selectedCell];
+        if (cell.isLocked || cell.value !== null) return state;
 
-        // Deep clone is unnecessary, just shallow clone the array, but we need to update multiple cells
         const newBoard = [...state.board];
 
-        // Validate move using the actual generated solution
+        if (state.isNotesMode) {
+          const bit = 1 << num;
+          newBoard[state.selectedCell] = {
+            ...cell,
+            notes: cell.notes ^ bit,
+          };
+          return { board: newBoard, history: [...state.history, state.board] };
+        }
+
         const isCorrect = state.solution[state.selectedCell] === num;
-
-        newBoard[state.selectedCell] = {
-          ...newBoard[state.selectedCell],
-          value: num,
-          notes: 0,
-          isError: !isCorrect,
-        };
-
+        
         // Auto-remove this number from notes in the same row, col, and block
         if (isCorrect) {
           const row = getRow(state.selectedCell);
@@ -107,72 +114,69 @@ export const useGameStore = create<GameState>()(
           const block = getBlock(state.selectedCell);
 
           for (let i = 0; i < 81; i++) {
-            if (i !== state.selectedCell && newBoard[i].value === null && newBoard[i].notes !== 0) {
-              if (getRow(i) === row || getCol(i) === col || getBlock(i) === block) {
-                // Remove the note if it exists
-                const bit = 1 << num;
-                if (newBoard[i].notes & bit) {
-                  newBoard[i] = {
-                    ...newBoard[i],
-                    notes: newBoard[i].notes ^ bit
-                  };
-                }
+            if (getRow(i) === row || getCol(i) === col || getBlock(i) === block) {
+              const bit = 1 << num;
+              if (newBoard[i].notes & bit) {
+                newBoard[i] = {
+                  ...newBoard[i],
+                  notes: newBoard[i].notes ^ bit
+                };
               }
             }
           }
         }
 
+        newBoard[state.selectedCell] = {
+          ...cell,
+          value: num,
+          isError: !isCorrect,
+          notes: 0, // Clear notes when a number is placed
+        };
+
         return {
           board: newBoard,
+          mistakes: isCorrect ? state.mistakes : state.mistakes + 1,
           history: [...state.history, state.board],
-          mistakes: isCorrect ? state.mistakes : state.mistakes + 1
         };
       }),
 
       toggleNote: (num) => set((state) => {
         if (state.selectedCell === null) return state;
-        if (state.board[state.selectedCell].isLocked || state.board[state.selectedCell].value !== null) return state;
+        const cell = state.board[state.selectedCell];
+        if (cell.isLocked || cell.value !== null) return state;
 
-        const newBoard = [...state.board];
-        const cell = newBoard[state.selectedCell];
         const bit = 1 << num;
-
+        const newBoard = [...state.board];
         newBoard[state.selectedCell] = {
           ...cell,
           notes: cell.notes ^ bit,
         };
-
         return { board: newBoard, history: [...state.history, state.board] };
       }),
 
       erase: () => set((state) => {
         if (state.selectedCell === null) return state;
-        if (state.board[state.selectedCell].isLocked) return state;
+        const cell = state.board[state.selectedCell];
+        if (cell.isLocked) return state;
 
         const newBoard = [...state.board];
-        newBoard[state.selectedCell] = {
-          ...newBoard[state.selectedCell],
-          value: null,
-          notes: 0,
-          isError: false,
-        };
-
+        newBoard[state.selectedCell] = { ...cell, value: null, isError: false, notes: 0 };
         return { board: newBoard, history: [...state.history, state.board] };
       }),
 
       undo: () => set((state) => {
         if (state.history.length === 0) return state;
-
         const newHistory = [...state.history];
         const previousBoard = newHistory.pop()!;
-
         return { board: previousBoard, history: newHistory };
       }),
 
       useHint: () => set((state) => {
         if (state.selectedCell === null) return state;
         if (state.board[state.selectedCell].isLocked || state.board[state.selectedCell].value !== null) return state;
-        if (state.hintsRemaining <= 0) return state; // In future, trigger Ad here
+        
+        // Block if not premium and out of hints
+        if (!state.isPremium && state.hintsRemaining <= 0) return state; 
 
         const correctNum = state.solution[state.selectedCell];
         const newBoard = [...state.board];
@@ -190,16 +194,20 @@ export const useGameStore = create<GameState>()(
           const analytics = getAnalytics();
           console.log('🔥 [Firebase Analytics] Logging Event: hint_used');
           logEvent(analytics, 'hint_used', {
-            hints_remaining_after: state.hintsRemaining - 1
+            hints_remaining_after: state.isPremium ? state.hintsRemaining : state.hintsRemaining - 1
           });
         } catch (e) { console.log('🔥 [Firebase Analytics Error]:', e); }
 
         return {
           board: newBoard,
-          history: [...state.history, state.board],
-          hintsRemaining: state.hintsRemaining - 1
+          hintsRemaining: state.isPremium ? state.hintsRemaining : state.hintsRemaining - 1,
+          history: [...state.history, state.board]
         };
       }),
+
+      addHint: () => set((state) => ({ hintsRemaining: state.hintsRemaining + 1 })),
+      
+      secondChance: () => set({ mistakes: 2 }),
 
       startNewGame: async (difficulty) => {
         const { puzzle, solution } = generatePuzzle(difficulty);

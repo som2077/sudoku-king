@@ -1,9 +1,10 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useGameStore } from '../store/useGameStore';
 import { useEffect } from 'react';
+import { ChevronLeft, RotateCcw, CirclePause, Settings } from 'lucide-react-native';
 
-export default function TopBar() {
-  const { mistakes, timer, hintsRemaining, useHint } = useGameStore();
+export default function TopBar({ showRewardedAd }: { showRewardedAd: (cb: () => void) => void }) {
+  const { mistakes, timer, setScreen, startNewGame } = useGameStore();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -18,20 +19,53 @@ export default function TopBar() {
     return `${m}:${s}`;
   };
 
+  const confirmRestart = () => {
+    Alert.alert("Restart", "Are you sure you want to start a new game?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Yes", onPress: () => startNewGame('Easy') } // In a real app we'd save current difficulty
+    ]);
+  };
+
   return (
-    <View className="flex-row justify-between items-center w-[360px] px-2 mb-4 mt-4">
-      <Text className="text-gray-600 font-medium text-lg">{formatTime(timer)}</Text>
-      
-      <Text className={`font-bold text-lg ${mistakes >= 3 ? 'text-red-600' : 'text-gray-600'}`}>
-        Mistakes: {mistakes}/3
-      </Text>
-      
-      <TouchableOpacity 
-        onPress={useHint} 
-        className={`px-4 py-1 rounded-full ${hintsRemaining > 0 ? 'bg-orange-400' : 'bg-gray-300'}`}
-      >
-        <Text className="text-white font-bold">Hint ({hintsRemaining})</Text>
-      </TouchableOpacity>
+    <View className="w-full px-4 mb-2 mt-4 bg-white">
+      {/* Top Header Row */}
+      <View className="flex-row justify-between items-center mb-6">
+        <TouchableOpacity onPress={() => setScreen('home')} className="p-2">
+          <ChevronLeft size={32} color="#3b82f6" strokeWidth={3} />
+        </TouchableOpacity>
+        
+        <Text className="text-2xl font-black text-gray-800 tracking-wider">
+          {formatTime(timer)}
+        </Text>
+        
+        <View className="flex-row gap-4 items-center">
+          <TouchableOpacity onPress={confirmRestart}>
+            <RotateCcw size={28} color="#3b82f6" strokeWidth={2.5} />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <CirclePause size={28} color="#3b82f6" strokeWidth={2.5} />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Settings size={28} color="#3b82f6" strokeWidth={2.5} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Second Row: Stats */}
+      <View className="flex-row justify-between items-center px-1 mb-2">
+        <View>
+          <Text className="text-gray-400 font-bold text-xs uppercase">Difficulty</Text>
+          <Text className="text-gray-600 font-black text-sm">Easy</Text>
+        </View>
+        <View className="items-center">
+          <Text className="text-gray-400 font-bold text-xs uppercase">Score</Text>
+          <Text className="text-gray-600 font-black text-sm">0</Text>
+        </View>
+        <View className="items-end">
+          <Text className="text-gray-400 font-bold text-xs uppercase">Mistakes</Text>
+          <Text className="text-gray-600 font-black text-sm">{mistakes}/3</Text>
+        </View>
+      </View>
     </View>
   );
 }
