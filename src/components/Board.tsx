@@ -41,6 +41,7 @@ export default function Board() {
       grid.push(
         <View key={i} style={{ width: cellSize, height: cellSize }} className={borderStyles.join(" ")}>
           <Cell
+            index={i}
             value={cell.value}
             notes={cell.notes}
             isSelected={selectedCell === i}
@@ -48,7 +49,7 @@ export default function Board() {
             isError={cell.isError}
             isHighlighted={isHighlighted}
             isSameValue={isSameValue}
-            onPress={() => selectCell(i)}
+            onPress={selectCell}
           />
         </View>
       );
