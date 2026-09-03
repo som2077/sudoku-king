@@ -2,6 +2,7 @@ import { TouchableOpacity, Text, View } from 'react-native';
 import { memo } from 'react';
 
 interface CellProps {
+  index: number;
   value: number | null;
   notes: number;
   isSelected: boolean;
@@ -9,10 +10,10 @@ interface CellProps {
   isError: boolean;
   isHighlighted: boolean;
   isSameValue: boolean;
-  onPress: () => void;
+  onPress: (index: number) => void;
 }
 
-const Cell = ({ value, notes, isSelected, isLocked, isError, isHighlighted, isSameValue, onPress }: CellProps) => {
+const Cell = ({ index, value, notes, isSelected, isLocked, isError, isHighlighted, isSameValue, onPress }: CellProps) => {
 
   let bgClass = "bg-white";
   if (isSelected) bgClass = "bg-blue-300";
@@ -42,10 +43,12 @@ const Cell = ({ value, notes, isSelected, isLocked, isError, isHighlighted, isSa
   return (
     <TouchableOpacity 
       activeOpacity={0.7} 
-      onPress={onPress}
+      onPress={() => onPress(index)}
       className={`flex-1 border-[0.5px] border-gray-300 items-center justify-center ${bgClass}`}
     >
       {value ? <Text className={textClass}>{value}</Text> : renderNotes()}
     </TouchableOpacity>
   );
 }
+
+export default memo(Cell);
