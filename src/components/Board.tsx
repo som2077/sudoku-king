@@ -58,7 +58,7 @@ export default function Board() {
   };
 
   return (
-    <View className="flex-row flex-wrap" style={{ width: boardSize, height: boardSize }}>
+    <View className="flex-row flex-wrap mb-7" style={{ width: boardSize, height: boardSize }}>
       {renderGrid()}
     </View>
   );

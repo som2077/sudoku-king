@@ -27,17 +27,17 @@ export default function TopBar({ showRewardedAd }: { showRewardedAd: (cb: () => 
   };
 
   return (
-    <View className="w-full px-4 mb-2 mt-4 bg-white">
+    <View className="w-full px-4 mb-2 bg-white">
       {/* Top Header Row */}
       <View className="flex-row justify-between items-center mb-6">
         <TouchableOpacity onPress={() => setScreen('home')} className="p-2">
           <ChevronLeft size={32} color="#3b82f6" strokeWidth={3} />
         </TouchableOpacity>
-        
+
         <Text className="text-2xl font-black text-gray-800 tracking-wider">
           {formatTime(timer)}
         </Text>
-        
+
         <View className="flex-row gap-4 items-center">
           <TouchableOpacity onPress={confirmRestart}>
             <RotateCcw size={28} color="#3b82f6" strokeWidth={2.5} />

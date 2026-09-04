@@ -19,8 +19,8 @@ export default function Keypad({ showRewardedAd }: { showRewardedAd: (cb: () => 
         "Watch a short video ad to get another hint?",
         [
           { text: "Cancel", style: "cancel" },
-          { 
-            text: "Watch Ad", 
+          {
+            text: "Watch Ad",
             onPress: () => showRewardedAd(() => {
               addHint();
               setTimeout(useHint, 500);
@@ -32,21 +32,21 @@ export default function Keypad({ showRewardedAd }: { showRewardedAd: (cb: () => 
   };
 
   return (
-    <View className="w-full px-4 mt-8 flex-1 justify-between pb-8">
-      
+    <View className="w-full px-4 items-center">
+
       {/* 4 Actions Row */}
-      <View className="flex-row justify-between px-6 mb-8">
-        
+      <View className="flex-row justify-between px-6 mb-5  gap-20 ">
+
         <TouchableOpacity onPress={undo} className="items-center">
           <RotateCcw size={32} color="#6b7280" strokeWidth={2} />
           <Text className="text-gray-500 text-xs font-bold mt-2">Undo</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity onPress={erase} className="items-center">
           <Eraser size={32} color="#6b7280" strokeWidth={2} />
           <Text className="text-gray-500 text-xs font-bold mt-2">Erase</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity onPress={toggleNotesMode} className="items-center relative">
           <Pen size={32} color="#6b7280" strokeWidth={2} />
           <Text className="text-gray-500 text-xs font-bold mt-2">Notes</Text>
@@ -68,14 +68,14 @@ export default function Keypad({ showRewardedAd }: { showRewardedAd: (cb: () => 
       </View>
 
       {/* Number Pad (1-9 in one row) */}
-      <View className="flex-row justify-between items-center w-full pb-4">
+      <View className="flex-row justify-between  w-full pb-4">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
           <TouchableOpacity
             key={num}
             onPress={() => handleNumberPress(num)}
-            className="items-center justify-center"
+            className="items-center justify-center bg-[#E5E7EB] rounded-lg h-11 flex-1 mx-0.5"
           >
-            <Text className="text-4xl font-light text-blue-600" style={{ transform: [{ scaleY: 1.1 }] }}>{num}</Text>
+            <Text className="text-2xl font-normal text-black">{num}</Text>
           </TouchableOpacity>
         ))}
       </View>

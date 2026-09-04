@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Text, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
+import { StatusBar as NativeStatusBar } from 'react-native';
 import { getAnalytics, logEvent } from '@react-native-firebase/analytics';
 import Purchases from 'react-native-purchases';
 import RevenueCatUI from 'react-native-purchases-ui';
@@ -9,6 +10,7 @@ import mobileAds, { BannerAd, BannerAdSize, TestIds, RewardedAd, RewardedAdEvent
 import Board from './src/components/Board';
 import Keypad from './src/components/Keypad';
 import TopBar from './src/components/TopBar';
+import HomeScreen from './src/screens/HomeScreen';
 import { useGameStore } from './src/store/useGameStore';
 
 import { getBannerAdUnitId, getRewardedAdUnitId, getRevenueCatApiKey } from './src/utils/secrets';
@@ -32,6 +34,9 @@ export default function App() {
   const [adShowing, setAdShowing] = useState(false);
 
   useEffect(() => {
+    NativeStatusBar.setBarStyle('dark-content');
+    NativeStatusBar.setBackgroundColor('#F9F9FB', true);
+
     fetchRemoteConfig();
 
     // RevenueCat Initialization
@@ -160,64 +165,23 @@ export default function App() {
 
   if (screen === 'home') {
     return (
-      <SafeAreaProvider>
-        <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center">
-          <Text className="text-5xl font-bold text-blue-600 mb-2">Sudoku King</Text>
-          <Text className="text-gray-500 mb-8">Train your brain, stay sharp.</Text>
-
-          {!isPremium && (
-            <View className="mb-8 items-center w-full px-8">
-              <TouchableOpacity onPress={buyPremium} className="bg-yellow-400 w-full py-4 rounded-2xl mb-3 shadow-sm items-center border border-yellow-500">
-                <Text className="text-yellow-900 font-bold text-lg">👑 Get Premium</Text>
-                <Text className="text-yellow-800 text-xs mt-1">No Ads & Unlimited Hints</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {isPremium && (
-            <View className="mb-8 items-center w-full px-8">
-              <View className="bg-yellow-100 w-full py-3 rounded-2xl items-center border border-yellow-300">
-                <Text className="text-yellow-700 font-bold text-md">👑 Premium Unlocked</Text>
-              </View>
-            </View>
-          )}
-
-          {history.length > 0 && (
-            <TouchableOpacity onPress={() => setScreen('playing')} className="bg-orange-500 px-12 py-4 rounded-full mb-6 shadow-md w-3/4 items-center">
-              <Text className="text-white font-bold text-xl">Continue Game</Text>
-            </TouchableOpacity>
-          )}
-
-          <Text className="text-gray-400 mb-4 font-bold tracking-wider">NEW GAME</Text>
-          <View className="flex-row flex-wrap justify-center gap-4 px-8">
-            {['Fast', 'Easy', 'Medium', 'Hard', 'Expert'].map(diff => (
-              <TouchableOpacity key={diff} onPress={() => startNewGame(diff as any)} className="bg-white border border-blue-500 px-6 py-3 rounded-full shadow-sm w-[42%] items-center">
-                <Text className="text-blue-600 font-bold text-lg">{diff}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <StatusBar style="auto" />
-        </SafeAreaView>
-      </SafeAreaProvider>
+      <HomeScreen
+        setScreen={setScreen}
+        startNewGame={startNewGame}
+        history={history}
+        isPremium={isPremium}
+        setPremium={setPremium}
+      />
     );
   }
 
   return (
     <SafeAreaProvider>
       <SafeAreaView className="flex-1 bg-gray-50">
-        <View className="flex-1 items-center mt-10">
-          <View className="flex-row w-full px-4 justify-between items-center mb-2">
-            <TouchableOpacity onPress={() => setScreen('home')}>
-              <Text className="text-blue-600 font-bold text-lg">← Back</Text>
-            </TouchableOpacity>
-            <Text className="text-2xl font-bold text-blue-600">Sudoku King</Text>
-            <View className="w-12"></View>
-          </View>
-
+        <View className="flex-1 items-center relative ">
           <TopBar showRewardedAd={showRewardedAd} />
           <Board />
           <Keypad showRewardedAd={showRewardedAd} />
-          <StatusBar style="auto" />
 
           {(isGameOver || isGameWon) && (
             <View className="absolute inset-0 bg-black/60 items-center justify-center z-50">
@@ -247,7 +211,7 @@ export default function App() {
 
           {/* AdMob Banner at bottom */}
           {!isPremium && (
-            <View className="absolute bottom-0 w-full items-center pb-2 bg-gray-50">
+            <View className="absolute bottom-0 w-full items-center justify-center bg-[#E2E8F0] h-[70px]">
               <BannerAd
                 unitId={bannerAdUnitId}
                 size={BannerAdSize.BANNER}
@@ -266,6 +230,7 @@ export default function App() {
           )}
         </View>
       </SafeAreaView>
+      <StatusBar style="dark" />
     </SafeAreaProvider>
   );
 }
