@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Text } from '../ui/Text';
+import { Text } from "../ui/Text";
 import { Pressable, View } from "react-native";
 
 const DAY_LABELS: readonly string[] = ["M", "T", "W", "T", "F", "S", "S"];
@@ -53,7 +53,7 @@ const DayCell = React.memo(function DayCell({
 
   return (
     <Pressable
-      style={{ alignItems: "center", gap: 6, width: 40 }}
+      style={{ alignItems: "center", gap: 3, width: 57 }}
       accessibilityRole="button"
       accessibilityLabel={`Select ${date.toDateString()}`}
       onPress={handlePress}

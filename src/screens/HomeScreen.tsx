@@ -1,17 +1,11 @@
 import React from "react";
-import { Text } from '../components/Text';
-import {
-  View,
-  TouchableOpacity,
-  ScrollView,
-  Dimensions} from "react-native";
+import { Text } from "../components/Text";
+import { View, TouchableOpacity, ScrollView, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Home, Calendar, Settings, Play, Flame } from "lucide-react-native";
 import { Image } from "expo-image";
 import { useGameStore } from "../store/useGameStore";
-import { getRevenueCatApiKey } from "../utils/secrets";
-import Purchases from "react-native-purchases";
-import RevenueCatUI from "react-native-purchases-ui";
+import { useShallow } from "zustand/react/shallow";
 
 import { WeeklyCalendarStrip } from "../components/WeeklyCalendarStrip";
 import { DashboardPager } from "../components/DashboardPager";
@@ -22,14 +16,14 @@ import { SettingsScreen } from "./SettingsScreen";
 import { AwardsScreen } from "./AwardsScreen";
 import { StatusBar as NativeStatusBar } from "react-native";
 
+import { Difficulty } from "../utils/sudokuLogic";
+
 type HomeScreenProps = {
   setScreen: (screen: "home" | "playing") => void;
-  startNewGame: (
-    difficulty: "Fast" | "Easy" | "Medium" | "Hard" | "Expert",
-  ) => void;
-  history: any[];
-  isPremium: boolean;
-  setPremium: (val: boolean) => void;
+  startNewGame: (difficulty: Difficulty) => void;
+  history?: any[];
+  isPremium?: boolean;
+  setPremium?: (val: boolean) => void;
 };
 
 type Tab = "home" | "daily" | "settings";
@@ -132,17 +126,68 @@ export default function HomeScreen({
   const [showDifficultySheet, setShowDifficultySheet] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<Tab>("home");
   const [showAwards, setShowAwards] = React.useState(false);
-  const [streak, setStreak] = React.useState(1);
 
   const scrollRef = React.useRef<ScrollView>(null);
-  const SCREEN_WIDTH = Dimensions.get("window").width;
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
   const TABS: Tab[] = ["home", "daily", "settings"];
 
-  // Placeholder stats — wire to real store / MMKV later
-  const SOLVED = 3; // today's solved
-  const TOTAL_SOLVED = 147; // all-time total
-  const WIN_RATE = 84;
-  const BEST_TIME = "3:21";
+  const {
+    totalSolved,
+    totalPlayed,
+    bestTimeSec,
+    todaySolved,
+    streak = 0,
+    timer = 0,
+    difficulty = "Easy",
+    board = [],
+    mistakes = 0,
+    isGameCompleted = false,
+  } = useGameStore(
+    useShallow((s) => ({
+      totalSolved: s.totalSolved,
+      totalPlayed: s.totalPlayed,
+      bestTimeSec: s.bestTimeSec,
+      todaySolved: s.todaySolved,
+      streak: s.streak,
+      timer: s.timer,
+      difficulty: s.difficulty,
+      board: s.board,
+      mistakes: s.mistakes,
+      isGameCompleted: s.isGameCompleted,
+    }))
+  );
+
+  const formatBestTime = (sec: number | null) => {
+    if (!sec || sec <= 0) return "--:--";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60)
+      .toString()
+      .padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const formatProgressTimer = (sec: number) => {
+    const m = Math.floor(sec / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = Math.floor(sec % 60)
+      .toString()
+      .padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const isOngoingGame = board.length > 0 && !isGameCompleted && mistakes < 3;
+  const continueProgressLabel = isOngoingGame
+    ? `${formatProgressTimer(timer)} · ${difficulty}`
+    : "Select difficulty";
+
+  const SOLVED = todaySolved || 0;
+  const TOTAL_SOLVED = totalSolved || 0;
+  const WIN_RATE =
+    (totalPlayed || 0) > 0
+      ? Math.round(((totalSolved || 0) / totalPlayed) * 100)
+      : 0;
+  const BEST_TIME = formatBestTime(bestTimeSec);
   const STREAK = streak;
 
   React.useEffect(() => {
@@ -179,7 +224,9 @@ export default function HomeScreen({
           style={{ flex: 1 }}
         >
           {/* ── 1. HOME TAB ── */}
-          <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
+          <View
+            style={{ width: SCREEN_WIDTH, flex: 1, justifyContent: "center" }}
+          >
             {showAwards ? (
               <AwardsScreen onBack={() => setShowAwards(false)} />
             ) : (
@@ -195,6 +242,7 @@ export default function HomeScreen({
                     alignItems: "center",
                     marginTop: 16,
                     marginBottom: 16,
+                    marginHorizontal: 5,
                   }}
                 >
                   <Image
@@ -294,7 +342,7 @@ export default function HomeScreen({
                             fontWeight: "500",
                           }}
                         >
-                          Streak +1
+                          {streak > 0 ? `Streak ${streak}` : "Start Streak"}
                         </Text>
                       </View>
                     </View>
@@ -316,7 +364,7 @@ export default function HomeScreen({
                   {/* ── Continue Game (Secondary — Bottom) ── */}
                   <TouchableOpacity
                     onPress={() =>
-                      history.length > 0
+                      isOngoingGame
                         ? setScreen("playing")
                         : setShowDifficultySheet(true)
                     }
@@ -363,7 +411,7 @@ export default function HomeScreen({
                             fontWeight: "500",
                           }}
                         >
-                          00:28 · Easy
+                          {continueProgressLabel}
                         </Text>
                       </View>
                     </View>
@@ -405,7 +453,11 @@ export default function HomeScreen({
         <DifficultyBottomSheet
           visible={showDifficultySheet}
           onClose={() => setShowDifficultySheet(false)}
-          onSelect={(diff) => startNewGame(diff as any)}
+          onSelect={(diff) => {
+            setShowDifficultySheet(false);
+            startNewGame(diff);
+            setScreen("playing");
+          }}
         />
       </SafeAreaView>
     </AppGradientBackground>

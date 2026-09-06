@@ -40,7 +40,8 @@ export default function App() {
     mistakes, board, secondChance, timer,
     isPremium, setPremium, fetchRemoteConfig,
     history, startNewGame, addHint, useHint,
-    currentDailyChallenge, completeDailyChallenge
+    currentDailyChallenge, completeDailyChallenge,
+    difficulty, recordGameWon
   } = useGameStore();
 
   const isGameOver = mistakes >= 3;
@@ -203,6 +204,8 @@ export default function App() {
       console.log(`🔥 [Firebase Analytics] Logging Event: game_won (Time: ${timer}s)`);
       logEvent(analytics, 'game_won', { time_taken: timer });
       
+      recordGameWon(difficulty, timer);
+
       if (currentDailyChallenge) {
         completeDailyChallenge(currentDailyChallenge);
       }
@@ -210,31 +213,28 @@ export default function App() {
       console.log(`🔥 [Firebase Analytics] Logging Event: game_lost (Time: ${timer}s)`);
       logEvent(analytics, 'game_lost', { time_taken: timer });
     }
-  }, [isGameWon, isGameOver, timer, currentDailyChallenge, completeDailyChallenge]);
+  }, [isGameWon, isGameOver, timer, currentDailyChallenge, completeDailyChallenge, difficulty, recordGameWon]);
 
   if (!fontsLoaded) {
     return <ActivityIndicator size="large" style={{ flex: 1 }} />;
   }
 
-  if (screen === 'home') {
-    return (
-      <HomeScreen
-        setScreen={setScreen}
-        startNewGame={startNewGame}
-        history={history}
-        isPremium={isPremium}
-        setPremium={setPremium}
-      />
-    );
-  }
-
   return (
     <SafeAreaProvider>
-      <AppGradientBackground>
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
-          <View style={{ flex: 1, alignItems: 'center' }}>
+      {screen === 'home' ? (
+        <HomeScreen
+          setScreen={setScreen}
+          startNewGame={startNewGame}
+          history={history}
+          isPremium={isPremium}
+          setPremium={setPremium}
+        />
+      ) : (
+        <AppGradientBackground>
+          <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+            <View style={{ flex: 1, alignItems: 'center' }}>
 
-            <TopBar showRewardedAd={showRewardedAd} />
+              <TopBar showRewardedAd={showRewardedAd} />
             <Board />
             <Keypad showRewardedAd={showRewardedAd} />
 
@@ -360,6 +360,7 @@ export default function App() {
           </View>
         </SafeAreaView>
       </AppGradientBackground>
+      )}
       <StatusBar style="dark" />
     </SafeAreaProvider>
   );

@@ -1,9 +1,8 @@
 import React from 'react';
 import { Text } from '../ui/Text';
-import { View, TouchableOpacity, Modal, TouchableWithoutFeedback, StyleSheet } from 'react-native';
-import { Lock } from 'lucide-react-native';
-
-type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Expert' | 'Master' | 'Extreme';
+import { View, TouchableOpacity, Modal, Pressable, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Difficulty } from '../../utils/sudokuLogic';
 
 interface DifficultyBottomSheetProps {
   visible: boolean;
@@ -12,89 +11,159 @@ interface DifficultyBottomSheetProps {
   onRestart?: () => void;
 }
 
-interface DifficultyOption {
-  id: Difficulty;
-  isLocked: boolean;
-  unlockText?: string;
-}
-
-const OPTIONS: DifficultyOption[] = [
-  { id: 'Easy', isLocked: false },
-  { id: 'Medium', isLocked: false },
-  { id: 'Hard', isLocked: true, unlockText: 'Complete 2 medium levels to unlock' },
-  { id: 'Expert', isLocked: true, unlockText: 'Complete 4 hard levels to unlock' },
-  { id: 'Master', isLocked: true, unlockText: 'Complete 10 expert levels to unlock' },
-  { id: 'Extreme', isLocked: true, unlockText: 'Complete 14 master levels to unlock' },
+const OPTIONS: Difficulty[] = [
+  'Easy',
+  'Medium',
+  'Hard',
+  'Expert',
+  'Master',
+  'Extreme',
 ];
 
-export function DifficultyBottomSheet({ visible, onClose, onSelect, onRestart }: DifficultyBottomSheetProps) {
+export function DifficultyBottomSheet({
+  visible,
+  onClose,
+  onSelect,
+  onRestart,
+}: DifficultyBottomSheetProps) {
+  let insetsBottom = 0;
+  try {
+    const insets = useSafeAreaInsets();
+    insetsBottom = insets?.bottom ?? 0;
+  } catch {
+    insetsBottom = 0;
+  }
+
+  const handleSelect = (diff: Difficulty) => {
+    onClose();
+    onSelect(diff);
+  };
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View className="flex-1 justify-end bg-black/40">
-          <TouchableWithoutFeedback>
-            <View className="bg-white rounded-t-3xl pt-2 pb-8 px-4">
-              <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-4" />
-              
-              <View className="bg-white rounded-2xl overflow-hidden">
-                {OPTIONS.map((opt, index) => (
-                  <View key={opt.id}>
-                    <TouchableOpacity
-                      disabled={opt.isLocked}
-                      onPress={() => {
-                        onSelect(opt.id);
-                        onClose();
-                      }}
-                      className="py-4 items-center flex-row justify-center"
-                    >
-                      {opt.isLocked && (
-                        <View className="absolute left-6">
-                          <Lock size={20} color="#9CA3AF" />
-                        </View>
-                      )}
-                      <View className="items-center">
-                        <Text className={`text-xl font-medium ${opt.isLocked ? 'text-gray-400' : 'text-blue-500'}`}>
-                          {opt.id}
-                        </Text>
-                        {opt.isLocked && opt.unlockText && (
-                          <Text className="text-gray-400 text-xs mt-1">
-                            {opt.unlockText}
-                          </Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                    {index < OPTIONS.length - 1 && (
-                      <View className="h-[1px] bg-gray-100 w-full" />
-                    )}
-                  </View>
-                ))}
+      <View style={styles.overlay}>
+        {/* Backdrop: Sibling that closes sheet on tap outside */}
+        <Pressable
+          style={[StyleSheet.absoluteFill, styles.backdrop]}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close difficulty selection"
+        />
 
-                {onRestart && (
-                  <>
-                    <View className="h-[1px] bg-gray-100 w-full" />
-                    <TouchableOpacity
-                      onPress={() => {
-                        onRestart();
-                        onClose();
-                      }}
-                      className="py-4 items-center"
-                    >
-                      <Text className="text-xl font-medium text-blue-500">
-                        Restart
-                      </Text>
-                    </TouchableOpacity>
-                  </>
-                )}
+        {/* Sheet Content */}
+        <View
+          style={[
+            styles.sheet,
+            { paddingBottom: Math.max(insetsBottom + 16, 32) },
+          ]}
+        >
+          {/* Top Handlebar */}
+          <View style={styles.handle} />
+
+          {/* Options List */}
+          <View style={styles.optionsList}>
+            {OPTIONS.map((difficulty, index) => (
+              <View key={difficulty}>
+                <TouchableOpacity
+                  activeOpacity={0.65}
+                  onPress={() => handleSelect(difficulty)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${difficulty} difficulty`}
+                  style={styles.optionRow}
+                >
+                  <Text style={styles.optionTitle}>{difficulty}</Text>
+                </TouchableOpacity>
+
+                {index < OPTIONS.length - 1 && <View style={styles.divider} />}
               </View>
-            </View>
-          </TouchableWithoutFeedback>
+            ))}
+
+            {onRestart && (
+              <>
+                <View style={styles.divider} />
+                <TouchableOpacity
+                  activeOpacity={0.65}
+                  onPress={() => {
+                    onClose();
+                    onRestart();
+                  }}
+                  style={styles.restartBtn}
+                >
+                  <Text style={styles.restartText}>Restart Current Board</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  sheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 10,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 16,
+  },
+  handle: {
+    width: 38,
+    height: 4.5,
+    backgroundColor: '#D1D5DB',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
+  optionsList: {
+    width: '100%',
+  },
+  optionRow: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
+  optionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2563EB',
+    textAlign: 'center',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    width: '100%',
+  },
+  restartBtn: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+  },
+  restartText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#EF4444',
+    textAlign: 'center',
+  },
+});

@@ -6,10 +6,11 @@ type ChartTab = "Day" | "Week" | "Month";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+// Time in seconds: Mon=3:21 (201s), Tue=4:15, Wed=2:50, Thu=5:10, Fri=3:45, Sat=4:30, Sun=2:40
 const MOCK_DATA: Record<ChartTab, number[]> = {
-  Day: [40, 55, 60, 90, 70, 50, 65],
-  Week: [60, 45, 75, 80, 55, 70, 85],
-  Month: [50, 65, 45, 70, 90, 60, 75],
+  Day: [201, 255, 170, 310, 225, 270, 160],
+  Week: [240, 195, 210, 180, 260, 220, 175],
+  Month: [210, 230, 185, 245, 190, 205, 165],
 };
 
 const TODAY_INDEX = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
@@ -19,10 +20,17 @@ const CARD_SHADOW = {
   borderRadius: 20,
   shadowColor: "#000",
   shadowOpacity: 0.06,
-  // shadowRadius: 10,
-  // shadowOffset: { width: 0, height: 4 },
   elevation: 1,
 };
+
+function formatTime(seconds: number): string {
+  if (!seconds || seconds <= 0) return "--:--";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, "0");
+  return `${m}:${s}`;
+}
 
 function Bar({
   value,
@@ -38,7 +46,7 @@ function Bar({
   onPress: () => void;
 }) {
   const BAR_MAX_HEIGHT = 150;
-  const height = Math.max(6, (value / maxValue) * BAR_MAX_HEIGHT);
+  const height = Math.max(12, (value / maxValue) * BAR_MAX_HEIGHT);
 
   return (
     <TouchableOpacity
@@ -46,19 +54,19 @@ function Bar({
       onPress={onPress}
       style={{ alignItems: "center", flex: 1 }}
     >
-      {/* Tooltip above selected bar */}
+      {/* Tooltip above active bar */}
       {isSelected ? (
         <View
           style={{
             backgroundColor: "#1C1F2E",
             borderRadius: 6,
-            paddingHorizontal: 5,
+            paddingHorizontal: 6,
             paddingVertical: 2,
             marginBottom: 4,
           }}
         >
           <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "bold" }}>
-            {value}%
+            {formatTime(value)}
           </Text>
         </View>
       ) : (
@@ -98,10 +106,16 @@ function Bar({
   );
 }
 
-export function WinRateChart() {
+interface BestTimeChartProps {
+  bestTime?: string;
+  data?: Record<ChartTab, number[]>;
+}
+
+export function BestTimeChart({ bestTime, data: propData }: BestTimeChartProps) {
   const [activeTab, setActiveTab] = useState<ChartTab>("Day");
   const [selectedDay, setSelectedDay] = useState(TODAY_INDEX);
-  const data = MOCK_DATA[activeTab];
+
+  const data = propData ? propData[activeTab] : MOCK_DATA[activeTab];
   const maxValue = Math.max(...data, 1);
   const tabs: ChartTab[] = ["Day", "Week", "Month"];
 
@@ -117,7 +131,7 @@ export function WinRateChart() {
         }}
       >
         <Text style={{ fontSize: 15, fontWeight: "bold", color: "#1C1F2E" }}>
-          Win Rate
+          Best Time
         </Text>
 
         {/* Tab switcher — light pill style */}

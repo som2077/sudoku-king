@@ -1,6 +1,9 @@
 export { DashboardPager } from './DashboardPager';
 export { StatsCards, SmallCard } from './StatsCards';
 export { WinRateChart } from './WinRateChart';
+export { BestTimeChart } from './BestTimeChart';
+export { DifficultyBreakdownChart } from './DifficultyBreakdownChart';
+export { PerformanceChart } from './PerformanceChart';
 export { RingSummaryCard } from './RingSummaryCard';
 export { LevelStatsTable } from './LevelStatsTable';
 export { WeeklyCalendarStrip } from './WeeklyCalendarStrip';

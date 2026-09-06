@@ -14,9 +14,11 @@ import { Image } from "expo-image";
 const DIFFICULTY_COLORS: Record<string, string> = {
   Fast: "#6B7280",
   Easy: "#16A34A",
-  Medium: "#EA580C",
-  Hard: "#DC2626",
+  Medium: "#F59E0B",
+  Hard: "#EA580C",
   Expert: "#7C3AED",
+  Master: "#3B82F6",
+  Extreme: "#EF4444",
 };
 
 function HeartIcon({ filled }: { filled: boolean }) {

@@ -1,12 +1,15 @@
 import React, { useRef, useState } from "react";
-import { Dimensions, ScrollView, View } from "react-native";
-import { Trophy, Zap } from "lucide-react-native";
-import { StatsCards, SmallCard } from "./StatsCards";
-import { WinRateChart } from "./WinRateChart";
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { StatsCards } from "./StatsCards";
+import { PerformanceChart } from "./PerformanceChart";
+import { DifficultyBreakdownChart } from "./DifficultyBreakdownChart";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-// Outer ScrollView has px-4 (16px each side) → card width
-const PAGE_WIDTH = SCREEN_WIDTH - 32;
 const INNER_PAD = 16;
 
 // ─── Pagination Dots ──────────────────────────────────────────────────────────
@@ -46,14 +49,14 @@ interface DashboardPagerProps {
 export function DashboardPager({
   solved,
   totalSolved,
-  winRate,
-  bestTime,
 }: DashboardPagerProps) {
   const [activePage, setActivePage] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const { width: screenWidth } = useWindowDimensions();
+  const pageWidth = screenWidth - 32;
 
-  const handleScroll = (e: any) => {
-    const page = Math.round(e.nativeEvent.contentOffset.x / PAGE_WIDTH);
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const page = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
     setActivePage(page);
   };
 
@@ -68,34 +71,23 @@ export function DashboardPager({
       <ScrollView
         ref={scrollRef}
         horizontal
-        pagingEnabled
+        snapToInterval={pageWidth}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        disableIntervalMomentum={true}
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScroll}
-        decelerationRate="fast"
         nestedScrollEnabled
-        // Each page is exactly PAGE_WIDTH so snapping is perfect
+        // Each page is exactly pageWidth so snapping is perfect
       >
-        {/* Page 1 — Win Rate Chart */}
-        <View style={{ width: PAGE_WIDTH, paddingHorizontal: INNER_PAD }}>
-          <WinRateChart />
+        {/* Page 1 — Performance Chart (Merged Win Rate & Best Time) */}
+        <View style={{ width: pageWidth, paddingHorizontal: INNER_PAD }}>
+          <PerformanceChart />
         </View>
 
-        {/* Page 2 — Win Rate % + Best Time */}
-        <View style={{ width: PAGE_WIDTH, paddingHorizontal: INNER_PAD }}>
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
-            <SmallCard
-              value={`${winRate}%`}
-              label="Win rate"
-              iconBg="#EDE9FE"
-              icon={<Trophy size={22} color="#7C3AED" />}
-            />
-            <SmallCard
-              value={bestTime}
-              label="Best time"
-              iconBg="#FEE2E2"
-              icon={<Zap size={22} color="#EF4444" />}
-            />
-          </View>
+        {/* Page 2 — Difficulty Breakdown Chart (Donut / Radar / Curve) */}
+        <View style={{ width: pageWidth, paddingHorizontal: INNER_PAD }}>
+          <DifficultyBreakdownChart />
         </View>
       </ScrollView>
 

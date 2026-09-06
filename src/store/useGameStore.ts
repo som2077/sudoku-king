@@ -20,6 +20,13 @@ export type CellState = {
   isError: boolean;
 };
 
+export interface DifficultyStatsRecord {
+  solved: number;
+  played: number;
+  bestSec: number | null;
+  totalSec: number;
+}
+
 type GameState = {
   board: CellState[];
   solution: number[]; // Added to store the correct answer
@@ -34,7 +41,19 @@ type GameState = {
   screen: 'home' | 'playing';
   difficulty: Difficulty;
 
+  // Real Persistent Stats
+  difficultyStats: Record<string, DifficultyStatsRecord>;
+  totalSolved: number;
+  totalPlayed: number;
+  bestTimeSec: number | null;
+  isGameCompleted: boolean;
+  todaySolved: number;
+  lastSolvedDate: string | null;
+  streak: number;
+
   // Actions
+  recordGameWon: (difficulty: Difficulty, timeSec: number) => void;
+  recordGamePlayed: (difficulty: Difficulty) => void;
   setScreen: (screen: 'home' | 'playing') => void;
   setPremium: (status: boolean) => void;
   selectCell: (index: number) => void;
@@ -63,6 +82,23 @@ const initialBoard = Array(81).fill(null).map(() => ({
   isError: false,
 }));
 
+const getLocalDateString = (d: Date = new Date()): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const initialDifficultyStats: Record<string, DifficultyStatsRecord> = {
+  Easy: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
+  Medium: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
+  Hard: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
+  Expert: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
+  Master: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
+  Extreme: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
+  Fast: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
+};
+
 export const useGameStore = create<GameState>()(
   persist(
     (set) => ({
@@ -78,6 +114,82 @@ export const useGameStore = create<GameState>()(
       history: [],
       screen: 'home',
       difficulty: 'Easy' as Difficulty,
+
+      // Real Persistent Stats
+      difficultyStats: initialDifficultyStats,
+      totalSolved: 0,
+      totalPlayed: 0,
+      bestTimeSec: null,
+      isGameCompleted: false,
+      todaySolved: 0,
+      lastSolvedDate: null,
+      streak: 0,
+
+      recordGameWon: (difficulty, timeSec) => set((state) => {
+        if (state.isGameCompleted) return state;
+        const todayStr = getLocalDateString();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = getLocalDateString(yesterday);
+
+        let newStreak = state.streak || 0;
+        if (state.lastSolvedDate === yesterdayStr) {
+          newStreak += 1;
+        } else if (state.lastSolvedDate !== todayStr) {
+          newStreak = 1;
+        }
+
+        const prevStats = state.difficultyStats || initialDifficultyStats;
+        const prevDiff = prevStats[difficulty] || {
+          solved: 0,
+          played: 0,
+          bestSec: null,
+          totalSec: 0,
+        };
+
+        const newBest = prevDiff.bestSec === null ? timeSec : Math.min(prevDiff.bestSec, timeSec);
+        const newOverallBest = state.bestTimeSec === null ? timeSec : Math.min(state.bestTimeSec, timeSec);
+        const isToday = state.lastSolvedDate === todayStr;
+        const newTodaySolved = isToday ? (state.todaySolved || 0) + 1 : 1;
+
+        return {
+          isGameCompleted: true,
+          totalSolved: (state.totalSolved || 0) + 1,
+          bestTimeSec: newOverallBest,
+          todaySolved: newTodaySolved,
+          lastSolvedDate: todayStr,
+          streak: newStreak,
+          difficultyStats: {
+            ...prevStats,
+            [difficulty]: {
+              ...prevDiff,
+              solved: prevDiff.solved + 1,
+              bestSec: newBest,
+              totalSec: prevDiff.totalSec + timeSec,
+            },
+          },
+        };
+      }),
+
+      recordGamePlayed: (difficulty) => set((state) => {
+        const prevStats = state.difficultyStats || initialDifficultyStats;
+        const prevDiff = prevStats[difficulty] || {
+          solved: 0,
+          played: 0,
+          bestSec: null,
+          totalSec: 0,
+        };
+        return {
+          totalPlayed: (state.totalPlayed || 0) + 1,
+          difficultyStats: {
+            ...prevStats,
+            [difficulty]: {
+              ...prevDiff,
+              played: prevDiff.played + 1,
+            },
+          },
+        };
+      }),
 
       setScreen: (screen) => set({ screen }),
       setPremium: (status) => set({ isPremium: status }),
@@ -100,7 +212,7 @@ export const useGameStore = create<GameState>()(
       placeNumber: (num) => set((state) => {
         if (state.selectedCell === null || state.mistakes >= 3) return state;
         const cell = state.board[state.selectedCell];
-        if (cell.isLocked || cell.value !== null) return state;
+        if (cell.isLocked || (cell.value !== null && !cell.isError)) return state;
 
         const newBoard = [...state.board];
 
@@ -231,18 +343,36 @@ export const useGameStore = create<GameState>()(
           logEvent(analytics, 'game_started', { difficulty });
         } catch (e) { console.log('Analytics Error:', e); }
 
-        set((state) => ({
-          board: newBoard,
-          solution,
-          difficulty,
-          selectedCell: null,
-          mistakes: 0,
-          timer: 0,
-          history: [],
-          hintsRemaining: state.initialHints,
-          screen: 'playing',
-          currentDailyChallenge: null, // Reset daily challenge tracker
-        }));
+        set((state) => {
+          const prevStats = state.difficultyStats || initialDifficultyStats;
+          const prevDiff = prevStats[difficulty] || {
+            solved: 0,
+            played: 0,
+            bestSec: null,
+            totalSec: 0,
+          };
+          return {
+            board: newBoard,
+            solution,
+            difficulty,
+            selectedCell: null,
+            mistakes: 0,
+            timer: 0,
+            history: [],
+            hintsRemaining: state.initialHints,
+            screen: 'playing',
+            currentDailyChallenge: null, // Reset daily challenge tracker
+            isGameCompleted: false,
+            totalPlayed: (state.totalPlayed || 0) + 1,
+            difficultyStats: {
+              ...prevStats,
+              [difficulty]: {
+                ...prevDiff,
+                played: prevDiff.played + 1,
+              },
+            },
+          };
+        });
       },
 
       // Daily Challenge Implementation
@@ -250,8 +380,8 @@ export const useGameStore = create<GameState>()(
       currentDailyChallenge: null,
       
       startDailyChallenge: (dateStr) => {
-        // Simple deterministic difficulty based on day of week (0=Sun, 1=Mon, etc)
-        const dateObj = new Date(dateStr);
+        const [year, month, dayNum] = dateStr.split('-').map(Number);
+        const dateObj = new Date(year, month - 1, dayNum);
         const day = dateObj.getDay();
         let difficulty: Difficulty = 'Medium';
         if (day === 0 || day === 6) difficulty = 'Expert';
@@ -265,18 +395,36 @@ export const useGameStore = create<GameState>()(
           isError: false,
         }));
 
-        set((state) => ({
-          board: newBoard,
-          solution,
-          difficulty,
-          selectedCell: null,
-          mistakes: 0,
-          timer: 0,
-          history: [],
-          hintsRemaining: state.initialHints,
-          screen: 'playing',
-          currentDailyChallenge: dateStr,
-        }));
+        set((state) => {
+          const prevStats = state.difficultyStats || initialDifficultyStats;
+          const prevDiff = prevStats[difficulty] || {
+            solved: 0,
+            played: 0,
+            bestSec: null,
+            totalSec: 0,
+          };
+          return {
+            board: newBoard,
+            solution,
+            difficulty,
+            selectedCell: null,
+            mistakes: 0,
+            timer: 0,
+            history: [],
+            hintsRemaining: state.initialHints,
+            screen: 'playing',
+            currentDailyChallenge: dateStr,
+            isGameCompleted: false,
+            totalPlayed: (state.totalPlayed || 0) + 1,
+            difficultyStats: {
+              ...prevStats,
+              [difficulty]: {
+                ...prevDiff,
+                played: prevDiff.played + 1,
+              },
+            },
+          };
+        });
       },
 
       completeDailyChallenge: (dateStr) => {

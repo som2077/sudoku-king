@@ -6,7 +6,8 @@ import { getRow, getCol, getBlock } from '../../utils/sudokuLogic';
 const screenWidth = Dimensions.get('window').width;
 const BOARD_PADDING = 8;
 const boardSize = Math.min(screenWidth - 32, 400);
-const cellSize = (boardSize - BOARD_PADDING * 2) / 9;
+const cellSize = Math.floor((boardSize - BOARD_PADDING * 2) / 9);
+const actualGridSize = cellSize * 9;
 
 const BORDER_THICK = 2;
 const BORDER_THIN = 0.5;
@@ -87,7 +88,7 @@ export default function Board() {
 
   return (
     <View style={styles.card}>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: boardSize, height: boardSize }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: actualGridSize, height: actualGridSize }}>
         {renderGrid()}
       </View>
     </View>
