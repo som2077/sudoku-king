@@ -1,6 +1,16 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Text } from '../ui/Text';
-import { View, TouchableOpacity, Modal, Pressable, StyleSheet } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Animated,
+  PanResponder,
+  Easing,
+  BackHandler,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Difficulty } from '../../utils/sudokuLogic';
 
@@ -20,12 +30,18 @@ const OPTIONS: Difficulty[] = [
   'Extreme',
 ];
 
+const SHEET_HEIGHT = 460;
+
 export function DifficultyBottomSheet({
   visible,
   onClose,
   onSelect,
   onRestart,
 }: DifficultyBottomSheetProps) {
+  const [modalVisible, setModalVisible] = useState(visible);
+  const isClosingRef = useRef(false);
+
+  // Safe area bottom inset calculation
   let insetsBottom = 0;
   try {
     const insets = useSafeAreaInsets();
@@ -34,44 +50,197 @@ export function DifficultyBottomSheet({
     insetsBottom = 0;
   }
 
+  // Animation values
+  const panY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+
+  // Open animation: Spring sheet up from bottom + fade in backdrop
+  const animateOpen = () => {
+    isClosingRef.current = false;
+    panY.setValue(SHEET_HEIGHT);
+    backdropOpacity.setValue(0);
+
+    Animated.parallel([
+      Animated.spring(panY, {
+        toValue: 0,
+        damping: 24,
+        mass: 0.8,
+        stiffness: 220,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Close animation: Slide sheet down + fade out backdrop, then trigger callbacks
+  const animateClose = (callback?: () => void) => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+
+    Animated.parallel([
+      Animated.timing(panY, {
+        toValue: SHEET_HEIGHT,
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      isClosingRef.current = false;
+      setModalVisible(false);
+      onClose();
+      if (callback) {
+        callback();
+      }
+    });
+  };
+
+  // Sync with parent `visible` prop
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true);
+      // animateOpen will be called on Modal onShow
+    } else if (modalVisible && !isClosingRef.current) {
+      animateClose();
+    }
+  }, [visible]);
+
+  // Handle hardware back on Android
+  useEffect(() => {
+    if (!modalVisible) return;
+
+    const onBackPress = () => {
+      animateClose();
+      return true;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [modalVisible]);
+
+  // PanResponder for drag-down gestures on the sheet
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return gestureState.dy > 8 && gestureState.dy > Math.abs(gestureState.dx) * 1.2;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          panY.setValue(gestureState.dy);
+        } else {
+          panY.setValue(gestureState.dy * 0.15);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 80 || gestureState.vy > 0.5) {
+          animateClose();
+        } else {
+          Animated.spring(panY, {
+            toValue: 0,
+            damping: 24,
+            mass: 0.8,
+            stiffness: 220,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  // Handlebar specific PanResponder: captures immediately on handle touch
+  const handlePanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          panY.setValue(gestureState.dy);
+        } else {
+          panY.setValue(gestureState.dy * 0.15);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 50 || gestureState.vy > 0.4) {
+          animateClose();
+        } else {
+          Animated.spring(panY, {
+            toValue: 0,
+            damping: 24,
+            mass: 0.8,
+            stiffness: 220,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  // Selection with smooth animated exit
   const handleSelect = (diff: Difficulty) => {
-    onClose();
-    onSelect(diff);
+    animateClose(() => {
+      onSelect(diff);
+    });
   };
 
   return (
     <Modal
-      visible={visible}
+      visible={modalVisible}
       transparent
-      animationType="slide"
+      animationType="none"
       statusBarTranslucent
-      onRequestClose={onClose}
+      onShow={animateOpen}
+      onRequestClose={() => animateClose()}
     >
       <View style={styles.overlay}>
-        {/* Backdrop: Sibling that closes sheet on tap outside */}
-        <Pressable
-          style={[StyleSheet.absoluteFill, styles.backdrop]}
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Close difficulty selection"
-        />
-
-        {/* Sheet Content */}
-        <View
+        {/* Animated Dimmed Backdrop */}
+        <Animated.View
           style={[
-            styles.sheet,
-            { paddingBottom: Math.max(insetsBottom + 16, 32) },
+            StyleSheet.absoluteFill,
+            styles.backdrop,
+            { opacity: backdropOpacity },
           ]}
         >
-          {/* Top Handlebar */}
-          <View style={styles.handle} />
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => animateClose()}
+            accessibilityRole="button"
+            accessibilityLabel="Close difficulty selection"
+          />
+        </Animated.View>
+
+        {/* Animated Draggable Bottom Sheet */}
+        <Animated.View
+          {...panResponder.panHandlers}
+          style={[
+            styles.sheet,
+            {
+              paddingBottom: Math.max(insetsBottom + 16, 32),
+              transform: [{ translateY: panY }],
+            },
+          ]}
+        >
+          {/* Top Handlebar & Drag Zone */}
+          <View
+            {...handlePanResponder.panHandlers}
+            style={styles.handleContainer}
+          >
+            <View style={styles.handle} />
+          </View>
 
           {/* Options List */}
           <View style={styles.optionsList}>
             {OPTIONS.map((difficulty, index) => (
               <View key={difficulty}>
                 <TouchableOpacity
-                  activeOpacity={0.65}
+                  activeOpacity={0.6}
                   onPress={() => handleSelect(difficulty)}
                   accessibilityRole="button"
                   accessibilityLabel={`Select ${difficulty} difficulty`}
@@ -88,10 +257,11 @@ export function DifficultyBottomSheet({
               <>
                 <View style={styles.divider} />
                 <TouchableOpacity
-                  activeOpacity={0.65}
+                  activeOpacity={0.6}
                   onPress={() => {
-                    onClose();
-                    onRestart();
+                    animateClose(() => {
+                      onRestart();
+                    });
                   }}
                   style={styles.restartBtn}
                 >
@@ -100,7 +270,7 @@ export function DifficultyBottomSheet({
               </>
             )}
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -118,21 +288,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingTop: 10,
+    paddingTop: 4,
     paddingHorizontal: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 16,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  handleContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 14,
   },
   handle: {
-    width: 38,
+    width: 40,
     height: 4.5,
     backgroundColor: '#D1D5DB',
     borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: 8,
   },
   optionsList: {
     width: '100%',
@@ -158,7 +332,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: 14,
   },
   restartText: {
     fontSize: 16,
