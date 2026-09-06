@@ -198,26 +198,50 @@ export default function App() {
     }
   };
 
+  const recordedWinRef = useRef<boolean>(false);
+  const recordedLossRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (!isGameWon && !isGameOver) {
+      recordedWinRef.current = false;
+      recordedLossRef.current = false;
+    }
+  }, [isGameWon, isGameOver]);
+
   useEffect(() => {
     const analytics = getAnalytics();
-    if (isGameWon) {
-      console.log(`🔥 [Firebase Analytics] Logging Event: game_won (Time: ${timer}s)`);
-      logEvent(analytics, 'game_won', { time_taken: timer });
-      
-      recordGameWon(difficulty, timer);
+    if (isGameWon && !recordedWinRef.current) {
+      recordedWinRef.current = true;
+      const currentTimer = useGameStore.getState().timer;
+      const currentMistakes = useGameStore.getState().mistakes;
+      const curDaily = useGameStore.getState().currentDailyChallenge;
+      const curDiff = useGameStore.getState().difficulty;
 
-      if (currentDailyChallenge) {
-        completeDailyChallenge(currentDailyChallenge);
+      console.log(`🔥 [Firebase Analytics] Logging Event: game_won (Time: ${currentTimer}s)`);
+      logEvent(analytics, 'game_won', { time_taken: currentTimer });
+      
+      recordGameWon(curDiff, currentTimer);
+
+      if (curDaily) {
+        completeDailyChallenge(curDaily, currentTimer, currentMistakes);
       }
-    } else if (isGameOver) {
-      console.log(`🔥 [Firebase Analytics] Logging Event: game_lost (Time: ${timer}s)`);
-      logEvent(analytics, 'game_lost', { time_taken: timer });
+    } else if (isGameOver && !recordedLossRef.current) {
+      recordedLossRef.current = true;
+      const currentTimer = useGameStore.getState().timer;
+      console.log(`🔥 [Firebase Analytics] Logging Event: game_lost (Time: ${currentTimer}s)`);
+      logEvent(analytics, 'game_lost', { time_taken: currentTimer });
     }
-  }, [isGameWon, isGameOver, timer, currentDailyChallenge, completeDailyChallenge, difficulty, recordGameWon]);
+  }, [isGameWon, isGameOver, completeDailyChallenge, recordGameWon]);
 
   if (!fontsLoaded) {
     return <ActivityIndicator size="large" style={{ flex: 1 }} />;
   }
+
+  const formatWinTime = (sec: number) => {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   return (
     <SafeAreaProvider>
@@ -262,22 +286,30 @@ export default function App() {
                   {/* Emoji circle */}
                   <View style={{
                     width: 80, height: 80, borderRadius: 999,
-                    backgroundColor: isGameWon ? '#DCFCE7' : '#FEE2E2',
+                    backgroundColor: isGameWon ? (currentDailyChallenge ? '#FEF3C7' : '#DCFCE7') : '#FEE2E2',
                     alignItems: 'center', justifyContent: 'center',
                     marginBottom: 16,
                   }}>
-                    <Text style={{ fontSize: 40 }}>{isGameWon ? '🏆' : '💀'}</Text>
+                    <Text style={{ fontSize: 40 }}>
+                      {isGameWon ? (currentDailyChallenge ? '👑' : '🏆') : '💀'}
+                    </Text>
                   </View>
 
                   <Text style={{
-                    fontSize: 26, fontWeight: '800', color: '#1C1F2E', marginBottom: 6,
+                    fontSize: 24, fontWeight: '800', color: '#1C1F2E', marginBottom: 6, textAlign: 'center',
                   }}>
-                    {isGameWon ? 'You Win!' : 'Game Over'}
+                    {isGameWon
+                      ? (currentDailyChallenge ? 'Daily Challenge Solved!' : 'You Win!')
+                      : 'Game Over'}
                   </Text>
                   <Text style={{
                     fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 28,
                   }}>
-                    {isGameWon ? 'Excellent job solving this puzzle! 🎉' : 'You made 3 mistakes. Better luck next time!'}
+                    {isGameWon
+                      ? (currentDailyChallenge
+                          ? `You solved ${currentDailyChallenge} in ${formatWinTime(timer)}! Crown earned! 🎉`
+                          : 'Excellent job solving this puzzle! 🎉')
+                      : 'You made 3 mistakes. Better luck next time!'}
                   </Text>
 
                   {/* Second Chance (only on game over) */}

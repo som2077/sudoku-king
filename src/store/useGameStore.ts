@@ -27,6 +27,54 @@ export interface DifficultyStatsRecord {
   totalSec: number;
 }
 
+export interface DailyProgressItem {
+  completed: boolean;
+  timeSec?: number;
+  mistakes?: number;
+  completedAt?: string;
+  difficulty?: Difficulty;
+}
+
+export const getDailyDifficulty = (dateStr: string): Difficulty => {
+  const [year, month, dayNum] = dateStr.split('-').map(Number);
+  const dateObj = new Date(year, month - 1, dayNum);
+  const day = dateObj.getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
+  switch (day) {
+    case 1: return 'Easy';    // Monday
+    case 2: return 'Medium';  // Tuesday
+    case 3: return 'Medium';  // Wednesday
+    case 4: return 'Hard';    // Thursday
+    case 5: return 'Hard';    // Friday
+    case 6: return 'Expert';  // Saturday
+    case 0: return 'Master';  // Sunday
+    default: return 'Medium';
+  }
+};
+
+export const isDailyChallengeCompleted = (
+  progress: Record<string, DailyProgressItem | boolean> | undefined,
+  dateStr: string
+): boolean => {
+  if (!progress) return false;
+  const item = progress[dateStr];
+  if (!item) return false;
+  if (typeof item === 'boolean') return item;
+  return !!item.completed;
+};
+
+export const getDailyChallengeItem = (
+  progress: Record<string, DailyProgressItem | boolean> | undefined,
+  dateStr: string
+): DailyProgressItem | null => {
+  if (!progress) return null;
+  const item = progress[dateStr];
+  if (!item) return null;
+  if (typeof item === 'boolean') {
+    return { completed: item };
+  }
+  return item;
+};
+
 type GameState = {
   board: CellState[];
   solution: number[]; // Added to store the correct answer
@@ -69,10 +117,10 @@ type GameState = {
   fetchRemoteConfig: () => Promise<void>;
   
   // Daily Challenges
-  dailyChallengesProgress: Record<string, boolean>;
+  dailyChallengesProgress: Record<string, DailyProgressItem | boolean>;
   currentDailyChallenge: string | null;
   startDailyChallenge: (dateStr: string) => void;
-  completeDailyChallenge: (dateStr: string) => void;
+  completeDailyChallenge: (dateStr: string, timeSec?: number, mistakes?: number) => void;
 };
 
 const initialBoard = Array(81).fill(null).map(() => ({
@@ -380,14 +428,8 @@ export const useGameStore = create<GameState>()(
       currentDailyChallenge: null,
       
       startDailyChallenge: (dateStr) => {
-        const [year, month, dayNum] = dateStr.split('-').map(Number);
-        const dateObj = new Date(year, month - 1, dayNum);
-        const day = dateObj.getDay();
-        let difficulty: Difficulty = 'Medium';
-        if (day === 0 || day === 6) difficulty = 'Expert';
-        else if (day === 4 || day === 5) difficulty = 'Hard';
-
-        const { puzzle, solution } = generatePuzzle(difficulty, dateStr); // seeded
+        const difficulty = getDailyDifficulty(dateStr);
+        const { puzzle, solution } = generatePuzzle(difficulty, `daily-${dateStr}`); // deterministic seed
         const newBoard = puzzle.map((val) => ({
           value: val === 0 ? null : val,
           notes: 0,
@@ -427,13 +469,41 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      completeDailyChallenge: (dateStr) => {
-        set((state) => ({
-          dailyChallengesProgress: {
-            ...state.dailyChallengesProgress,
-            [dateStr]: true,
+      completeDailyChallenge: (dateStr, timeSec = 0, mistakes = 0) => {
+        const todayStr = getLocalDateString();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = getLocalDateString(yesterday);
+
+        set((state) => {
+          const diff = getDailyDifficulty(dateStr);
+          const currentItem = getDailyChallengeItem(state.dailyChallengesProgress, dateStr);
+          const bestTime = currentItem?.timeSec ? Math.min(currentItem.timeSec, timeSec) : (timeSec || undefined);
+
+          let newStreak = state.streak || 0;
+          if (dateStr === todayStr) {
+            if (state.lastSolvedDate === yesterdayStr) {
+              newStreak += 1;
+            } else if (state.lastSolvedDate !== todayStr) {
+              newStreak = 1;
+            }
           }
-        }));
+
+          return {
+            lastSolvedDate: dateStr === todayStr ? todayStr : state.lastSolvedDate,
+            streak: dateStr === todayStr ? newStreak : state.streak,
+            dailyChallengesProgress: {
+              ...state.dailyChallengesProgress,
+              [dateStr]: {
+                completed: true,
+                timeSec: bestTime,
+                mistakes,
+                completedAt: new Date().toISOString(),
+                difficulty: diff,
+              },
+            },
+          };
+        });
       }
     }),
     {

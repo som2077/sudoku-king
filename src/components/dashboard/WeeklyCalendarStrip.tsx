@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Text } from "../ui/Text";
 import { Pressable, View } from "react-native";
+import { useGameStore, isDailyChallengeCompleted } from "../../store/useGameStore";
 
 const DAY_LABELS: readonly string[] = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -96,8 +97,7 @@ const DayCell = React.memo(function DayCell({
 
 export function WeeklyCalendarStrip() {
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
-
-  const activeDates = new Set([toLocalDateString(new Date())]); // Mocked for now
+  const { dailyChallengesProgress } = useGameStore();
 
   const weekDates = useMemo(() => {
     const startOfWeek = getStartOfWeek(selectedDate);
@@ -129,7 +129,8 @@ export function WeeklyCalendarStrip() {
             streakStatus = "future";
           } else {
             const dateStr = toLocalDateString(dateAtMidnight);
-            streakStatus = activeDates.has(dateStr) ? "streak" : "missed";
+            const isCompleted = isDailyChallengeCompleted(dailyChallengesProgress, dateStr);
+            streakStatus = isCompleted ? "streak" : "missed";
           }
 
           return (

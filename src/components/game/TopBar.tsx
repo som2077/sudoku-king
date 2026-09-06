@@ -32,19 +32,22 @@ export default function TopBar({
 }: {
   showRewardedAd: (cb: () => void) => void;
 }) {
-  const { mistakes, timer, setScreen, difficulty } = useGameStore();
+  const { mistakes, timer, setScreen, difficulty, currentDailyChallenge, board } = useGameStore();
   const [isPaused, setIsPaused] = useState(false);
+
+  const isGameOver = mistakes >= 3;
+  const isGameWon = board.length > 0 && board.every(cell => cell.value !== null && !cell.isError) && mistakes < 3;
 
   const diffColor = DIFFICULTY_COLORS[difficulty] ?? "#6B7280";
 
   // ── Timer ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || isGameOver || isGameWon) return;
     const interval = setInterval(() => {
       useGameStore.setState((state) => ({ timer: state.timer + 1 }));
     }, 1000);
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, isGameOver, isGameWon]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
@@ -55,10 +58,18 @@ export default function TopBar({
   };
 
   const confirmBack = () => {
-    Alert.alert("Leave Game", "Your progress will be saved.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Leave", style: "destructive", onPress: () => setScreen("home") },
-    ]);
+    Alert.alert(
+      "Leave Game",
+      "Your progress will be saved.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Leave",
+          onPress: () => setScreen("home"),
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   // 3 hearts, filled = no mistake yet at that slot
@@ -69,19 +80,38 @@ export default function TopBar({
       <View style={styles.container}>
         {/* ── Row 1: Back | Logo | Pause ── */}
         <View style={styles.row1}>
-          <TouchableOpacity onPress={confirmBack} style={styles.iconBtn}>
+          <TouchableOpacity onPress={confirmBack} style={styles.iconBtn} activeOpacity={0.7}>
             <ChevronLeft size={28} color="#1C1F2E" strokeWidth={2.5} />
           </TouchableOpacity>
 
-          <Image
-            source={require("../../../assets/sudukoLogo.svg")}
-            style={{ width: 110, height: 32 }}
-            contentFit="contain"
-          />
+          <TouchableOpacity
+            disabled={!__DEV__}
+            onLongPress={() => {
+              if (__DEV__) {
+                const sol = useGameStore.getState().solution;
+                useGameStore.setState({
+                  board: sol.map((val) => ({
+                    value: val,
+                    notes: 0,
+                    isLocked: false,
+                    isError: false,
+                  })),
+                });
+              }
+            }}
+            activeOpacity={__DEV__ ? 0.7 : 1}
+          >
+            <Image
+              source={require("../../../assets/sudukoLogo.svg")}
+              style={{ width: 110, height: 32 }}
+              contentFit="contain"
+            />
+          </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setIsPaused(true)}
             style={styles.iconBtn}
+            activeOpacity={0.7}
           >
             <Text style={{ fontSize: 22 }}>⏸</Text>
           </TouchableOpacity>
@@ -90,9 +120,12 @@ export default function TopBar({
         {/* ── Row 2: Difficulty | Timer | Hearts ── */}
         <View style={styles.row2}>
           {/* Difficulty pill */}
-          <View style={[styles.diffPill, { borderColor: diffColor }]}>
+          <View style={[styles.diffPill, { borderColor: diffColor, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+            {currentDailyChallenge && (
+              <Text style={{ fontSize: 11 }}>📅</Text>
+            )}
             <Text style={[styles.diffText, { color: diffColor }]}>
-              {difficulty}
+              {currentDailyChallenge ? `Daily · ${difficulty}` : difficulty}
             </Text>
           </View>
 
@@ -118,8 +151,19 @@ export default function TopBar({
             <TouchableOpacity
               onPress={() => setIsPaused(false)}
               style={styles.resumeBtn}
+              activeOpacity={0.8}
             >
               <Text style={styles.resumeBtnText}>Resume</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setIsPaused(false);
+                setScreen("home");
+              }}
+              style={styles.leaveGameBtn}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.leaveGameBtnText}>Save & Quit to Home</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -213,10 +257,26 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 14,
     paddingHorizontal: 48,
+    width: "100%",
+    alignItems: "center",
   },
   resumeBtnText: {
     color: "#FFFFFF",
     fontWeight: "800",
     fontSize: 16,
+  },
+  leaveGameBtn: {
+    backgroundColor: "#F3F4F6",
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    width: "100%",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  leaveGameBtnText: {
+    color: "#4B5563",
+    fontWeight: "700",
+    fontSize: 15,
   },
 });
