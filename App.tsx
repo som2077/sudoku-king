@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Text } from './src/components/Text';
 import { View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { StatusBar as NativeStatusBar } from 'react-native';
 import { getAnalytics, logEvent } from '@react-native-firebase/analytics';
 import Purchases from 'react-native-purchases';
@@ -47,7 +47,7 @@ export default function App() {
   const isGameWon = board.length > 0 && board.every(cell => cell.value !== null && !cell.isError) && mistakes < 3;
 
   const [rewardedLoaded, setRewardedLoaded] = useState(false);
-  const [adCallback, setAdCallback] = useState<(() => void) | null>(null);
+  const adCallbackRef = useRef<(() => void) | null>(null);
   const [adShowing, setAdShowing] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -63,10 +63,6 @@ export default function App() {
     NativeStatusBar.setBackgroundColor('#F9F9FB', true);
 
     fetchRemoteConfig();
-
-    // RevenueCat Initialization
-    // Disable debug logs to stop terminal spam
-    // Purchases.setLogLevel(LOG_LEVEL.DEBUG);
 
     const rcKey = getRevenueCatApiKey();
     if (rcKey && rcKey !== "goog_REPLACE_WITH_REAL_API_KEY") {
@@ -98,15 +94,22 @@ export default function App() {
     });
     const unsubscribeEarned = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
       console.log('User earned reward of ', reward);
-      if (adCallback) {
-        adCallback();
-        setAdCallback(null);
+      if (adCallbackRef.current) {
+        adCallbackRef.current();
+        adCallbackRef.current = null;
       }
     });
     const unsubscribeClosed = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
       setRewardedLoaded(false);
       setAdShowing(false);
       rewarded.load(); // preload next
+    });
+    const unsubscribeError = rewarded.addAdEventListener(AdEventType.ERROR, (error) => {
+      console.log('⚠️ [AdMob Rewarded Error]:', error);
+      setRewardedLoaded(false);
+      setAdShowing(false);
+      adCallbackRef.current = null;
+      rewarded.load();
     });
 
     rewarded.load();
@@ -115,8 +118,20 @@ export default function App() {
       unsubscribeLoaded();
       unsubscribeEarned();
       unsubscribeClosed();
+      unsubscribeError();
     };
-  }, [isPremium, adCallback]);
+  }, [isPremium]);
+
+  // Safety watchdog to prevent permanent overlay hang
+  useEffect(() => {
+    if (!adShowing) return;
+    const timerId = setTimeout(() => {
+      setAdShowing(false);
+      adCallbackRef.current = null;
+      Alert.alert('Ad Timed Out', 'The ad took too long to load. Please try again.');
+    }, 8000);
+    return () => clearTimeout(timerId);
+  }, [adShowing]);
 
   const showRewardedAd = (onReward: () => void) => {
     if (isPremium) {
@@ -124,9 +139,14 @@ export default function App() {
       return;
     }
     if (rewardedLoaded) {
-      setAdCallback(() => onReward);
+      adCallbackRef.current = onReward;
       setAdShowing(true);
-      rewarded.show();
+      rewarded.show().catch((err) => {
+        console.log('⚠️ [AdMob Show Error]:', err);
+        setAdShowing(false);
+        adCallbackRef.current = null;
+        Alert.alert('Ad Error', 'Failed to display the ad. Please try again.');
+      });
     } else {
       Alert.alert('Ad not ready', 'Please wait a moment for the video to load.');
       rewarded.load();
@@ -324,6 +344,16 @@ export default function App() {
                 <Text style={{ color: '#FFFFFF', marginTop: 16, fontWeight: '700', fontSize: 16 }}>
                   Loading Ad...
                 </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setAdShowing(false);
+                    adCallbackRef.current = null;
+                  }}
+                  style={{ marginTop: 20, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20 }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '600' }}>Cancel</Text>
+                </TouchableOpacity>
               </View>
             )}
 

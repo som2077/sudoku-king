@@ -30,11 +30,9 @@ export default function TopBar({
 }: {
   showRewardedAd: (cb: () => void) => void;
 }) {
-  const { mistakes, timer, setScreen, startNewGame } = useGameStore();
+  const { mistakes, timer, setScreen, difficulty } = useGameStore();
   const [isPaused, setIsPaused] = useState(false);
 
-  // Hardcoded for now — wire from store when difficulty is persisted
-  const difficulty = "Easy";
   const diffColor = DIFFICULTY_COLORS[difficulty] ?? "#6B7280";
 
   // ── Timer ──────────────────────────────────────────────────────────────────

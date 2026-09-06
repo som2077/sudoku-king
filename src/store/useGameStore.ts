@@ -32,6 +32,7 @@ type GameState = {
   isPremium: boolean;
   history: CellState[][];
   screen: 'home' | 'playing';
+  difficulty: Difficulty;
 
   // Actions
   setScreen: (screen: 'home' | 'playing') => void;
@@ -76,6 +77,7 @@ export const useGameStore = create<GameState>()(
       isPremium: false,
       history: [],
       screen: 'home',
+      difficulty: 'Easy' as Difficulty,
 
       setScreen: (screen) => set({ screen }),
       setPremium: (status) => set({ isPremium: status }),
@@ -232,6 +234,7 @@ export const useGameStore = create<GameState>()(
         set((state) => ({
           board: newBoard,
           solution,
+          difficulty,
           selectedCell: null,
           mistakes: 0,
           timer: 0,
@@ -265,6 +268,7 @@ export const useGameStore = create<GameState>()(
         set((state) => ({
           board: newBoard,
           solution,
+          difficulty,
           selectedCell: null,
           mistakes: 0,
           timer: 0,
