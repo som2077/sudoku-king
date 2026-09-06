@@ -1,4 +1,4 @@
-import { generatePuzzle } from './src/utils/sudokuLogic';
+import { generatePuzzle } from '../src/utils/sudokuLogic';
 
 function printBoard(board: number[]) {
   for (let i = 0; i < 9; i++) {

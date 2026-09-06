@@ -22,11 +22,15 @@
 - Android: `npm run android`
 - iOS: `npm run ios`
 - Web: `npm run web`
-- Test Logic: `npx ts-node testLogic.ts`
+- Run Tests: `npm test`
 
 ## Key Directories
-- `src/components/` - Reusable UI widgets and Game Board components
-- `src/screens/` - Main app screens (Home, DailyChallenges, Settings, Awards)
-- `src/store/` - Zustand store (`useGameStore.ts`)
+- `src/components/game/` - Sudoku game components (Board, Cell, Keypad, TopBar, DifficultyBottomSheet)
+- `src/components/dashboard/` - Stats, calendar, and analytics widgets (DashboardPager, StatsCards, etc.)
+- `src/components/ui/` - Primitives and common wrappers (Text, AppGradientBackground, Paywall)
+- `src/screens/` - Main app screens (HomeScreen, DailyChallengesScreen, SettingsScreen, AwardsScreen)
+- `src/store/` - Zustand persistent store (`useGameStore.ts`)
 - `src/utils/` - Algorithmic logic (`sudokuLogic.ts`) and security helpers (`secrets.ts`)
+- `tests/` - Puzzle generation benchmarks and logic test scripts
+- `scripts/` - Obfuscation and code migration maintenance scripts
 - `docs/` - Domain game design, algorithms, and hint architecture specs
