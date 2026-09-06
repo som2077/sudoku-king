@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
+import { Text } from '../components/Text';
+import { View, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import { Crown, CheckCircle2, X } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

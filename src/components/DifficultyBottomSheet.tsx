@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, StyleSheet } from 'react-native';
+import { Text } from '../components/Text';
+import { View, TouchableOpacity, Modal, TouchableWithoutFeedback, StyleSheet } from 'react-native';
 import { Lock } from 'lucide-react-native';
 
 type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Expert' | 'Master' | 'Extreme';

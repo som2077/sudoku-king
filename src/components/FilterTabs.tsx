@@ -1,5 +1,6 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Text } from '../components/Text';
+import { Pressable, StyleSheet, View } from "react-native";
 
 export type FilterTab = "Daily" | "Weekly" | "Monthly" | "90 Days";
 

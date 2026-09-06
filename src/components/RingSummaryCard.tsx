@@ -1,7 +1,8 @@
 import { Image } from "expo-image";
+import { Text } from '../components/Text';
 import type { ReactNode } from "react";
 import React, { useMemo, useRef, useEffect } from "react";
-import { Animated, Text, View } from "react-native";
+import { Animated, View } from "react-native";
 import { Circle, Svg } from "react-native-svg";
 import { Flame } from "lucide-react-native";
 

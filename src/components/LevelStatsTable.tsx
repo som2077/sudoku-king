@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { Text } from '../components/Text';
+import { View} from 'react-native';
 
 interface LevelStat {
   level: string;

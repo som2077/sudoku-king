@@ -1,5 +1,6 @@
-import { TouchableOpacity, Text, View } from 'react-native';
-import { memo } from 'react';
+import { TouchableOpacity, View } from "react-native";
+import { Text } from '../components/Text';
+import { memo } from "react";
 
 interface CellProps {
   index: number;
@@ -13,42 +14,97 @@ interface CellProps {
   onPress: (index: number) => void;
 }
 
-const Cell = ({ index, value, notes, isSelected, isLocked, isError, isHighlighted, isSameValue, onPress }: CellProps) => {
+const Cell = ({
+  index,
+  value,
+  notes,
+  isSelected,
+  isLocked,
+  isError,
+  isHighlighted,
+  isSameValue,
+  onPress,
+}: CellProps) => {
+  // ── Background ──────────────────────────────────────────────────────────────
+  let bg = "#FFFFFF";
+  if (isSelected) bg = "#1C1F2E";
+  else if (isError) bg = "#FFF0F0";
+  else if (isSameValue) bg = "#DDE3FF";
+  else if (isHighlighted) bg = "#F0F0F8";
+  else if (isLocked) bg = "#F9F9FB";
 
-  let bgClass = "bg-white";
-  if (isSelected) bgClass = "bg-blue-300";
-  else if (isError) bgClass = "bg-red-200";
-  else if (isSameValue) bgClass = "bg-blue-200";
-  else if (isHighlighted) bgClass = "bg-blue-100";
-  else if (isLocked) bgClass = "bg-gray-100";
+  // ── Text color ───────────────────────────────────────────────────────────────
+  let textColor = "#3B82F6"; // user-placed number: blue
+  if (isSelected) textColor = "#FFFFFF";
+  else if (isLocked) textColor = "#1C1F2E";
+  else if (isError) textColor = "#EF4444";
 
-  let textClass = "text-2xl font-normal text-black";
-  if (isLocked) textClass = "text-2xl font-bold text-gray-800";
-  if (isError) textClass = "text-2xl font-bold text-red-600";
-  if (!isLocked && !isError) textClass = "text-2xl font-medium text-blue-700";
-
+  // ── Notes rendering ─────────────────────────────────────────────────────────
   const renderNotes = () => {
     if (notes === 0) return null;
     return (
-      <View className="flex-row flex-wrap w-full h-full p-0.5 justify-between">
-         {[1,2,3,4,5,6,7,8,9].map(num => (
-            <Text key={num} style={{fontSize: 10, width: '30%', textAlign: 'center'}} className={(notes & (1 << num)) ? "text-gray-600" : "text-transparent"}>
+      <View
+        style={{
+          flex: 1,
+          width: "100%",
+          height: "100%",
+          flexDirection: "row",
+          flexWrap: "wrap",
+          padding: 1,
+        }}
+      >
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
+          const active = !!(notes & (1 << num));
+          return (
+            <Text
+              key={num}
+              style={{
+                width: "33.33%",
+                textAlign: "center",
+                fontSize: 9,
+                fontWeight: "600",
+                color: active
+                  ? isSelected
+                    ? "#FFFFFF"
+                    : "#1C1F2E"
+                  : "transparent",
+                lineHeight: 13,
+              }}
+            >
               {num}
             </Text>
-         ))}
+          );
+        })}
       </View>
     );
-  }
+  };
 
   return (
-    <TouchableOpacity 
-      activeOpacity={0.7} 
+    <TouchableOpacity
+      activeOpacity={0.7}
       onPress={() => onPress(index)}
-      className={`flex-1 border-[0.5px] border-gray-300 items-center justify-center ${bgClass}`}
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: bg,
+      }}
     >
-      {value ? <Text className={textClass}>{value}</Text> : renderNotes()}
+      {value ? (
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: isLocked ? "700" : "500",
+            color: textColor,
+          }}
+        >
+          {value}
+        </Text>
+      ) : (
+        renderNotes()
+      )}
     </TouchableOpacity>
   );
-}
+};
 
 export default memo(Cell);

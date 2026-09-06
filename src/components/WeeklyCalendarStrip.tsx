@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text } from '../components/Text';
+import { Pressable, View } from "react-native";
 
 const DAY_LABELS: readonly string[] = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -22,7 +23,7 @@ const startOfDay = (date: Date) => {
 };
 
 const toLocalDateString = (date: Date) => {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 };
 
 interface DayCellProps {
@@ -119,7 +120,9 @@ export function WeeklyCalendarStrip() {
         {weekDates.map((date, index) => {
           const dateAtMidnight = startOfDay(date);
           const diffTime = dateAtMidnight.getTime() - today.getTime();
-          const diffDaysFromToday = Math.round(diffTime / (1000 * 60 * 60 * 24));
+          const diffDaysFromToday = Math.round(
+            diffTime / (1000 * 60 * 60 * 24),
+          );
 
           let streakStatus: "streak" | "missed" | "future";
           if (diffDaysFromToday > 0) {

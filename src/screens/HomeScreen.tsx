@@ -1,7 +1,12 @@
 import React from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { Text } from '../components/Text';
+import {
+  View,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Home, BarChart2, Settings, Play, Flame } from "lucide-react-native";
+import { Home, Calendar, Settings, Play, Flame } from "lucide-react-native";
 import { Image } from "expo-image";
 import { useGameStore } from "../store/useGameStore";
 import { getRevenueCatApiKey } from "../utils/secrets";
@@ -27,7 +32,7 @@ type HomeScreenProps = {
   setPremium: (val: boolean) => void;
 };
 
-type Tab = "home" | "progress" | "settings";
+type Tab = "home" | "daily" | "settings";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Bottom Navigation (shared across tabs)
@@ -75,22 +80,19 @@ function BottomNav({
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => setActiveTab("progress")}
+        onPress={() => setActiveTab("daily")}
         style={{ alignItems: "center", flex: 1 }}
       >
-        <BarChart2
-          size={26}
-          color={activeTab === "progress" ? active : inactive}
-        />
+        <Calendar size={26} color={activeTab === "daily" ? active : inactive} />
         <Text
           style={{
             fontSize: 11,
             fontWeight: "bold",
-            color: activeTab === "progress" ? active : inactive,
+            color: activeTab === "daily" ? active : inactive,
             marginTop: 3,
           }}
         >
-          Progress
+          Daily
         </Text>
       </TouchableOpacity>
 
@@ -132,6 +134,10 @@ export default function HomeScreen({
   const [showAwards, setShowAwards] = React.useState(false);
   const [streak, setStreak] = React.useState(1);
 
+  const scrollRef = React.useRef<ScrollView>(null);
+  const SCREEN_WIDTH = Dimensions.get("window").width;
+  const TABS: Tab[] = ["home", "daily", "settings"];
+
   // Placeholder stats — wire to real store / MMKV later
   const SOLVED = 3; // today's solved
   const TOTAL_SOLVED = 147; // all-time total
@@ -145,267 +151,256 @@ export default function HomeScreen({
     NativeStatusBar.setTranslucent(true);
   }, [activeTab]);
 
-  // ── Progress Tab ──────────────────────────────────────────────────────────
-  if (activeTab === "progress") {
-    return (
-      <AppGradientBackground>
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
-          <ScrollView
-            style={{ flex: 1, paddingHorizontal: 16 }}
-            showsVerticalScrollIndicator={false}
-          >
-            <Text
-              style={{
-                fontSize: 22,
-                fontWeight: "bold",
-                color: "#1C1F2E",
-                marginTop: 20,
-                marginBottom: 16,
-              }}
-            >
-              Progress
-            </Text>
-            <DashboardPager
-              solved={SOLVED}
-              totalSolved={TOTAL_SOLVED}
-              winRate={WIN_RATE}
-              bestTime={BEST_TIME}
-              streak={STREAK}
-            />
-            <View style={{ height: 100 }} />
-          </ScrollView>
-          <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
-        </SafeAreaView>
-      </AppGradientBackground>
-    );
-  }
+  const handleTabPress = (tab: Tab) => {
+    setActiveTab(tab);
+    const index = TABS.indexOf(tab);
+    scrollRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: true });
+  };
 
-  // ── Settings Tab ──────────────────────────────────────────────────────────
-  if (activeTab === "settings") {
-    return (
-      <AppGradientBackground>
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
-          <SettingsScreen />
-          <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
-        </SafeAreaView>
-      </AppGradientBackground>
-    );
-  }
+  const handleScroll = (e: any) => {
+    const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    if (TABS[index] && TABS[index] !== activeTab) {
+      setActiveTab(TABS[index]);
+    }
+  };
 
-  // ── Home Tab (default) ────────────────────────────────────────────────────
   return (
     <AppGradientBackground>
-      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
-        {showAwards ? (
-          <AwardsScreen onBack={() => setShowAwards(false)} />
-        ) : (
-          <ScrollView
-            style={{ flex: 1, paddingHorizontal: 16 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* ── Header ── */}
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: 16,
-                marginBottom: 16,
-              }}
-            >
-              <Image
-                source={require("../../assets/sudukoLogo.svg")}
-                style={{ width: 140, height: 40 }}
-                contentFit="contain"
-              />
-              <TouchableOpacity
-                onPress={() => setShowAwards(true)}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#FFFFFF",
-                  borderWidth: 1,
-                  borderColor: "#E5E7EB",
-                  borderRadius: 999,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  shadowColor: "#000",
-                  shadowOpacity: 0.06,
-                  shadowRadius: 4,
-                  shadowOffset: { width: 0, height: 2 },
-                  elevation: 2,
-                }}
+      <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
+        {/* Swipeable Tabs Container */}
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          decelerationRate="fast"
+          style={{ flex: 1 }}
+        >
+          {/* ── 1. HOME TAB ── */}
+          <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
+            {showAwards ? (
+              <AwardsScreen onBack={() => setShowAwards(false)} />
+            ) : (
+              <ScrollView
+                style={{ flex: 1, paddingHorizontal: 16 }}
+                showsVerticalScrollIndicator={false}
               >
-                <Flame size={16} color="#F97316" />
-                <Text
+                {/* ── Header ── */}
+                <View
                   style={{
-                    color: "#374151",
-                    fontWeight: "bold",
-                    marginLeft: 4,
-                    fontSize: 13,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: 16,
+                    marginBottom: 16,
                   }}
                 >
-                  {streak}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* ── Dashboard: Calendar + Pager ── */}
-            <View style={{ marginBottom: 16 }}>
-              {/* Calendar Strip */}
-              <WeeklyCalendarStrip />
-
-              {/* Stats + Chart (each card has its own shadow) */}
-              <DashboardPager
-                solved={SOLVED}
-                totalSolved={TOTAL_SOLVED}
-                winRate={WIN_RATE}
-                bestTime={BEST_TIME}
-                streak={STREAK}
-              />
-            </View>
-
-            {/* ── Action Buttons ── */}
-            <View style={{ gap: 12 }}>
-              {/* ── New Game (Primary — Top) ── */}
-              <TouchableOpacity
-                onPress={() => setShowDifficultySheet(true)}
-                style={{
-                  backgroundColor: "#3B82F6",
-                  borderRadius: 18,
-                  paddingVertical: 18,
-                  paddingHorizontal: 24,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  shadowColor: "#3B82F6",
-                  shadowOpacity: 0.35,
-                  shadowRadius: 12,
-                  shadowOffset: { width: 0, height: 6 },
-                  elevation: 6,
-                }}
-              >
-                <View>
-                  <Text
-                    style={{
-                      color: "#FFFFFF",
-                      fontWeight: "bold",
-                      fontSize: 20,
-                    }}
-                  >
-                    New Game
-                  </Text>
-                  <View
+                  <Image
+                    source={require("../../assets/sudukoLogo.svg")}
+                    style={{ width: 140, height: 40 }}
+                    contentFit="contain"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowAwards(true)}
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      marginTop: 3,
+                      backgroundColor: "#FFFFFF",
+                      borderWidth: 1,
+                      borderColor: "#E5E7EB",
+                      borderRadius: 999,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      shadowColor: "#000",
+                      shadowOpacity: 0.06,
+                      shadowRadius: 4,
+                      shadowOffset: { width: 0, height: 2 },
+                      elevation: 2,
                     }}
                   >
-                    <Flame size={13} color="rgba(255,255,255,0.85)" />
+                    <Flame size={16} color="#F97316" />
                     <Text
                       style={{
-                        color: "rgba(255,255,255,0.85)",
-                        fontSize: 13,
+                        color: "#374151",
+                        fontWeight: "bold",
                         marginLeft: 4,
-                        fontWeight: "500",
+                        fontSize: 13,
                       }}
                     >
-                      Streak +1
+                      {streak}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
-                {/* Right arrow circle */}
-                <View
-                  style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 999,
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
-                </View>
-              </TouchableOpacity>
 
-              {/* ── Continue Game (Secondary — Bottom) ── */}
-              <TouchableOpacity
-                onPress={() =>
-                  history.length > 0
-                    ? setScreen("playing")
-                    : setShowDifficultySheet(true)
-                }
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  borderRadius: 18,
-                  paddingVertical: 18,
-                  paddingHorizontal: 24,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  borderWidth: 1,
-                  borderColor: "#E5E7EB",
-                  shadowColor: "#000",
-                  shadowOpacity: 0.06,
-                  shadowRadius: 10,
-                  shadowOffset: { width: 0, height: 4 },
-                  elevation: 3,
-                }}
-              >
-                <View>
-                  <Text
+                {/* ── Dashboard: Calendar + Pager ── */}
+                <View style={{ marginBottom: 16 }}>
+                  {/* Calendar Strip */}
+                  <WeeklyCalendarStrip />
+
+                  {/* Stats + Chart */}
+                  <DashboardPager
+                    solved={SOLVED}
+                    totalSolved={TOTAL_SOLVED}
+                    winRate={WIN_RATE}
+                    bestTime={BEST_TIME}
+                  />
+                </View>
+
+                {/* ── Action Buttons ── */}
+                <View style={{ gap: 12 }}>
+                  {/* ── New Game (Primary — Top) ── */}
+                  <TouchableOpacity
+                    onPress={() => setShowDifficultySheet(true)}
                     style={{
-                      color: "#1C1F2E",
-                      fontWeight: "bold",
-                      fontSize: 20,
-                    }}
-                  >
-                    Continue Game
-                  </Text>
-                  <View
-                    style={{
+                      backgroundColor: "#3B82F6",
+                      borderRadius: 18,
+                      paddingVertical: 18,
+                      paddingHorizontal: 24,
                       flexDirection: "row",
                       alignItems: "center",
-                      marginTop: 3,
+                      justifyContent: "space-between",
+                      shadowColor: "#3B82F6",
+                      shadowOpacity: 0.35,
+                      shadowRadius: 12,
+                      shadowOffset: { width: 0, height: 6 },
+                      elevation: 6,
                     }}
                   >
-                    <Play size={13} color="#6B7280" fill="#6B7280" />
-                    <Text
+                    <View>
+                      <Text
+                        style={{
+                          color: "#FFFFFF",
+                          fontWeight: "bold",
+                          fontSize: 20,
+                        }}
+                      >
+                        New Game
+                      </Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginTop: 3,
+                        }}
+                      >
+                        <Flame size={13} color="rgba(255,255,255,0.85)" />
+                        <Text
+                          style={{
+                            color: "rgba(255,255,255,0.85)",
+                            fontSize: 13,
+                            marginLeft: 4,
+                            fontWeight: "500",
+                          }}
+                        >
+                          Streak +1
+                        </Text>
+                      </View>
+                    </View>
+                    {/* Right arrow circle */}
+                    <View
                       style={{
-                        color: "#6B7280",
-                        fontSize: 13,
-                        marginLeft: 4,
-                        fontWeight: "500",
+                        width: 42,
+                        height: 42,
+                        borderRadius: 999,
+                        backgroundColor: "rgba(255,255,255,0.2)",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      00:28 · Easy
-                    </Text>
-                  </View>
-                </View>
-                {/* Right arrow circle */}
-                <View
-                  style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 999,
-                    backgroundColor: "#F3F4F6",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Play size={18} color="#1C1F2E" fill="#1C1F2E" />
-                </View>
-              </TouchableOpacity>
-            </View>
+                      <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
+                    </View>
+                  </TouchableOpacity>
 
-            <View style={{ height: 100 }} />
-          </ScrollView>
-        )}
+                  {/* ── Continue Game (Secondary — Bottom) ── */}
+                  <TouchableOpacity
+                    onPress={() =>
+                      history.length > 0
+                        ? setScreen("playing")
+                        : setShowDifficultySheet(true)
+                    }
+                    style={{
+                      backgroundColor: "#FFFFFF",
+                      borderRadius: 18,
+                      paddingVertical: 18,
+                      paddingHorizontal: 24,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      borderWidth: 1,
+                      borderColor: "#E5E7EB",
+                      shadowColor: "#000",
+                      shadowOpacity: 0.06,
+                      shadowRadius: 10,
+                      shadowOffset: { width: 0, height: 4 },
+                      elevation: 3,
+                    }}
+                  >
+                    <View>
+                      <Text
+                        style={{
+                          color: "#1C1F2E",
+                          fontWeight: "bold",
+                          fontSize: 20,
+                        }}
+                      >
+                        Continue Game
+                      </Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginTop: 3,
+                        }}
+                      >
+                        <Play size={13} color="#6B7280" fill="#6B7280" />
+                        <Text
+                          style={{
+                            color: "#6B7280",
+                            fontSize: 13,
+                            marginLeft: 4,
+                            fontWeight: "500",
+                          }}
+                        >
+                          00:28 · Easy
+                        </Text>
+                      </View>
+                    </View>
+                    {/* Right arrow circle */}
+                    <View
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 999,
+                        backgroundColor: "#F3F4F6",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Play size={18} color="#1C1F2E" fill="#1C1F2E" />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{ height: 100 }} />
+              </ScrollView>
+            )}
+          </View>
+
+          {/* ── 2. DAILY CHALLENGES TAB ── */}
+          <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
+            <DailyChallengesScreen />
+          </View>
+
+          {/* ── 3. SETTINGS TAB ── */}
+          <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
+            <SettingsScreen />
+          </View>
+        </ScrollView>
 
         {/* Bottom Nav */}
-        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+        <BottomNav activeTab={activeTab} setActiveTab={handleTabPress} />
 
         <DifficultyBottomSheet
           visible={showDifficultySheet}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Text } from '../components/Text';
+import { View, TouchableOpacity } from 'react-native';
 
 type ChartTab = 'Day' | 'Week' | 'Month';
 

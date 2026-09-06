@@ -25,7 +25,6 @@ export const isValid = (board: Board, index: number, num: number): boolean => {
 };
 
 // Backtracking solver
-// Returns true if solvable, mutates the board
 export const solveBoard = (board: Board): boolean => {
   for (let i = 0; i < 81; i++) {
     if (board[i] === 0) {
@@ -64,13 +63,40 @@ export const countSolutions = (board: Board, count = { value: 0 }): number => {
   return count.value;
 };
 
+// Seeded RNG utils
+export function cyrb128(str: string) {
+    let h1 = 1779033703, h2 = 3144134277,
+        h3 = 1013904242, h4 = 2773480762;
+    for (let i = 0, k; i < str.length; i++) {
+        k = str.charCodeAt(i);
+        h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+        h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+        h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+        h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+    }
+    h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+    h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+    h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+    h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+    return (h1^h2^h3^h4) >>> 0;
+}
+
+export function mulberry32(a: number) {
+    return function() {
+      var t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+
 // Generate a fully valid random board
-export const generateFullBoard = (): Board => {
+export const generateFullBoard = (randomFn: () => number = Math.random): Board => {
   const board = Array(81).fill(0);
 
-  // Fill diagonal blocks first for randomness and speed (they don't intersect)
+  // Fill diagonal blocks first for randomness and speed
   for (let block = 0; block < 9; block += 4) {
-    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
+    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => randomFn() - 0.5);
     let i = 0;
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
@@ -86,8 +112,9 @@ export const generateFullBoard = (): Board => {
 };
 
 // Generate a playable puzzle
-export const generatePuzzle = (difficulty: Difficulty): { puzzle: Board; solution: Board } => {
-  const solution = generateFullBoard();
+export const generatePuzzle = (difficulty: Difficulty, seed?: string): { puzzle: Board; solution: Board } => {
+  const randomFn = seed ? mulberry32(cyrb128(seed)) : Math.random;
+  const solution = generateFullBoard(randomFn);
   const puzzle = [...solution];
 
   let holesToDig = 0;
@@ -100,7 +127,7 @@ export const generatePuzzle = (difficulty: Difficulty): { puzzle: Board; solutio
   }
 
   // Randomize positions to dig
-  const indices = Array.from({ length: 81 }, (_, i) => i).sort(() => Math.random() - 0.5);
+  const indices = Array.from({ length: 81 }, (_, i) => i).sort(() => randomFn() - 0.5);
 
   for (const index of indices) {
     if (holesToDig === 0) break;

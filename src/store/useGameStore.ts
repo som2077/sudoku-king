@@ -47,6 +47,12 @@ type GameState = {
   secondChance: () => void;
   startNewGame: (difficulty: Difficulty) => void;
   fetchRemoteConfig: () => Promise<void>;
+  
+  // Daily Challenges
+  dailyChallengesProgress: Record<string, boolean>;
+  currentDailyChallenge: string | null;
+  startDailyChallenge: (dateStr: string) => void;
+  completeDailyChallenge: (dateStr: string) => void;
 };
 
 const initialBoard = Array(81).fill(null).map(() => ({
@@ -218,14 +224,10 @@ export const useGameStore = create<GameState>()(
           isError: false,
         }));
 
-        // Log Analytics
         try {
           const analytics = getAnalytics();
-          console.log(`🔥 [Firebase Analytics] Logging Event: game_started (Difficulty: ${difficulty})`);
-          logEvent(analytics, 'game_started', {
-            difficulty: difficulty
-          });
-        } catch (e) { console.log('🔥 [Firebase Analytics Error]:', e); }
+          logEvent(analytics, 'game_started', { difficulty });
+        } catch (e) { console.log('Analytics Error:', e); }
 
         set((state) => ({
           board: newBoard,
@@ -235,7 +237,50 @@ export const useGameStore = create<GameState>()(
           timer: 0,
           history: [],
           hintsRemaining: state.initialHints,
-          screen: 'playing'
+          screen: 'playing',
+          currentDailyChallenge: null, // Reset daily challenge tracker
+        }));
+      },
+
+      // Daily Challenge Implementation
+      dailyChallengesProgress: {},
+      currentDailyChallenge: null,
+      
+      startDailyChallenge: (dateStr) => {
+        // Simple deterministic difficulty based on day of week (0=Sun, 1=Mon, etc)
+        const dateObj = new Date(dateStr);
+        const day = dateObj.getDay();
+        let difficulty: Difficulty = 'Medium';
+        if (day === 0 || day === 6) difficulty = 'Expert';
+        else if (day === 4 || day === 5) difficulty = 'Hard';
+
+        const { puzzle, solution } = generatePuzzle(difficulty, dateStr); // seeded
+        const newBoard = puzzle.map((val) => ({
+          value: val === 0 ? null : val,
+          notes: 0,
+          isLocked: val !== 0,
+          isError: false,
+        }));
+
+        set((state) => ({
+          board: newBoard,
+          solution,
+          selectedCell: null,
+          mistakes: 0,
+          timer: 0,
+          history: [],
+          hintsRemaining: state.initialHints,
+          screen: 'playing',
+          currentDailyChallenge: dateStr,
+        }));
+      },
+
+      completeDailyChallenge: (dateStr) => {
+        set((state) => ({
+          dailyChallengesProgress: {
+            ...state.dailyChallengesProgress,
+            [dateStr]: true,
+          }
         }));
       }
     }),

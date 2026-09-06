@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Linking } from 'react-native';
+import { Text } from '../components/Text';
+import { View, TouchableOpacity, ScrollView, Linking } from 'react-native';
 import { ChevronRight, HelpCircle, BookOpen, ShieldCheck, FileText, Info } from 'lucide-react-native';
 
 interface SettingsScreenProps {

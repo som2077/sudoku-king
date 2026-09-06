@@ -1,9 +1,33 @@
-import { View, TouchableOpacity, Text, Alert } from 'react-native';
-import { useGameStore } from '../store/useGameStore';
-import { RotateCcw, Eraser, Pen, Lightbulb } from 'lucide-react-native';
+import { View, TouchableOpacity, Alert, StyleSheet } from "react-native";
+import { Text } from '../components/Text';
+import { useGameStore } from "../store/useGameStore";
+import { RotateCcw, Eraser, Pen, Lightbulb } from "lucide-react-native";
 
-export default function Keypad({ showRewardedAd }: { showRewardedAd: (cb: () => void) => void }) {
-  const { placeNumber, isNotesMode, toggleNotesMode, toggleNote, erase, undo, hintsRemaining, useHint, isPremium, addHint } = useGameStore();
+export default function Keypad({
+  showRewardedAd,
+}: {
+  showRewardedAd: (cb: () => void) => void;
+}) {
+  const {
+    board,
+    placeNumber,
+    isNotesMode,
+    toggleNotesMode,
+    toggleNote,
+    erase,
+    undo,
+    hintsRemaining,
+    useHint,
+    isPremium,
+    addHint,
+  } = useGameStore();
+
+  // Count how many times each number appears correctly on the board (to dim completed numbers)
+  const numberCounts = Array(10).fill(0);
+  board.forEach((cell) => {
+    if (cell.value !== null && !cell.isError) numberCounts[cell.value]++;
+  });
+  const isComplete = (num: number) => numberCounts[num] >= 9;
 
   const handleNumberPress = (num: number) => {
     if (isNotesMode) toggleNote(num);
@@ -21,64 +45,198 @@ export default function Keypad({ showRewardedAd }: { showRewardedAd: (cb: () => 
           { text: "Cancel", style: "cancel" },
           {
             text: "Watch Ad",
-            onPress: () => showRewardedAd(() => {
-              addHint();
-              setTimeout(useHint, 500);
-            })
-          }
-        ]
+            onPress: () =>
+              showRewardedAd(() => {
+                addHint();
+                setTimeout(useHint, 500);
+              }),
+          },
+        ],
       );
     }
   };
 
+  // ── Action button helper ────────────────────────────────────────────────────
+  const ActionBtn = ({
+    icon,
+    label,
+    onPress,
+    active = false,
+  }: {
+    icon: React.ReactNode;
+    label: string;
+    onPress: () => void;
+    active?: boolean;
+  }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[styles.actionBtn, active && styles.actionBtnActive]}
+    >
+      {icon}
+      <Text style={[styles.actionLabel, active && styles.actionLabelActive]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <View className="w-full px-4 items-center">
-
-      {/* 4 Actions Row */}
-      <View className="flex-row justify-between px-6 mb-5  gap-20 ">
-
-        <TouchableOpacity onPress={undo} className="items-center">
-          <RotateCcw size={32} color="#6b7280" strokeWidth={2} />
-          <Text className="text-gray-500 text-xs font-bold mt-2">Undo</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={erase} className="items-center">
-          <Eraser size={32} color="#6b7280" strokeWidth={2} />
-          <Text className="text-gray-500 text-xs font-bold mt-2">Erase</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={toggleNotesMode} className="items-center relative">
-          <Pen size={32} color="#6b7280" strokeWidth={2} />
-          <Text className="text-gray-500 text-xs font-bold mt-2">Notes</Text>
-          <View className={`absolute -top-2 -right-3 px-1.5 py-0.5 rounded-full ${isNotesMode ? 'bg-blue-500' : 'bg-gray-400'}`}>
-            <Text className="text-white text-[9px] font-black">{isNotesMode ? 'ON' : 'OFF'}</Text>
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={handleHintClick} className="items-center relative">
-          <Lightbulb size={32} color="#6b7280" strokeWidth={2} />
-          <Text className="text-gray-500 text-xs font-bold mt-2">Hint</Text>
-          <View className="absolute -top-1 -right-2 bg-blue-500 w-5 h-5 rounded-full items-center justify-center border-2 border-white">
-            <Text className="text-white text-[10px] font-black">
-              {isPremium ? '∞' : (hintsRemaining > 0 ? hintsRemaining : '📺')}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
+    <View style={styles.container}>
+      {/* ── Number Pad ── */}
+      <View style={styles.numRow}>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
+          const done = isComplete(num);
+          return (
+            <TouchableOpacity
+              key={num}
+              onPress={() => handleNumberPress(num)}
+              style={[styles.numBtn, done && styles.numBtnDone]}
+              disabled={done}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.numText, done && styles.numTextDone]}>
+                {num}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
-      {/* Number Pad (1-9 in one row) */}
-      <View className="flex-row justify-between  w-full pb-4">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-          <TouchableOpacity
-            key={num}
-            onPress={() => handleNumberPress(num)}
-            className="items-center justify-center bg-[#E5E7EB] rounded-lg h-11 flex-1 mx-0.5"
-          >
-            <Text className="text-2xl font-normal text-black">{num}</Text>
-          </TouchableOpacity>
-        ))}
+      {/* ── Action Row ── */}
+      <View style={styles.actionRow}>
+        <ActionBtn
+          icon={
+            <RotateCcw
+              size={26}
+              color={isNotesMode ? "#6B7280" : "#1C1F2E"}
+              strokeWidth={2}
+            />
+          }
+          label="Undo"
+          onPress={undo}
+        />
+
+        <ActionBtn
+          icon={
+            <Eraser
+              size={26}
+              color={isNotesMode ? "#6B7280" : "#1C1F2E"}
+              strokeWidth={2}
+            />
+          }
+          label="Erase"
+          onPress={erase}
+        />
+
+        <ActionBtn
+          icon={
+            <Pen
+              size={26}
+              color={isNotesMode ? "#1C1F2E" : "#6B7280"}
+              strokeWidth={2}
+            />
+          }
+          label="Notes"
+          onPress={toggleNotesMode}
+          active={isNotesMode}
+        />
+
+        {/* Hint with badge */}
+        <TouchableOpacity onPress={handleHintClick} style={styles.actionBtn}>
+          <View style={{ position: "relative" }}>
+            <Lightbulb size={26} color="#1C1F2E" strokeWidth={2} />
+            <View style={styles.hintBadge}>
+              <Text style={styles.hintBadgeText}>
+                {isPremium ? "∞" : hintsRemaining > 0 ? hintsRemaining : "📺"}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.actionLabel}>Hint</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+    paddingHorizontal: 12,
+    gap: 16,
+  },
+
+  // ── Number pad ──────────────────────────────────────────────────────────────
+  numRow: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  numBtn: {
+    flex: 1,
+    height: 56,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  numBtnDone: {
+    opacity: 0.25,
+  },
+  numText: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1C1F2E",
+  },
+  numTextDone: {
+    color: "#9CA3AF",
+  },
+
+  // ── Action row ───────────────────────────────────────────────────────────────
+  actionRow: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    paddingBottom: 8,
+  },
+  actionBtn: {
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  actionBtnActive: {
+    backgroundColor: "#F0F0F8",
+  },
+  actionLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#6B7280",
+  },
+  actionLabelActive: {
+    color: "#1C1F2E",
+  },
+
+  // ── Hint badge ───────────────────────────────────────────────────────────────
+  hintBadge: {
+    position: "absolute",
+    top: -6,
+    right: -8,
+    backgroundColor: "#1C1F2E",
+    borderRadius: 999,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+  },
+  hintBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "900",
+  },
+});

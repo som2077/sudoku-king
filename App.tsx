@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
-import { Text, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { Text } from './src/components/Text';
+import { View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 import { StatusBar as NativeStatusBar } from 'react-native';
@@ -12,8 +13,18 @@ import Keypad from './src/components/Keypad';
 import TopBar from './src/components/TopBar';
 import HomeScreen from './src/screens/HomeScreen';
 import { useGameStore } from './src/store/useGameStore';
+import { AppGradientBackground } from './src/components/AppGradientBackground';
 
 import { getBannerAdUnitId, getRewardedAdUnitId, getRevenueCatApiKey } from './src/utils/secrets';
+
+import {
+  useFonts,
+  BricolageGrotesque_400Regular,
+  BricolageGrotesque_500Medium,
+  BricolageGrotesque_600SemiBold,
+  BricolageGrotesque_700Bold,
+  BricolageGrotesque_800ExtraBold,
+} from '@expo-google-fonts/bricolage-grotesque';
 
 // Initialize Ads
 mobileAds().initialize().then(() => console.log('🔥 [AdMob] Initialized'));
@@ -24,7 +35,13 @@ const rewardedAdUnitId = __DEV__ ? TestIds.REWARDED : getRewardedAdUnitId();
 const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId);
 
 export default function App() {
-  const { startNewGame, mistakes, board, screen, setScreen, history, timer, fetchRemoteConfig, isPremium, setPremium, secondChance, addHint, useHint } = useGameStore();
+  const {
+    screen, setScreen,
+    mistakes, board, secondChance, timer,
+    isPremium, setPremium, fetchRemoteConfig,
+    history, startNewGame, addHint, useHint,
+    currentDailyChallenge, completeDailyChallenge
+  } = useGameStore();
 
   const isGameOver = mistakes >= 3;
   const isGameWon = board.length > 0 && board.every(cell => cell.value !== null && !cell.isError) && mistakes < 3;
@@ -32,6 +49,14 @@ export default function App() {
   const [rewardedLoaded, setRewardedLoaded] = useState(false);
   const [adCallback, setAdCallback] = useState<(() => void) | null>(null);
   const [adShowing, setAdShowing] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    BricolageGrotesque_400Regular,
+    BricolageGrotesque_500Medium,
+    BricolageGrotesque_600SemiBold,
+    BricolageGrotesque_700Bold,
+    BricolageGrotesque_800ExtraBold,
+  });
 
   useEffect(() => {
     NativeStatusBar.setBarStyle('dark-content');
@@ -157,11 +182,19 @@ export default function App() {
     if (isGameWon) {
       console.log(`🔥 [Firebase Analytics] Logging Event: game_won (Time: ${timer}s)`);
       logEvent(analytics, 'game_won', { time_taken: timer });
+      
+      if (currentDailyChallenge) {
+        completeDailyChallenge(currentDailyChallenge);
+      }
     } else if (isGameOver) {
       console.log(`🔥 [Firebase Analytics] Logging Event: game_lost (Time: ${timer}s)`);
       logEvent(analytics, 'game_lost', { time_taken: timer });
     }
-  }, [isGameWon, isGameOver, timer]);
+  }, [isGameWon, isGameOver, timer, currentDailyChallenge, completeDailyChallenge]);
+
+  if (!fontsLoaded) {
+    return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+  }
 
   if (screen === 'home') {
     return (
@@ -177,59 +210,126 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView className="flex-1 bg-gray-50">
-        <View className="flex-1 items-center relative ">
-          <TopBar showRewardedAd={showRewardedAd} />
-          <Board />
-          <Keypad showRewardedAd={showRewardedAd} />
+      <AppGradientBackground>
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+          <View style={{ flex: 1, alignItems: 'center' }}>
 
-          {(isGameOver || isGameWon) && (
-            <View className="absolute inset-0 bg-black/60 items-center justify-center z-50">
-              <View className="bg-white p-8 rounded-3xl items-center shadow-lg w-4/5">
-                <Text className={`text-4xl font-bold mb-4 ${isGameWon ? 'text-green-500' : 'text-red-500'}`}>
-                  {isGameWon ? 'You Win!' : 'Game Over'}
-                </Text>
-                <Text className="text-gray-600 text-lg mb-8 text-center">
-                  {isGameWon ? 'Excellent job solving this puzzle!' : 'You made 3 mistakes.'}
-                </Text>
+            <TopBar showRewardedAd={showRewardedAd} />
+            <Board />
+            <Keypad showRewardedAd={showRewardedAd} />
 
-                {isGameOver && (
+            {/* ── Win / Game Over Modal ── */}
+            {(isGameOver || isGameWon) && (
+              <View style={{
+                position: 'absolute', inset: 0, top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 50,
+              }}>
+                <View style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 28,
+                  padding: 32,
+                  alignItems: 'center',
+                  width: '82%',
+                  shadowColor: '#000',
+                  shadowOpacity: 0.2,
+                  shadowRadius: 24,
+                  shadowOffset: { width: 0, height: 10 },
+                  elevation: 12,
+                }}>
+                  {/* Emoji circle */}
+                  <View style={{
+                    width: 80, height: 80, borderRadius: 999,
+                    backgroundColor: isGameWon ? '#DCFCE7' : '#FEE2E2',
+                    alignItems: 'center', justifyContent: 'center',
+                    marginBottom: 16,
+                  }}>
+                    <Text style={{ fontSize: 40 }}>{isGameWon ? '🏆' : '💀'}</Text>
+                  </View>
+
+                  <Text style={{
+                    fontSize: 26, fontWeight: '800', color: '#1C1F2E', marginBottom: 6,
+                  }}>
+                    {isGameWon ? 'You Win!' : 'Game Over'}
+                  </Text>
+                  <Text style={{
+                    fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 28,
+                  }}>
+                    {isGameWon ? 'Excellent job solving this puzzle! 🎉' : 'You made 3 mistakes. Better luck next time!'}
+                  </Text>
+
+                  {/* Second Chance (only on game over) */}
+                  {isGameOver && (
+                    <TouchableOpacity
+                      onPress={() => showRewardedAd(() => secondChance())}
+                      style={{
+                        backgroundColor: '#3B82F6',
+                        borderRadius: 999,
+                        paddingVertical: 14,
+                        width: '100%',
+                        alignItems: 'center',
+                        marginBottom: 10,
+                      }}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 16 }}>
+                        Second Chance {isPremium ? '' : '📺'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Home / New Game */}
                   <TouchableOpacity
-                    onPress={() => showRewardedAd(() => secondChance())}
-                    className="bg-blue-500 px-8 py-3 rounded-full mb-4 w-full items-center"
+                    onPress={() => setScreen('home')}
+                    style={{
+                      backgroundColor: '#F3F4F6',
+                      borderRadius: 999,
+                      paddingVertical: 14,
+                      width: '100%',
+                      alignItems: 'center',
+                    }}
                   >
-                    <Text className="text-white font-bold text-xl">Second Chance {isPremium ? '' : '📺'}</Text>
+                    <Text style={{ color: '#1C1F2E', fontWeight: '700', fontSize: 16 }}>
+                      Back to Home
+                    </Text>
                   </TouchableOpacity>
-                )}
-
-                <TouchableOpacity onPress={() => setScreen('home')} className="bg-gray-200 px-8 py-3 rounded-full w-full items-center">
-                  <Text className="text-gray-700 font-bold text-xl">New Game</Text>
-                </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          )}
+            )}
 
-          {/* AdMob Banner at bottom */}
-          {!isPremium && (
-            <View className="absolute bottom-0 w-full items-center justify-center bg-[#E2E8F0] h-[70px]">
-              <BannerAd
-                unitId={bannerAdUnitId}
-                size={BannerAdSize.BANNER}
-                requestOptions={{
-                  requestNonPersonalizedAdsOnly: true,
-                }}
-              />
-            </View>
-          )}
+            {/* AdMob Banner */}
+            {!isPremium && (
+              <View style={{
+                position: 'absolute', bottom: 0, width: '100%',
+                alignItems: 'center', justifyContent: 'center',
+                backgroundColor: '#E2E8F0', height: 70,
+              }}>
+                <BannerAd
+                  unitId={bannerAdUnitId}
+                  size={BannerAdSize.BANNER}
+                  requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+                />
+              </View>
+            )}
 
-          {adShowing && (
-            <View className="absolute inset-0 bg-black/80 items-center justify-center z-50">
-              <ActivityIndicator size="large" color="#ffffff" />
-              <Text className="text-white mt-4 font-bold text-lg">Loading Ad...</Text>
-            </View>
-          )}
-        </View>
-      </SafeAreaView>
+            {/* Ad Loading Overlay */}
+            {adShowing && (
+              <View style={{
+                position: 'absolute', inset: 0, top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                alignItems: 'center', justifyContent: 'center', zIndex: 50,
+              }}>
+                <ActivityIndicator size="large" color="#ffffff" />
+                <Text style={{ color: '#FFFFFF', marginTop: 16, fontWeight: '700', fontSize: 16 }}>
+                  Loading Ad...
+                </Text>
+              </View>
+            )}
+
+          </View>
+        </SafeAreaView>
+      </AppGradientBackground>
       <StatusBar style="dark" />
     </SafeAreaProvider>
   );

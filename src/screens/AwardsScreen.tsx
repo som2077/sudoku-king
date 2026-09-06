@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { Text } from '../components/Text';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Trophy, ChevronLeft } from 'lucide-react-native';
 
 interface AwardsScreenProps {
