@@ -3,6 +3,7 @@ import { Text } from "../ui/Text";
 import { View } from "react-native";
 import { Svg, Circle } from "react-native-svg";
 import { Flame } from "lucide-react-native";
+import { useTranslation } from "../../i18n";
 
 // ─── Shared card shadow style ────────────────────────────────────────────────
 export const CARD_SHADOW = {
@@ -217,13 +218,14 @@ interface StatsCardsProps {
 }
 
 export function StatsCards({ solved, totalSolved }: StatsCardsProps) {
+  const { t } = useTranslation();
   const progress = totalSolved > 0 ? solved / totalSolved : 0;
   return (
     <View style={{ marginTop: 10 }}>
       <HeroCard
         value={solved}
         total={totalSolved}
-        label="Puzzles solved today"
+        label={t('home.solvedToday')}
         progress={progress}
       />
     </View>

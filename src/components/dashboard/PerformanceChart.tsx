@@ -3,6 +3,7 @@ import { Text } from "../ui/Text";
 import { View, TouchableOpacity } from "react-native";
 import { Trophy, Zap, TrendingUp } from "lucide-react-native";
 import { useGameStore } from "../../store/useGameStore";
+import { useTranslation } from "../../i18n";
 
 type TimeTab = "Day" | "Week" | "Month";
 type MetricFilter = "Both" | "WinRate" | "BestTime";
@@ -71,6 +72,7 @@ const COLOR_WIN = "#04B2F1"; // Cyan / Light Blue
 const COLOR_TIME = "#AB88EC"; // Lavender / Purple
 
 export function PerformanceChart() {
+  const { t } = useTranslation();
   const [activeTimeTab, setActiveTimeTab] = useState<TimeTab>("Day");
   const [metricFilter, setMetricFilter] = useState<MetricFilter>("Both");
   const [selectedDay, setSelectedDay] = useState<number>(() => {
@@ -134,7 +136,7 @@ export function PerformanceChart() {
             marginLeft: 3,
           }}
         >
-          Performance
+          {t('home.performance')}
         </Text>
 
         {/* Day | Week | Month switcher */}
@@ -170,7 +172,7 @@ export function PerformanceChart() {
                   color: activeTimeTab === tab ? "#1C1F2E" : "#9CA3AF",
                 }}
               >
-                {tab}
+                {tab === "Day" ? t('home.day') : tab === "Week" ? t('home.week') : t('home.month')}
               </Text>
             </TouchableOpacity>
           ))}
@@ -207,7 +209,7 @@ export function PerformanceChart() {
               color: metricFilter === "Both" ? "#1C1F2E" : "#9CA3AF",
             }}
           >
-            All
+            {t('home.all')}
           </Text>
         </TouchableOpacity>
 
@@ -242,7 +244,7 @@ export function PerformanceChart() {
               color: metricFilter === "WinRate" ? "#1C1F2E" : "#64748B",
             }}
           >
-            Win Rate (%)
+            {t('home.winRate')}
           </Text>
         </TouchableOpacity>
 
@@ -277,7 +279,7 @@ export function PerformanceChart() {
               color: metricFilter === "BestTime" ? "#7C3AED" : "#64748B",
             }}
           >
-            Best Time
+            {t('home.bestTime')}
           </Text>
         </TouchableOpacity>
       </View>

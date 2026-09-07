@@ -1,5 +1,5 @@
 import { TouchableOpacity, View } from "react-native";
-import { Text } from '../ui/Text';
+import { Text } from "../ui/Text";
 import { memo } from "react";
 
 interface CellProps {
@@ -25,21 +25,27 @@ const Cell = ({
   isSameValue,
   onPress,
 }: CellProps) => {
-  // ── Background ──────────────────────────────────────────────────────────────
+  // ── Background Color Palette (Exact Match to Reference Screenshot) ──────────
   let bg = "#FFFFFF";
-  if (isSelected) bg = "#1C1F2E";
-  else if (isError) bg = "#FFF0F0";
-  else if (isSameValue) bg = "#DDE3FF";
-  else if (isHighlighted) bg = "#F0F0F8";
-  else if (isLocked) bg = "#F9F9FB";
+  if (isSelected) {
+    bg = "#5D69F9"; // Solid royal/indigo blue
+  } else if (isError) {
+    bg = "#FEE2E2"; // Soft error red
+  } else if (isSameValue || isHighlighted) {
+    bg = "#EBEEFD"; // Soft lavender-blue tint for crosshair and matching numbers
+  }
 
-  // ── Text color ───────────────────────────────────────────────────────────────
-  let textColor = "#3B82F6"; // user-placed number: blue
-  if (isSelected) textColor = "#FFFFFF";
-  else if (isLocked) textColor = "#1C1F2E";
-  else if (isError) textColor = "#EF4444";
+  // ── Text Color ──────────────────────────────────────────────────────────────
+  let textColor = "#2563EB"; // Vibrant brand blue for user entries
+  if (isSelected) {
+    textColor = "#FFFFFF"; // Pure white text when cell is selected
+  } else if (isError) {
+    textColor = "#EF4444";
+  } else if (isLocked) {
+    textColor = "#1F2224"; // Rich dark slate/charcoal for fixed clues
+  }
 
-  // ── Notes rendering ─────────────────────────────────────────────────────────
+  // ── Notes Rendering ─────────────────────────────────────────────────────────
   const renderNotes = () => {
     if (notes === 0) return null;
     return (
@@ -50,7 +56,7 @@ const Cell = ({
           height: "100%",
           flexDirection: "row",
           flexWrap: "wrap",
-          padding: 1,
+          padding: 2,
         }}
       >
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
@@ -62,13 +68,13 @@ const Cell = ({
                 width: "33.33%",
                 textAlign: "center",
                 fontSize: 9,
-                fontWeight: "600",
+                fontWeight: "700",
                 color: active
                   ? isSelected
                     ? "#FFFFFF"
-                    : "#1C1F2E"
+                    : "#5D69F9"
                   : "transparent",
-                lineHeight: 13,
+                lineHeight: 12,
               }}
             >
               {num}
@@ -85,6 +91,8 @@ const Cell = ({
       onPress={() => onPress(index)}
       style={{
         flex: 1,
+        width: "100%",
+        height: "100%",
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: bg,
@@ -93,8 +101,8 @@ const Cell = ({
       {value ? (
         <Text
           style={{
-            fontSize: 20,
-            fontWeight: isLocked ? "700" : "500",
+            fontSize: 23,
+            fontWeight: "600",
             color: textColor,
           }}
         >

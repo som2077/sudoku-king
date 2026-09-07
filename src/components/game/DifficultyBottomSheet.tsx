@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Difficulty } from '../../utils/sudokuLogic';
+import { useTranslation } from '../../i18n';
 
 interface DifficultyBottomSheetProps {
   visible: boolean;
@@ -38,8 +39,26 @@ export function DifficultyBottomSheet({
   onSelect,
   onRestart,
 }: DifficultyBottomSheetProps) {
+  const { t } = useTranslation();
   const [modalVisible, setModalVisible] = useState(visible);
   const isClosingRef = useRef(false);
+
+  const getDifficultyTitle = (diff: Difficulty) => {
+    switch (diff) {
+      case 'Easy':
+        return t('diff.easy');
+      case 'Medium':
+        return t('diff.medium');
+      case 'Hard':
+        return t('diff.hard');
+      case 'Expert':
+        return t('diff.expert');
+      case 'Master':
+        return t('diff.master');
+      default:
+        return diff;
+    }
+  };
 
   // Safe area bottom inset calculation
   let insetsBottom = 0;
@@ -246,7 +265,7 @@ export function DifficultyBottomSheet({
                   accessibilityLabel={`Select ${difficulty} difficulty`}
                   style={styles.optionRow}
                 >
-                  <Text style={styles.optionTitle}>{difficulty}</Text>
+                  <Text style={styles.optionTitle}>{getDifficultyTitle(difficulty)}</Text>
                 </TouchableOpacity>
 
                 {index < OPTIONS.length - 1 && <View style={styles.divider} />}

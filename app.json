@@ -26,7 +26,7 @@
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-1281153062436075~3145715659"
+          "androidAppId": "ca-app-pub-6128782678213076~4242585573"
         }
       ],
       [
@@ -40,6 +40,6 @@
     ]
   },
   "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-1281153062436075~3145715659"
+    "android_app_id": "ca-app-pub-6128782678213076~4242585573"
   }
 }

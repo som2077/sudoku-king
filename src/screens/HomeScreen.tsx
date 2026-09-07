@@ -6,7 +6,7 @@ import {
   ScrollView,
   useWindowDimensions,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Calendar, Settings, Play } from "lucide-react-native";
 import { Image } from "expo-image";
 import { StreakFlame } from "../components/StreakFlame";
@@ -22,6 +22,7 @@ import { AwardsScreen } from "./AwardsScreen";
 import { StatusBar as NativeStatusBar } from "react-native";
 
 import { Difficulty } from "../utils/sudokuLogic";
+import { useTranslation } from "../i18n";
 
 type HomeScreenProps = {
   setScreen: (screen: "home" | "playing") => void;
@@ -43,8 +44,10 @@ function BottomNav({
   activeTab: Tab;
   setActiveTab: (t: Tab) => void;
 }) {
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const active = "#1C1F2E";
-  const inactive = "#9CA3AF";
+  const inactive = "#8E8E93";
 
   return (
     <View
@@ -52,66 +55,78 @@ function BottomNav({
         position: "absolute",
         bottom: 0,
         width: "100%",
-        backgroundColor: "#F4F3F0",
+        backgroundColor: "#FFFFFF",
         flexDirection: "row",
         justifyContent: "space-around",
-        paddingTop: 12,
-        paddingBottom: 28,
+        paddingTop: 8,
+        paddingBottom: Math.max(insets.bottom, 10),
         borderTopWidth: 1,
-        borderTopColor: "#E5E7EB",
+        borderTopColor: "#EBEBEB",
       }}
     >
       <TouchableOpacity
         onPress={() => setActiveTab("home")}
         style={{ alignItems: "center", flex: 1 }}
+        activeOpacity={0.7}
       >
-        <Home size={26} color={activeTab === "home" ? active : inactive} />
+        <Home
+          size={24}
+          color={activeTab === "home" ? active : inactive}
+          strokeWidth={activeTab === "home" ? 2.2 : 1.8}
+        />
         <Text
           style={{
             fontSize: 11,
-            fontWeight: "bold",
+            fontWeight: activeTab === "home" ? "700" : "500",
             color: activeTab === "home" ? active : inactive,
-            marginTop: 3,
+            marginTop: 4,
           }}
         >
-          Home
+          {t('tabs.home')}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={() => setActiveTab("daily")}
         style={{ alignItems: "center", flex: 1 }}
+        activeOpacity={0.7}
       >
-        <Calendar size={26} color={activeTab === "daily" ? active : inactive} />
+        <Calendar
+          size={24}
+          color={activeTab === "daily" ? active : inactive}
+          strokeWidth={activeTab === "daily" ? 2.2 : 1.8}
+        />
         <Text
           style={{
             fontSize: 11,
-            fontWeight: "bold",
+            fontWeight: activeTab === "daily" ? "700" : "500",
             color: activeTab === "daily" ? active : inactive,
-            marginTop: 3,
+            marginTop: 4,
           }}
         >
-          Daily
+          {t('tabs.daily')}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={() => setActiveTab("settings")}
         style={{ alignItems: "center", flex: 1 }}
+        activeOpacity={0.7}
       >
         <Settings
-          size={26}
+          size={24}
           color={activeTab === "settings" ? active : inactive}
+          strokeWidth={activeTab === "settings" ? 2.2 : 1.8}
         />
         <Text
           style={{
             fontSize: 11,
-            fontWeight: "bold",
+            fontWeight: activeTab === "settings" ? "700" : "500",
             color: activeTab === "settings" ? active : inactive,
-            marginTop: 3,
+            marginTop: 4,
           }}
         >
-          Settings
+          {t('tabs.settings')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -132,6 +147,7 @@ export default function HomeScreen({
   const [activeTab, setActiveTab] = React.useState<Tab>("home");
   const [showAwards, setShowAwards] = React.useState(false);
 
+  const { t } = useTranslation();
   const scrollRef = React.useRef<ScrollView>(null);
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const TABS: Tab[] = ["home", "daily", "settings"];
@@ -181,10 +197,27 @@ export default function HomeScreen({
     return `${m}:${s}`;
   };
 
+  const getDifficultyTitle = (diff?: string) => {
+    switch (diff) {
+      case "Easy":
+        return t("diff.easy");
+      case "Medium":
+        return t("diff.medium");
+      case "Hard":
+        return t("diff.hard");
+      case "Expert":
+        return t("diff.expert");
+      case "Master":
+        return t("diff.master");
+      default:
+        return diff || "";
+    }
+  };
+
   const isOngoingGame = board.length > 0 && !isGameCompleted && mistakes < 3;
   const continueProgressLabel = isOngoingGame
-    ? `${formatProgressTimer(timer)} · ${difficulty}`
-    : "Select difficulty";
+    ? `${formatProgressTimer(timer)} · ${getDifficultyTitle(difficulty)}`
+    : t('home.selectDifficulty');
 
   const SOLVED = todaySolved || 0;
   const TOTAL_SOLVED = totalSolved || 0;
@@ -195,8 +228,14 @@ export default function HomeScreen({
   const BEST_TIME = formatBestTime(bestTimeSec);
   const STREAK = streak;
 
+  const insets = useSafeAreaInsets();
+
   React.useEffect(() => {
-    NativeStatusBar.setBarStyle("dark-content");
+    if (activeTab === "daily") {
+      NativeStatusBar.setBarStyle("light-content");
+    } else {
+      NativeStatusBar.setBarStyle("dark-content");
+    }
     NativeStatusBar.setBackgroundColor("transparent", true);
     NativeStatusBar.setTranslucent(true);
   }, [activeTab]);
@@ -216,7 +255,7 @@ export default function HomeScreen({
 
   return (
     <AppGradientBackground>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
+      <View style={{ flex: 1, backgroundColor: "transparent" }}>
         {/* Swipeable Tabs Container */}
         <ScrollView
           ref={scrollRef}
@@ -231,7 +270,12 @@ export default function HomeScreen({
         >
           {/* ── 1. HOME TAB ── */}
           <View
-            style={{ width: SCREEN_WIDTH, flex: 1, justifyContent: "center" }}
+            style={{
+              width: SCREEN_WIDTH,
+              flex: 1,
+              paddingTop: insets.top,
+              justifyContent: "center",
+            }}
           >
             {showAwards ? (
               <AwardsScreen onBack={() => setShowAwards(false)} />
@@ -331,7 +375,7 @@ export default function HomeScreen({
                           fontSize: 20,
                         }}
                       >
-                        New Game
+                        {t('home.newGame')}
                       </Text>
                       <View
                         style={{
@@ -349,7 +393,7 @@ export default function HomeScreen({
                             fontWeight: "500",
                           }}
                         >
-                          {streak > 0 ? `Streak ${streak}` : "Start Streak"}
+                          {streak > 0 ? `${t('home.streak')} ${streak}` : t('home.startStreak')}
                         </Text>
                       </View>
                     </View>
@@ -400,8 +444,7 @@ export default function HomeScreen({
                           fontSize: 20,
                         }}
                       >
-                        Continue Game
-                        
+                        {t('home.continueGame')}
                       </Text>
                       <View
                         style={{
@@ -450,7 +493,12 @@ export default function HomeScreen({
           </View>
 
           {/* ── 3. SETTINGS TAB ── */}
-          <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
+          <View
+            style={{
+              width: SCREEN_WIDTH,
+              flex: 1,
+            }}
+          >
             <SettingsScreen />
           </View>
         </ScrollView>
@@ -469,7 +517,7 @@ export default function HomeScreen({
             setScreen("playing");
           }}
         />
-      </SafeAreaView>
+      </View>
     </AppGradientBackground>
   );
 }

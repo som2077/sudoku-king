@@ -1,48 +1,53 @@
-import React, { useState, useMemo } from 'react';
-import { Text } from '../components/Text';
+import React, { useState, useMemo } from "react";
+import { Text } from "../components/Text";
 import {
   View,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
   ScrollView,
-} from 'react-native';
+} from "react-native";
 import {
-  Trophy,
   ChevronLeft,
   ChevronRight,
   Play,
   RotateCcw,
   Lock,
-  Flame,
   Crown,
-} from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "lucide-react-native";
+import LottieView from "lottie-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useGameStore,
   getDailyDifficulty,
   isDailyChallengeCompleted,
   getDailyChallengeItem,
-} from '../store/useGameStore';
+} from "../store/useGameStore";
+import { useTranslation } from "../i18n";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const DAYS_LABEL = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const DAYS_LABEL = ["M", "T", "W", "T", "F", "S", "S"];
 
-const DIFFICULTY_CONFIG: Record<string, { label: string; color: string; bg: string; givens: number }> = {
-  Easy: { label: 'Easy', color: '#16A34A', bg: '#DCFCE7', givens: 41 },
-  Medium: { label: 'Medium', color: '#D97706', bg: '#FEF3C7', givens: 34 },
-  Hard: { label: 'Hard', color: '#EA580C', bg: '#FFEDD5', givens: 29 },
-  Expert: { label: 'Expert', color: '#7C3AED', bg: '#F3E8FF', givens: 25 },
-  Master: { label: 'Master', color: '#2563EB', bg: '#DBEAFE', givens: 23 },
-  Extreme: { label: 'Extreme', color: '#DC2626', bg: '#FEE2E2', givens: 21 },
-  Fast: { label: 'Fast', color: '#4B5563', bg: '#F3F4F6', givens: 45 },
+const DIFFICULTY_CONFIG: Record<
+  string,
+  { label: string; color: string; bg: string; givens: number }
+> = {
+  Easy: { label: "Easy", color: "#16A34A", bg: "#DCFCE7", givens: 41 },
+  Medium: { label: "Medium", color: "#D97706", bg: "#FEF3C7", givens: 34 },
+  Hard: { label: "Hard", color: "#EA580C", bg: "#FFEDD5", givens: 29 },
+  Expert: { label: "Expert", color: "#7C3AED", bg: "#F3E8FF", givens: 25 },
+  Master: { label: "Master", color: "#2563EB", bg: "#DBEAFE", givens: 23 },
+  Extreme: { label: "Extreme", color: "#DC2626", bg: "#FEE2E2", givens: 21 },
+  Fast: { label: "Fast", color: "#4B5563", bg: "#F3F4F6", givens: 45 },
 };
 
 function formatDuration(sec?: number) {
-  if (!sec || sec <= 0) return '00:00';
-  const m = Math.floor(sec / 60).toString().padStart(2, '0');
-  const s = (sec % 60).toString().padStart(2, '0');
+  if (!sec || sec <= 0) return "00:00";
+  const m = Math.floor(sec / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = (sec % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
 }
 
@@ -72,7 +77,15 @@ function buildCalendarGrid(year: number, month: number) {
 }
 
 export function DailyChallengesScreen() {
-  const { startDailyChallenge, dailyChallengesProgress, streak = 0 } = useGameStore();
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const {
+    startDailyChallenge,
+    dailyChallengesProgress,
+    streak = 0,
+    settings,
+  } = useGameStore();
+  const language = settings?.language || 'en';
 
   const now = new Date();
   const todayDate = now.getDate();
@@ -86,21 +99,31 @@ export function DailyChallengesScreen() {
     [currentMonth]: todayDate,
   });
 
-  const selectedDate = selectedDates[visibleMonthIdx] || (visibleMonthIdx === currentMonth ? todayDate : 1);
+  const selectedDate =
+    selectedDates[visibleMonthIdx] ||
+    (visibleMonthIdx === currentMonth ? todayDate : 1);
 
-  const mStr = String(visibleMonthIdx + 1).padStart(2, '0');
-  const dStr = String(selectedDate).padStart(2, '0');
+  const mStr = String(visibleMonthIdx + 1).padStart(2, "0");
+  const dStr = String(selectedDate).padStart(2, "0");
   const selectedDateStr = `${currentYear}-${mStr}-${dStr}`;
 
   const selectedDifficulty = getDailyDifficulty(selectedDateStr);
-  const diffMeta = DIFFICULTY_CONFIG[selectedDifficulty] || DIFFICULTY_CONFIG.Medium;
+  const diffMeta =
+    DIFFICULTY_CONFIG[selectedDifficulty] || DIFFICULTY_CONFIG.Medium;
 
-  const isTodaySelected = visibleMonthIdx === currentMonth && selectedDate === todayDate;
+  const isTodaySelected =
+    visibleMonthIdx === currentMonth && selectedDate === todayDate;
   const isFutureSelected =
     visibleMonthIdx > currentMonth ||
     (visibleMonthIdx === currentMonth && selectedDate > todayDate);
-  const isSelectedCompleted = isDailyChallengeCompleted(dailyChallengesProgress, selectedDateStr);
-  const selectedProgressItem = getDailyChallengeItem(dailyChallengesProgress, selectedDateStr);
+  const isSelectedCompleted = isDailyChallengeCompleted(
+    dailyChallengesProgress,
+    selectedDateStr,
+  );
+  const selectedProgressItem = getDailyChallengeItem(
+    dailyChallengesProgress,
+    selectedDateStr,
+  );
 
   const handlePlay = () => {
     if (isFutureSelected) return;
@@ -115,15 +138,18 @@ export function DailyChallengesScreen() {
     });
   };
 
-  const grid = useMemo(() => buildCalendarGrid(currentYear, visibleMonthIdx), [currentYear, visibleMonthIdx]);
+  const grid = useMemo(
+    () => buildCalendarGrid(currentYear, visibleMonthIdx),
+    [currentYear, visibleMonthIdx],
+  );
   const dateObj = new Date(currentYear, visibleMonthIdx, 1);
-  const monthName = dateObj.toLocaleString('default', { month: 'long' });
+  const monthName = dateObj.toLocaleDateString(language, { month: "long" });
   const totalDays = new Date(currentYear, visibleMonthIdx + 1, 0).getDate();
 
   // Completed count in this month
   let completedCount = 0;
   for (let d = 1; d <= totalDays; d++) {
-    const ds = `${currentYear}-${String(visibleMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const ds = `${currentYear}-${String(visibleMonthIdx + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     if (isDailyChallengeCompleted(dailyChallengesProgress, ds)) {
       completedCount++;
     }
@@ -135,33 +161,42 @@ export function DailyChallengesScreen() {
   const isBronze = !isGold && !isSilver && completedCount >= 10;
 
   const trophyTitle = isGold
-    ? 'Royal Gold Cup 🏆'
+    ? "Royal Gold Cup 🏆"
     : isSilver
-    ? 'Silver Cup 🥈'
-    : isBronze
-    ? 'Bronze Cup 🥉'
-    : `${monthName} Cup`;
+      ? "Silver Cup 🥈"
+      : isBronze
+        ? "Bronze Cup 🥉"
+        : `${monthName} Cup`;
 
   const trophySubtitle = isGold
-    ? 'All 30 Challenges Solved!'
+    ? "All 30 Challenges Solved!"
     : isSilver
-    ? `${totalDays - completedCount} more for Royal Gold 🏆`
-    : isBronze
-    ? `${20 - completedCount} more for Silver Cup 🥈`
-    : `${10 - completedCount} more to unlock Bronze Cup 🥉`;
+      ? `${totalDays - completedCount} more for Royal Gold 🏆`
+      : isBronze
+        ? `${20 - completedCount} more for Silver Cup 🥈`
+        : `${10 - completedCount} more to unlock Bronze Cup 🥉`;
 
   // Milestone Progress percentage
-  const progressPercent = Math.min(100, Math.round((completedCount / totalDays) * 100));
+  const progressPercent = Math.min(
+    100,
+    Math.round((completedCount / totalDays) * 100),
+  );
 
   // Formatted date string for selected card
   const selectedDayObj = new Date(currentYear, visibleMonthIdx, selectedDate);
-  const selectedDayName = selectedDayObj.toLocaleDateString('en-US', { weekday: 'long' });
-  const selectedMonthShort = selectedDayObj.toLocaleDateString('en-US', { month: 'short' });
+  const selectedDayName = selectedDayObj.toLocaleDateString(language, {
+    weekday: "long",
+  });
+  const selectedMonthShort = selectedDayObj.toLocaleDateString(language, {
+    month: "short",
+  });
+
+  const bannerBg = isGold ? "#B45309" : isSilver ? "#334155" : "#1E3A8A";
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <View style={{ flex: 1, backgroundColor: bannerBg }}>
       <ScrollView
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: "#FFFFFF" }}
         contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
@@ -169,31 +204,29 @@ export function DailyChallengesScreen() {
         <LinearGradient
           colors={
             isGold
-              ? ['#B45309', '#D97706', '#F59E0B']
+              ? ["#B45309", "#D97706", "#F59E0B"]
               : isSilver
-              ? ['#334155', '#475569', '#64748B']
-              : ['#1E3A8A', '#2563EB', '#3B82F6']
+                ? ["#334155", "#475569", "#64748B"]
+                : ["#1E3A8A", "#2563EB", "#3B82F6"]
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.heroBanner}
         >
-          {/* Header Row: Title & Streak */}
-          <SafeAreaView edges={['top']} style={styles.heroHeader}>
-            <View style={{ width: 60 }} />
-            <Text style={styles.heroTitle}>Daily Challenges</Text>
-            <View style={styles.streakPill}>
-              <Flame size={14} color="#F97316" fill="#F97316" />
-              <Text style={styles.streakText}>{streak}</Text>
-            </View>
-          </SafeAreaView>
+          {/* Header Row: Title */}
+          <View style={[styles.heroHeader, { paddingTop: insets.top + 8 }]}>
+            <Text style={styles.heroTitle}>{t('daily.title')}</Text>
+          </View>
 
           {/* Month Navigation & Trophy Visual */}
           <View style={styles.heroContentRow}>
             <TouchableOpacity
               onPress={() => changeMonth(-1)}
               disabled={visibleMonthIdx === 0}
-              style={[styles.navArrow, visibleMonthIdx === 0 && { opacity: 0.3 }]}
+              style={[
+                styles.navArrow,
+                visibleMonthIdx === 0 && { opacity: 0.3 },
+              ]}
               activeOpacity={0.7}
             >
               <ChevronLeft color="#FFFFFF" size={28} />
@@ -201,20 +234,22 @@ export function DailyChallengesScreen() {
 
             {/* Dynamic Trophy Presentation */}
             <View style={styles.trophyContainer}>
-              <View
-                style={[
-                  styles.trophyGlow,
-                  isGold && { backgroundColor: 'rgba(253, 230, 138, 0.35)' },
-                  isSilver && { backgroundColor: 'rgba(226, 232, 240, 0.3)' },
-                  isBronze && { backgroundColor: 'rgba(245, 158, 11, 0.25)' },
-                ]}
-              />
-              <Trophy
-                size={68}
-                color={isGold ? '#FEF08A' : isSilver ? '#F1F5F9' : isBronze ? '#FDE68A' : '#E0E7FF'}
-                strokeWidth={1.2}
-                fill={isGold ? '#F59E0B' : isSilver ? '#94A3B8' : isBronze ? '#D97706' : '#1D4ED8'}
-              />
+              <View style={styles.trophyAnimWrapper}>
+                <View
+                  style={[
+                    // styles.trophyGlow,
+                    isGold && { backgroundColor: "rgba(253, 230, 138, 0.35)" },
+                    isSilver && { backgroundColor: "rgba(226, 232, 240, 0.3)" },
+                    isBronze && { backgroundColor: "rgba(245, 158, 11, 0.25)" },
+                  ]}
+                />
+                <LottieView
+                  source={require("../../assets/badge/Trophy.json")}
+                  autoPlay={true}
+                  loop={false}
+                  style={styles.trophyLottie}
+                />
+              </View>
               <Text style={styles.trophyTitleText}>{trophyTitle}</Text>
               <Text style={styles.trophySubtitleText}>{trophySubtitle}</Text>
             </View>
@@ -222,7 +257,10 @@ export function DailyChallengesScreen() {
             <TouchableOpacity
               onPress={() => changeMonth(1)}
               disabled={visibleMonthIdx === 11}
-              style={[styles.navArrow, visibleMonthIdx === 11 && { opacity: 0.3 }]}
+              style={[
+                styles.navArrow,
+                visibleMonthIdx === 11 && { opacity: 0.3 },
+              ]}
               activeOpacity={0.7}
             >
               <ChevronRight color="#FFFFFF" size={28} />
@@ -236,19 +274,39 @@ export function DailyChallengesScreen() {
                 {completedCount} / {totalDays} Solved
               </Text>
               <View style={styles.milestoneBadgesRow}>
-                <Text style={[styles.badgeTag, completedCount >= 10 && styles.badgeTagActive]}>
+                <Text
+                  style={[
+                    styles.badgeTag,
+                    completedCount >= 10 && styles.badgeTagActive,
+                  ]}
+                >
                   🥉 10
                 </Text>
-                <Text style={[styles.badgeTag, completedCount >= 20 && styles.badgeTagActive]}>
+                <Text
+                  style={[
+                    styles.badgeTag,
+                    completedCount >= 20 && styles.badgeTagActive,
+                  ]}
+                >
                   🥈 20
                 </Text>
-                <Text style={[styles.badgeTag, completedCount >= totalDays && styles.badgeTagActive]}>
+                <Text
+                  style={[
+                    styles.badgeTag,
+                    completedCount >= totalDays && styles.badgeTagActive,
+                  ]}
+                >
                   🏆 {totalDays}
                 </Text>
               </View>
             </View>
             <View style={styles.progressBarTrack}>
-              <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+              <View
+                style={[
+                  styles.progressBarFill,
+                  { width: `${progressPercent}%` },
+                ]}
+              />
             </View>
           </View>
         </LinearGradient>
@@ -290,13 +348,13 @@ export function DailyChallengesScreen() {
                     visibleMonthIdx > currentMonth ||
                     (visibleMonthIdx === currentMonth && day > todayDate);
 
-                  const curMStr = String(visibleMonthIdx + 1).padStart(2, '0');
-                  const curDStr = String(day).padStart(2, '0');
+                  const curMStr = String(visibleMonthIdx + 1).padStart(2, "0");
+                  const curDStr = String(day).padStart(2, "0");
                   const curDateStr = `${currentYear}-${curMStr}-${curDStr}`;
 
                   const isCompleted = isDailyChallengeCompleted(
                     dailyChallengesProgress,
-                    curDateStr
+                    curDateStr,
                   );
                   const isSelected = day === selectedDate;
 
@@ -324,8 +382,8 @@ export function DailyChallengesScreen() {
                         <View style={styles.crownWrapper}>
                           <Crown
                             size={18}
-                            color={isSelected ? '#FFFFFF' : '#D97706'}
-                            fill={isSelected ? '#FFFFFF' : '#F59E0B'}
+                            color={isSelected ? "#FFFFFF" : "#D97706"}
+                            fill={isSelected ? "#FFFFFF" : "#F59E0B"}
                           />
                         </View>
                       ) : isFuture ? (
@@ -365,10 +423,7 @@ export function DailyChallengesScreen() {
                 </Text>
                 <View style={styles.detailsMetaRow}>
                   <View
-                    style={[
-                      styles.diffBadge,
-                      { backgroundColor: diffMeta.bg },
-                    ]}
+                    style={[styles.diffBadge, { backgroundColor: diffMeta.bg }]}
                   >
                     <View
                       style={[
@@ -379,7 +434,7 @@ export function DailyChallengesScreen() {
                     <Text
                       style={[styles.diffBadgeText, { color: diffMeta.color }]}
                     >
-                      {selectedDifficulty}
+                      {t(`diff.${selectedDifficulty.toLowerCase()}` as any) || selectedDifficulty}
                     </Text>
                   </View>
                   <Text style={styles.cluesText}>
@@ -399,10 +454,10 @@ export function DailyChallengesScreen() {
               {isSelectedCompleted ? (
                 <View style={styles.statusCompletedBox}>
                   <Text style={styles.statusCompletedText}>
-                    👑 Solved in {formatDuration(selectedProgressItem?.timeSec)}
+                    👑 {t('daily.completed')} · {formatDuration(selectedProgressItem?.timeSec)}
                     {selectedProgressItem?.mistakes !== undefined
                       ? ` · ${selectedProgressItem.mistakes} mistakes`
-                      : ''}
+                      : ""}
                   </Text>
                 </View>
               ) : isFutureSelected ? (
@@ -441,18 +496,18 @@ export function DailyChallengesScreen() {
               <View style={styles.btnContentRow}>
                 <RotateCcw size={18} color="#FFFFFF" />
                 <Text style={styles.playBtnText}>
-                  Play Again ({formatDuration(selectedProgressItem?.timeSec)})
+                  {t('daily.completed')} ({formatDuration(selectedProgressItem?.timeSec)})
                 </Text>
               </View>
             ) : isTodaySelected ? (
               <View style={styles.btnContentRow}>
                 <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.playBtnText}>Play Today's Challenge</Text>
+                <Text style={styles.playBtnText}>{t('daily.play')}</Text>
               </View>
             ) : (
               <View style={styles.btnContentRow}>
                 <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.playBtnText}>Catch Up & Play</Text>
+                <Text style={styles.playBtnText}>{t('daily.play')}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -465,164 +520,162 @@ export function DailyChallengesScreen() {
 const styles = StyleSheet.create({
   heroBanner: {
     paddingBottom: 10,
-    paddingHorizontal: 16,
-    overflow: 'hidden',
+    paddingHorizontal: 15,
+    overflow: "hidden",
   },
   heroHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingTop: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
   },
   heroTitle: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '800',
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "800",
     letterSpacing: 0.3,
   },
-  streakPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  streakText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
   heroContentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 30,
   },
   navArrow: {
     width: 38,
     height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 999,
   },
   trophyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  trophyGlow: {
-    position: 'absolute',
-    width: 90,
-    height: 90,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  trophyAnimWrapper: {
+    width: 94,
+    height: 94,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // trophyGlow: {
+  //   position: "absolute",
+  //   width: 94,
+  //   height: 94,
+  //   borderRadius: 999,
+  //   backgroundColor: "rgba(255, 255, 255, 0.12)",
+  // },
+  trophyLottie: {
+    width: 230,
+    height: 230,
   },
   trophyTitleText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
-    marginTop: 4,
+    color: "#FFFFFF",
+    fontSize: 16,
+    textAlign: "center",
+    fontWeight: "800",
+    marginTop: 20,
     letterSpacing: 0.2,
   },
   trophySubtitleText: {
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 1,
+    color: "rgba(255, 255, 255, 0.85)",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: -2,
   },
   milestoneSection: {
     marginTop: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    backgroundColor: "rgba(0, 0, 0, 0.12)",
     borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 15,
+    paddingVertical: 17,
   },
   milestoneLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 4,
+    // paddingHorizontal: 4,
   },
   milestoneProgressLabel: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   milestoneBadgesRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   badgeTag: {
-    color: 'rgba(255, 255, 255, 0.65)',
+    color: "rgba(255, 255, 255, 0.65)",
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   badgeTagActive: {
-    color: '#FEF08A',
-    fontWeight: '800',
+    color: "#FEF08A",
+    fontWeight: "800",
   },
   progressBarTrack: {
-    height: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    height: 7,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 999,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressBarFill: {
-    height: '100%',
-    backgroundColor: '#FEF08A',
+    height: "100%",
+    backgroundColor: "#FEF08A",
     borderRadius: 999,
   },
   calendarCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     paddingHorizontal: 16,
     paddingTop: 8,
   },
   monthHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 6,
   },
   monthNameText: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#1C1F2E',
+    fontWeight: "800",
+    color: "#1C1F2E",
   },
   completedCountBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: "#FEF3C7",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: "#FDE68A",
   },
   completedCountText: {
     fontSize: 12,
-    fontWeight: '800',
-    color: '#92400E',
+    fontWeight: "800",
+    color: "#92400E",
   },
   dayLabelsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 4,
   },
   dayLabel: {
     width: (SCREEN_WIDTH - 32) / 7,
-    textAlign: 'center',
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#9CA3AF',
+    textAlign: "center",
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#9CA3AF",
   },
   weekRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   emptyCell: {
     width: (SCREEN_WIDTH - 32) / 7,
@@ -631,181 +684,181 @@ const styles = StyleSheet.create({
   dayCell: {
     width: (SCREEN_WIDTH - 32) / 7,
     height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 12,
   },
   dayCellToday: {
     borderWidth: 2,
-    borderColor: '#2563EB',
-    backgroundColor: 'rgba(37, 99, 235, 0.05)',
+    borderColor: "#2563EB",
+    backgroundColor: "rgba(37, 99, 235, 0.05)",
   },
   dayCellSelected: {
-    backgroundColor: '#2563EB',
+    backgroundColor: "#2563EB",
   },
   dayCellCompleted: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: "#FEF3C7",
     borderWidth: 1,
-    borderColor: '#FCD34D',
+    borderColor: "#FCD34D",
   },
   dayText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#1C1F2E',
+    fontWeight: "600",
+    color: "#1C1F2E",
   },
   dayTextToday: {
-    color: '#2563EB',
-    fontWeight: '800',
+    color: "#2563EB",
+    fontWeight: "800",
   },
   dayTextSelected: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    color: "#FFFFFF",
+    fontWeight: "800",
   },
   dayTextFuture: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#D1D5DB',
+    fontWeight: "500",
+    color: "#D1D5DB",
   },
   futureWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 1,
   },
   crownWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   todayDot: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 3,
-    width: 4,
-    height: 4,
+    width: 7,
+    height: 7,
     borderRadius: 999,
-    backgroundColor: '#2563EB',
+    backgroundColor: "#2563EB",
   },
   detailsCard: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
     borderRadius: 14,
     padding: 10,
     marginTop: 8,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: "#E2E8F0",
   },
   detailsHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   detailsDateTitle: {
     fontSize: 15,
-    fontWeight: '800',
-    color: '#1C1F2E',
+    fontWeight: "800",
+    color: "#1C1F2E",
     marginBottom: 4,
   },
   detailsMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   diffBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 999,
   },
   diffIndicatorDot: {
-    width: 5,
-    height: 5,
+    width: 7,
+    height: 7,
     borderRadius: 999,
   },
   diffBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cluesText: {
     fontSize: 11,
-    color: '#64748B',
-    fontWeight: '500',
+    color: "#64748B",
+    fontWeight: "500",
   },
   todayPill: {
-    backgroundColor: '#2563EB',
+    backgroundColor: "#2563EB",
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 4,
   },
   todayPillText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 9,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   statusRow: {
     marginTop: 6,
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: "#E2E8F0",
   },
   statusCompletedBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   statusCompletedText: {
-    color: '#D97706',
-    fontWeight: '700',
+    color: "#D97706",
+    fontWeight: "700",
     fontSize: 12,
   },
   statusActiveText: {
-    color: '#2563EB',
-    fontWeight: '600',
+    color: "#2563EB",
+    fontWeight: "600",
     fontSize: 12,
   },
   statusMissedText: {
-    color: '#475569',
-    fontWeight: '500',
+    color: "#475569",
+    fontWeight: "500",
     fontSize: 12,
   },
   statusFutureText: {
-    color: '#94A3B8',
-    fontWeight: '500',
+    color: "#94A3B8",
+    fontWeight: "500",
     fontSize: 12,
   },
   playBtn: {
-    backgroundColor: '#2563EB',
+    backgroundColor: "#2563EB",
     borderRadius: 14,
     paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#2563EB',
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#2563EB",
     shadowOpacity: 0.3,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
   },
   playBtnCompleted: {
-    backgroundColor: '#0F172A',
-    shadowColor: '#0F172A',
+    backgroundColor: "#0F172A",
+    shadowColor: "#0F172A",
   },
   playBtnDisabled: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: "#F1F5F9",
     shadowOpacity: 0,
     elevation: 0,
   },
   btnContentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   playBtnText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 0.2,
   },
   playBtnTextDisabled: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });

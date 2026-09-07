@@ -75,6 +75,28 @@ export const getDailyChallengeItem = (
   return item;
 };
 
+export interface GameSettings {
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+  highlightDuplicates: boolean;
+  highlightSameNumbers: boolean;
+  autoCheckMistakes: boolean;
+  highlightAreas: boolean;
+  timerVisible: boolean;
+  language: string;
+}
+
+export const defaultGameSettings: GameSettings = {
+  soundEnabled: true,
+  vibrationEnabled: true,
+  highlightDuplicates: true,
+  highlightSameNumbers: true,
+  autoCheckMistakes: true,
+  highlightAreas: true,
+  timerVisible: true,
+  language: 'en',
+};
+
 type GameState = {
   board: CellState[];
   solution: number[]; // Added to store the correct answer
@@ -88,6 +110,7 @@ type GameState = {
   history: CellState[][];
   screen: 'home' | 'playing';
   difficulty: Difficulty;
+  settings: GameSettings;
 
   // Real Persistent Stats
   difficultyStats: Record<string, DifficultyStatsRecord>;
@@ -115,6 +138,8 @@ type GameState = {
   secondChance: () => void;
   startNewGame: (difficulty: Difficulty) => void;
   fetchRemoteConfig: () => Promise<void>;
+  updateSetting: <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => void;
+  resetAllStats: () => void;
   
   // Daily Challenges
   dailyChallengesProgress: Record<string, DailyProgressItem | boolean>;
@@ -162,6 +187,7 @@ export const useGameStore = create<GameState>()(
       history: [],
       screen: 'home',
       difficulty: 'Easy' as Difficulty,
+      settings: defaultGameSettings,
 
       // Real Persistent Stats
       difficultyStats: initialDifficultyStats,
@@ -241,6 +267,24 @@ export const useGameStore = create<GameState>()(
 
       setScreen: (screen) => set({ screen }),
       setPremium: (status) => set({ isPremium: status }),
+
+      updateSetting: (key, value) =>
+        set((state) => ({
+          settings: {
+            ...(state.settings ?? defaultGameSettings),
+            [key]: value,
+          },
+        })),
+
+      resetAllStats: () =>
+        set({
+          totalSolved: 0,
+          totalPlayed: 0,
+          bestTimeSec: null,
+          streak: 0,
+          todaySolved: 0,
+          difficultyStats: initialDifficultyStats,
+        }),
 
       fetchRemoteConfig: async () => {
         try {

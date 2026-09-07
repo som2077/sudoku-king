@@ -10,10 +10,12 @@ import {
 import { Text } from "../components/Text";
 import LottieView from "lottie-react-native";
 import Svg, { Path } from "react-native-svg";
-import { Trophy, ChevronLeft, ChevronRight } from "lucide-react-native";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { Image } from "expo-image";
 import { useGameStore, isDailyChallengeCompleted } from "../store/useGameStore";
 import { StreakFlame } from "../components/StreakFlame";
 import { CARD_SHADOW } from "../components/dashboard/StatsCards";
+import { useTranslation } from "../i18n";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const H_PAD = 20;
@@ -54,15 +56,15 @@ function StatCard({ children }: { children: React.ReactNode }) {
       style={{
         flex: 1,
         backgroundColor: T.surface,
-        borderRadius: 14,
-        borderWidth: 1,
+        borderRadius: 15,
+        borderWidth: 0.7,
         borderColor: T.border,
         padding: 12,
-        shadowColor: "#000",
-        shadowOpacity: 0.03,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 1,
+        // shadowColor: "#000",
+        // shadowOpacity: 0.03,
+        // shadowRadius: 6,
+        // shadowOffset: { width: 0, height: 2 },
+        // elevation: 1,
       }}
     >
       {children}
@@ -77,7 +79,9 @@ interface AwardsScreenProps {
 }
 
 export function AwardsScreen({ onBack }: AwardsScreenProps) {
-  const { streak = 0, dailyChallengesProgress } = useGameStore();
+  const { t } = useTranslation();
+  const { streak = 0, dailyChallengesProgress, settings } = useGameStore();
+  const language = settings?.language || 'en';
   const currentStreak = streak || 0;
 
   useEffect(() => {
@@ -122,7 +126,9 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
   }, [dailyChallengesProgress, currentStreak]);
 
   const monthsData = useMemo(() => {
-    return MONTH_NAMES.map((name, monthIdx) => {
+    return Array.from({ length: 12 }, (_, monthIdx) => {
+      const monthDate = new Date(selectedYear, monthIdx, 1);
+      const name = monthDate.toLocaleDateString(language, { month: "long" });
       const totalDays = new Date(selectedYear, monthIdx + 1, 0).getDate();
       let count = 0;
       const mStr = String(monthIdx + 1).padStart(2, "0");
@@ -179,7 +185,7 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
           >
             <ChevronLeft size={22} color="#1C1F2E" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Daily Streak</Text>
+          <Text style={styles.headerTitle}>{t('awards.title')}</Text>
         </View>
 
         <View style={styles.streakPill}>
@@ -190,14 +196,14 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 1 }}
       >
         {/* ── Hero Stats ── */}
         <View
           style={{
             paddingHorizontal: H_PAD,
             marginTop: 20,
-            marginBottom: 16,
+            marginBottom: 10,
           }}
         >
           {/* Lotties row */}
@@ -315,35 +321,52 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
               <View
                 style={{
                   flexDirection: "row",
+                  justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 8,
-                  gap: 5,
+                  marginBottom: 10,
                 }}
               >
-                <Svg width={16} height={16} viewBox="0 0 100 100">
-                  <Path
-                    d="M50 5 L95 28 L95 72 L50 95 L5 72 L5 28 Z"
-                    fill="#2D2A3D"
-                    stroke="#D4AF37"
-                    strokeWidth={4}
-                  />
-                </Svg>
-                <Text
+                <View
                   style={{
-                    fontSize: 13,
-                    fontWeight: "bold",
-                    color: T.ink,
-                    letterSpacing: -0.2,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
                   }}
                 >
-                  {earnedCount}/12 Badges
+                  <Svg width={16} height={16} viewBox="0 0 100 100">
+                    <Path
+                      d="M50 5 L95 28 L95 72 L50 95 L5 72 L5 28 Z"
+                      fill="#232232"
+                      stroke="#D4AF37"
+                      strokeWidth={6}
+                    />
+                  </Svg>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      color: "#1C1F2E",
+                    }}
+                  >
+                    Badges
+                  </Text>
+                </View>
+
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    color: "#1C1F2E",
+                  }}
+                >
+                  {earnedCount}/12
                 </Text>
               </View>
 
               {/* Progress bar */}
               <View
                 style={{
-                  height: 6,
+                  height: 7,
                   backgroundColor: "#EDEDF2",
                   borderRadius: 100,
                   overflow: "hidden",
@@ -353,7 +376,7 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
                   style={{
                     width: `${Math.max(earnedPct * 100, earnedPct > 0 ? 5 : 0)}%`,
                     height: "100%",
-                    backgroundColor: T.accent,
+                    backgroundColor: "#232232",
                     borderRadius: 100,
                   }}
                 />
@@ -408,39 +431,27 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
                   isBronze,
                 } = month;
 
-                let iconColor = "#9CA3AF";
-                let iconFill = "#E5E7EB";
                 let iconBg = "#F3F4F6";
                 let statusText = `${count}/${totalDays}`;
                 let statusColor = "#9CA3AF";
 
                 if (isGold) {
-                  iconColor = "#D97706";
-                  iconFill = "#F59E0B";
                   iconBg = "#FEF3C7";
                   statusText = "Gold";
                   statusColor = "#D97706";
                 } else if (isSilver) {
-                  iconColor = "#64748B";
-                  iconFill = "#94A3B8";
                   iconBg = "#F1F5F9";
                   statusText = "Silver";
                   statusColor = "#64748B";
                 } else if (isBronze) {
-                  iconColor = "#B45309";
-                  iconFill = "#D97706";
                   iconBg = "#FFEDD5";
                   statusText = "Bronze";
                   statusColor = "#B45309";
                 } else if (isCurrentMonth) {
-                  iconColor = "#3B82F6";
-                  iconFill = "#DBEAFE";
                   iconBg = "#EFF6FF";
                   statusText = `${count}/${totalDays}`;
                   statusColor = "#3B82F6";
                 } else if (isFutureMonth) {
-                  iconColor = "#D1D5DB";
-                  iconFill = "#F3F4F6";
                   iconBg = "#F9FAFB";
                   statusText = "Upcoming";
                   statusColor = "#9CA3AF";
@@ -460,11 +471,14 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
                         { backgroundColor: iconBg },
                       ]}
                     >
-                      <Trophy
-                        size={26}
-                        color={iconColor}
-                        fill={iconFill}
-                        strokeWidth={1.3}
+                      <Image
+                        source={require("../../assets/sdf.svg")}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          opacity: isFutureMonth ? 0.35 : 1,
+                        }}
+                        contentFit="contain"
                       />
                     </View>
                     <Text
@@ -501,7 +515,7 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
   },
   backButton: {
     width: 40,
@@ -512,11 +526,11 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 1 },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 2,
+    // elevation: 2,
   },
   headerTitle: {
     fontSize: 20,
@@ -532,11 +546,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
   },
   streakPillText: {
     color: "#1C1F2E",
@@ -546,6 +555,7 @@ const styles = StyleSheet.create({
   },
   card: {
     ...CARD_SHADOW,
+    borderRadius: 25,
     padding: 18,
   },
   cardHeader: {
@@ -572,9 +582,11 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 4,
     paddingVertical: 3,
+    marginRight: 4,
   },
   yearArrow: {
-    padding: 4,
+    padding: 5,
+    // marginRight: 4,
   },
   yearText: {
     fontSize: 13,
@@ -586,7 +598,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: 14,
+    rowGap: 5,
   },
   monthItem: {
     width: "31%",
@@ -600,18 +612,18 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   monthIconBubble: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 58,
+    height: 58,
+    borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 6,
+    marginBottom: 2,
   },
   monthName: {
     fontSize: 13,
     fontWeight: "600",
     color: "#4B5563",
-    marginBottom: 2,
+    // marginBottom: 2,
   },
   monthNameCurrent: {
     color: "#1C1F2E",

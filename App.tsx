@@ -1,22 +1,21 @@
 import { StatusBar } from 'expo-status-bar';
 import { Text } from './src/components/Text';
-import { View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useState, useRef } from 'react';
 import { StatusBar as NativeStatusBar } from 'react-native';
 import { getAnalytics, logEvent } from '@react-native-firebase/analytics';
 import Purchases from 'react-native-purchases';
 import RevenueCatUI from 'react-native-purchases-ui';
-import mobileAds, { BannerAd, BannerAdSize, TestIds, RewardedAd, RewardedAdEventType, AdEventType } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import Board from './src/components/Board';
 import Keypad from './src/components/Keypad';
 import TopBar from './src/components/TopBar';
 import HomeScreen from './src/screens/HomeScreen';
 import { useGameStore } from './src/store/useGameStore';
-import { AppGradientBackground } from './src/components/AppGradientBackground';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { getBannerAdUnitId, getRewardedAdUnitId, getRevenueCatApiKey } from './src/utils/secrets';
-
+import { getRevenueCatApiKey } from './src/utils/secrets';
 import {
   useFonts,
   BricolageGrotesque_400Regular,
@@ -25,14 +24,11 @@ import {
   BricolageGrotesque_700Bold,
   BricolageGrotesque_800ExtraBold,
 } from '@expo-google-fonts/bricolage-grotesque';
-
-// Initialize Ads
-mobileAds().initialize().then(() => console.log('🔥 [AdMob] Initialized'));
-
-const bannerAdUnitId = __DEV__ ? TestIds.BANNER : getBannerAdUnitId();
-const rewardedAdUnitId = __DEV__ ? TestIds.REWARDED : getRewardedAdUnitId();
-
-const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId);
+import {
+  BANNER_AD_UNIT_ID,
+  showRewardedAd as adManagerShowRewarded,
+  showInterstitialAd as adManagerShowInterstitial,
+} from './src/services/adManager';
 
 export default function App() {
   const {
@@ -47,9 +43,7 @@ export default function App() {
   const isGameOver = mistakes >= 3;
   const isGameWon = board.length > 0 && board.every(cell => cell.value !== null && !cell.isError) && mistakes < 3;
 
-  const [rewardedLoaded, setRewardedLoaded] = useState(false);
-  const adCallbackRef = useRef<(() => void) | null>(null);
-  const [adShowing, setAdShowing] = useState(false);
+  const [bannerLoaded, setBannerLoaded] = useState(false);
 
   const [fontsLoaded] = useFonts({
     BricolageGrotesque_400Regular,
@@ -60,8 +54,13 @@ export default function App() {
   });
 
   useEffect(() => {
-    NativeStatusBar.setBarStyle('dark-content');
-    NativeStatusBar.setBackgroundColor('#F9F9FB', true);
+    if (screen === 'playing') {
+      NativeStatusBar.setBarStyle('light-content');
+    } else {
+      NativeStatusBar.setBarStyle('dark-content');
+    }
+    NativeStatusBar.setBackgroundColor('transparent', true);
+    NativeStatusBar.setTranslucent(true);
 
     fetchRemoteConfig();
 
@@ -70,6 +69,7 @@ export default function App() {
       Purchases.configure({ apiKey: rcKey });
     } else {
       console.log("⚠️ [RevenueCat] Skipping initialization: Real API key not set yet.");
+      setPremium(false);
     }
 
     const checkPremiumStatus = async () => {
@@ -87,70 +87,19 @@ export default function App() {
     checkPremiumStatus();
   }, []);
 
-  // AdMob Rewarded Listener
-  useEffect(() => {
-    if (isPremium) return;
-    const unsubscribeLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
-      setRewardedLoaded(true);
-    });
-    const unsubscribeEarned = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
-      console.log('User earned reward of ', reward);
-      if (adCallbackRef.current) {
-        adCallbackRef.current();
-        adCallbackRef.current = null;
-      }
-    });
-    const unsubscribeClosed = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
-      setRewardedLoaded(false);
-      setAdShowing(false);
-      rewarded.load(); // preload next
-    });
-    const unsubscribeError = rewarded.addAdEventListener(AdEventType.ERROR, (error) => {
-      console.log('⚠️ [AdMob Rewarded Error]:', error);
-      setRewardedLoaded(false);
-      setAdShowing(false);
-      adCallbackRef.current = null;
-      rewarded.load();
-    });
-
-    rewarded.load();
-
-    return () => {
-      unsubscribeLoaded();
-      unsubscribeEarned();
-      unsubscribeClosed();
-      unsubscribeError();
-    };
-  }, [isPremium]);
-
-  // Safety watchdog to prevent permanent overlay hang
-  useEffect(() => {
-    if (!adShowing) return;
-    const timerId = setTimeout(() => {
-      setAdShowing(false);
-      adCallbackRef.current = null;
-      Alert.alert('Ad Timed Out', 'The ad took too long to load. Please try again.');
-    }, 8000);
-    return () => clearTimeout(timerId);
-  }, [adShowing]);
-
   const showRewardedAd = (onReward: () => void) => {
-    if (isPremium) {
-      onReward();
-      return;
-    }
-    if (rewardedLoaded) {
-      adCallbackRef.current = onReward;
-      setAdShowing(true);
-      rewarded.show().catch((err) => {
-        console.log('⚠️ [AdMob Show Error]:', err);
-        setAdShowing(false);
-        adCallbackRef.current = null;
-        Alert.alert('Ad Error', 'Failed to display the ad. Please try again.');
-      });
+    adManagerShowRewarded(
+      onReward,
+      (errMsg) => Alert.alert('Ad Notice', errMsg),
+      isPremium,
+    );
+  };
+
+  const handleBackToHome = () => {
+    if (isGameWon) {
+      adManagerShowInterstitial(() => setScreen('home'), isPremium);
     } else {
-      Alert.alert('Ad not ready', 'Please wait a moment for the video to load.');
-      rewarded.load();
+      setScreen('home');
     }
   };
 
@@ -209,6 +158,15 @@ export default function App() {
   }, [isGameWon, isGameOver]);
 
   useEffect(() => {
+    if (screen === 'playing') {
+      const isBoardEmpty = !board || board.length !== 81 || board.every((c) => c.value === null);
+      if (isBoardEmpty) {
+        startNewGame(difficulty || 'Medium');
+      }
+    }
+  }, [screen, board, difficulty, startNewGame]);
+
+  useEffect(() => {
     const analytics = getAnalytics();
     if (isGameWon && !recordedWinRef.current) {
       recordedWinRef.current = true;
@@ -254,146 +212,183 @@ export default function App() {
           setPremium={setPremium}
         />
       ) : (
-        <AppGradientBackground>
-          <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <View style={{ flex: 1, alignItems: 'center' }}>
+        <View style={{ flex: 1, backgroundColor: '#1E3A8A' }}>
+          <LinearGradient
+            colors={['#1E3A8A', '#2563EB', '#3B82F6']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+            <TopBar showRewardedAd={showRewardedAd} />
 
-              <TopBar showRewardedAd={showRewardedAd} />
-            <Board />
-            <Keypad showRewardedAd={showRewardedAd} />
+            {/* ── White Sheet Container: Board, Keypad & Banner Ad ── */}
+            <View style={styles.playingWhiteSheet}>
+              <Board />
+              <Keypad showRewardedAd={showRewardedAd} />
 
-            {/* ── Win / Game Over Modal ── */}
-            {(isGameOver || isGameWon) && (
-              <View style={{
-                position: 'absolute', inset: 0, top: 0, left: 0, right: 0, bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.6)',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 50,
-              }}>
-                <View style={{
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: 28,
-                  padding: 32,
-                  alignItems: 'center',
-                  width: '82%',
-                  shadowColor: '#000',
-                  shadowOpacity: 0.2,
-                  shadowRadius: 24,
-                  shadowOffset: { width: 0, height: 10 },
-                  elevation: 12,
-                }}>
-                  {/* Emoji circle */}
-                  <View style={{
-                    width: 80, height: 80, borderRadius: 999,
-                    backgroundColor: isGameWon ? (currentDailyChallenge ? '#FEF3C7' : '#DCFCE7') : '#FEE2E2',
-                    alignItems: 'center', justifyContent: 'center',
-                    marginBottom: 16,
-                  }}>
-                    <Text style={{ fontSize: 40 }}>
-                      {isGameWon ? (currentDailyChallenge ? '👑' : '🏆') : '💀'}
-                    </Text>
-                  </View>
-
-                  <Text style={{
-                    fontSize: 24, fontWeight: '800', color: '#1C1F2E', marginBottom: 6, textAlign: 'center',
-                  }}>
-                    {isGameWon
-                      ? (currentDailyChallenge ? 'Daily Challenge Solved!' : 'You Win!')
-                      : 'Game Over'}
-                  </Text>
-                  <Text style={{
-                    fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 28,
-                  }}>
-                    {isGameWon
-                      ? (currentDailyChallenge
-                          ? `You solved ${currentDailyChallenge} in ${formatWinTime(timer)}! Crown earned! 🎉`
-                          : 'Excellent job solving this puzzle! 🎉')
-                      : 'You made 3 mistakes. Better luck next time!'}
-                  </Text>
-
-                  {/* Second Chance (only on game over) */}
-                  {isGameOver && (
-                    <TouchableOpacity
-                      onPress={() => showRewardedAd(() => secondChance())}
-                      style={{
-                        backgroundColor: '#3B82F6',
-                        borderRadius: 999,
-                        paddingVertical: 14,
-                        width: '100%',
-                        alignItems: 'center',
-                        marginBottom: 10,
-                      }}
-                    >
-                      <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 16 }}>
-                        Second Chance {isPremium ? '' : '📺'}
+              {/* ── Banner Ad Slot Below Keypad ── */}
+              {!isPremium && (
+                <View style={styles.bannerAdSlot}>
+                  <BannerAd
+                    unitId={BANNER_AD_UNIT_ID}
+                    size={BannerAdSize.BANNER}
+                    requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+                    onAdLoaded={() => {
+                      setBannerLoaded(true);
+                      console.log('🔥 [BannerAd] Loaded successfully');
+                    }}
+                    onAdFailedToLoad={(error) => {
+                      setBannerLoaded(false);
+                      console.log('⚠️ [BannerAd] Failed to load:', error);
+                    }}
+                  />
+                  {!bannerLoaded && (
+                    <View style={styles.bannerPlaceholder}>
+                      <Text style={styles.bannerPlaceholderText}>
+                        Banner Ad (320×50)
                       </Text>
-                    </TouchableOpacity>
+                    </View>
                   )}
+                </View>
+              )}
+            </View>
+          </View>
 
-                  {/* Home / New Game */}
+          {/* ── Win / Game Over Modal ── */}
+          {(isGameOver || isGameWon) && (
+            <View style={{
+              position: 'absolute', inset: 0, top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 50,
+            }}>
+              <View style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 28,
+                padding: 32,
+                alignItems: 'center',
+                width: '82%',
+                shadowColor: '#000',
+                shadowOpacity: 0.2,
+                shadowRadius: 24,
+                shadowOffset: { width: 0, height: 10 },
+                elevation: 12,
+              }}>
+                {/* Emoji circle */}
+                <View style={{
+                  width: 80, height: 80, borderRadius: 999,
+                  backgroundColor: isGameWon ? (currentDailyChallenge ? '#FEF3C7' : '#DCFCE7') : '#FEE2E2',
+                  alignItems: 'center', justifyContent: 'center',
+                  marginBottom: 16,
+                }}>
+                  <Text style={{ fontSize: 40 }}>
+                    {isGameWon ? (currentDailyChallenge ? '👑' : '🏆') : '💀'}
+                  </Text>
+                </View>
+
+                <Text style={{
+                  fontSize: 24, fontWeight: '800', color: '#1C1F2E', marginBottom: 6, textAlign: 'center',
+                }}>
+                  {isGameWon
+                    ? (currentDailyChallenge ? 'Daily Challenge Solved!' : 'You Win!')
+                    : 'Game Over'}
+                </Text>
+                <Text style={{
+                  fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 28,
+                }}>
+                  {isGameWon
+                    ? (currentDailyChallenge
+                        ? `You solved ${currentDailyChallenge} in ${formatWinTime(timer)}! Crown earned! 🎉`
+                        : 'Excellent job solving this puzzle! 🎉')
+                    : 'You made 3 mistakes. Better luck next time!'}
+                </Text>
+
+                {/* Second Chance (only on game over) */}
+                {isGameOver && (
                   <TouchableOpacity
-                    onPress={() => setScreen('home')}
+                    onPress={() => showRewardedAd(() => secondChance())}
                     style={{
-                      backgroundColor: '#F3F4F6',
+                      backgroundColor: '#3B82F6',
                       borderRadius: 999,
                       paddingVertical: 14,
                       width: '100%',
                       alignItems: 'center',
+                      marginBottom: 10,
                     }}
                   >
-                    <Text style={{ color: '#1C1F2E', fontWeight: '700', fontSize: 16 }}>
-                      Back to Home
+                    <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 16 }}>
+                      Second Chance {isPremium ? '' : '📺'}
                     </Text>
                   </TouchableOpacity>
-                </View>
-              </View>
-            )}
+                )}
 
-            {/* AdMob Banner */}
-            {!isPremium && (
-              <View style={{
-                position: 'absolute', bottom: 0, width: '100%',
-                alignItems: 'center', justifyContent: 'center',
-                backgroundColor: '#E2E8F0', height: 70,
-              }}>
-                <BannerAd
-                  unitId={bannerAdUnitId}
-                  size={BannerAdSize.BANNER}
-                  requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-                />
-              </View>
-            )}
-
-            {/* Ad Loading Overlay */}
-            {adShowing && (
-              <View style={{
-                position: 'absolute', inset: 0, top: 0, left: 0, right: 0, bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.8)',
-                alignItems: 'center', justifyContent: 'center', zIndex: 50,
-              }}>
-                <ActivityIndicator size="large" color="#ffffff" />
-                <Text style={{ color: '#FFFFFF', marginTop: 16, fontWeight: '700', fontSize: 16 }}>
-                  Loading Ad...
-                </Text>
+                {/* Home / New Game */}
                 <TouchableOpacity
-                  onPress={() => {
-                    setAdShowing(false);
-                    adCallbackRef.current = null;
+                  onPress={handleBackToHome}
+                  style={{
+                    backgroundColor: '#F3F4F6',
+                    borderRadius: 999,
+                    paddingVertical: 14,
+                    width: '100%',
+                    alignItems: 'center',
                   }}
-                  style={{ marginTop: 20, paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20 }}
-                  activeOpacity={0.7}
                 >
-                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '600' }}>Cancel</Text>
+                  <Text style={{ color: '#1C1F2E', fontWeight: '700', fontSize: 16 }}>
+                    Back to Home
+                  </Text>
                 </TouchableOpacity>
               </View>
-            )}
+            </View>
+          )}
 
-          </View>
-        </SafeAreaView>
-      </AppGradientBackground>
+        </View>
       )}
-      <StatusBar style="dark" />
+      <StatusBar style={screen === 'playing' ? 'light' : 'dark'} />
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  playingWhiteSheet: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 8,
+  },
+  bannerAdSlot: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    minHeight: 52,
+  },
+  bannerPlaceholder: {
+    width: 320,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerPlaceholderText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#94A3B8',
+    letterSpacing: 0.3,
+  },
+});
+

@@ -1,110 +1,163 @@
-import { View, Dimensions, StyleSheet } from 'react-native';
-import Cell from './Cell';
-import { useGameStore } from '../../store/useGameStore';
-import { getRow, getCol, getBlock } from '../../utils/sudokuLogic';
+import React from "react";
+import { View, Dimensions, StyleSheet } from "react-native";
+import Cell from "./Cell";
+import { useGameStore } from "../../store/useGameStore";
+import { getRow, getCol, getBlock } from "../../utils/sudokuLogic";
 
-const screenWidth = Dimensions.get('window').width;
-const BOARD_PADDING = 8;
-const boardSize = Math.min(screenWidth - 32, 400);
-const cellSize = Math.floor((boardSize - BOARD_PADDING * 2) / 9);
-const actualGridSize = cellSize * 9;
+const screenWidth = Dimensions.get("window").width;
+const boardSize = Math.min(screenWidth - 32, 420);
 
-const BORDER_THICK = 2;
-const BORDER_THIN = 0.5;
-const COLOR_THICK = '#1C1F2E';
-const COLOR_THIN = '#D1D5DB';
+const COLOR_BORDER = "#5C6AF0"; // Modern vibrant periwinkle/indigo border
+const COLOR_THIN = "#00000030"; // Subtle lavender-gray inner divider
 
 export default function Board() {
-  const { board, selectedCell, selectCell } = useGameStore();
+  const { board, selectedCell, selectCell, settings } = useGameStore();
 
-  const renderGrid = () => {
-    const grid = [];
+  const highlightAreas = settings?.highlightAreas ?? true;
+  const highlightSameNumbers = settings?.highlightSameNumbers ?? true;
 
-    for (let i = 0; i < 81; i++) {
-      const cell = board[i];
-      const row = getRow(i);
-      const col = getCol(i);
+  if (!board || board.length !== 81) {
+    return null;
+  }
 
-      let isHighlighted = false;
-      let isSameValue = false;
-
-      if (selectedCell !== null) {
-        if (
-          getRow(i) === getRow(selectedCell) ||
-          getCol(i) === getCol(selectedCell) ||
-          getBlock(i) === getBlock(selectedCell)
-        ) {
-          isHighlighted = true;
-        }
-        const selectedVal = board[selectedCell].value;
-        if (selectedVal !== null && cell.value === selectedVal) {
-          isSameValue = true;
-        }
-      }
-
-      // ── Border logic ──────────────────────────────────────────────────────
-      const borderTop    = row % 3 === 0 ? BORDER_THICK : BORDER_THIN;
-      const borderLeft   = col % 3 === 0 ? BORDER_THICK : BORDER_THIN;
-      const borderBottom = row === 8 ? BORDER_THICK : (row % 3 === 2 ? BORDER_THICK : BORDER_THIN);
-      const borderRight  = col === 8 ? BORDER_THICK : (col % 3 === 2 ? BORDER_THICK : BORDER_THIN);
-
-      const borderTopColor    = row % 3 === 0 || row === 8 ? COLOR_THICK : COLOR_THIN;
-      const borderLeftColor   = col % 3 === 0 ? COLOR_THICK : COLOR_THIN;
-      const borderBottomColor = row % 3 === 2 ? COLOR_THICK : COLOR_THIN;
-      const borderRightColor  = col % 3 === 2 ? COLOR_THICK : COLOR_THIN;
-
-      grid.push(
-        <View
-          key={i}
-          style={{
-            width: cellSize,
-            height: cellSize,
-            borderTopWidth: borderTop,
-            borderLeftWidth: borderLeft,
-            borderBottomWidth: borderBottom,
-            borderRightWidth: borderRight,
-            borderTopColor,
-            borderLeftColor,
-            borderBottomColor,
-            borderRightColor,
-          }}
-        >
-          <Cell
-            index={i}
-            value={cell.value}
-            notes={cell.notes}
-            isSelected={selectedCell === i}
-            isLocked={cell.isLocked}
-            isError={cell.isError}
-            isHighlighted={isHighlighted}
-            isSameValue={isSameValue}
-            onPress={selectCell}
-          />
-        </View>
-      );
-    }
-    return grid;
-  };
+  const selectedVal =
+    selectedCell !== null && board[selectedCell]
+      ? board[selectedCell].value
+      : null;
 
   return (
-    <View style={styles.card}>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: actualGridSize, height: actualGridSize }}>
-        {renderGrid()}
+    <View style={styles.boardWrapper}>
+      <View style={styles.boardContainer}>
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((row) => {
+          const isThickHorizontal = row === 2 || row === 5;
+          const isNotLastRow = row < 8;
+
+          return (
+            <React.Fragment key={`row-group-${row}`}>
+              <View style={styles.row}>
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((col) => {
+                  const i = row * 9 + col;
+                  const cell = board[i];
+                  if (!cell) return null;
+
+                  let isHighlighted = false;
+                  let isSameValue = false;
+
+                  if (selectedCell !== null) {
+                    if (
+                      highlightAreas &&
+                      (row === getRow(selectedCell) ||
+                        col === getCol(selectedCell) ||
+                        getBlock(i) === getBlock(selectedCell))
+                    ) {
+                      isHighlighted = true;
+                    }
+                    if (
+                      highlightSameNumbers &&
+                      selectedVal !== null &&
+                      cell.value === selectedVal
+                    ) {
+                      isSameValue = true;
+                    }
+                  }
+
+                  const isThickVertical = col === 2 || col === 5;
+                  const isNotLastCol = col < 8;
+
+                  return (
+                    <React.Fragment key={`cell-group-${i}`}>
+                      <View style={styles.cellContainer}>
+                        <Cell
+                          index={i}
+                          value={cell.value}
+                          notes={cell.notes}
+                          isSelected={selectedCell === i}
+                          isLocked={cell.isLocked}
+                          isError={cell.isError}
+                          isHighlighted={isHighlighted}
+                          isSameValue={isSameValue}
+                          onPress={selectCell}
+                        />
+                      </View>
+                      {isNotLastCol && (
+                        <View
+                          style={[
+                            styles.verticalDivider,
+                            isThickVertical
+                              ? styles.verticalThick
+                              : styles.verticalThin,
+                          ]}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </View>
+              {isNotLastRow && (
+                <View
+                  style={[
+                    styles.horizontalDivider,
+                    isThickHorizontal
+                      ? styles.horizontalThick
+                      : styles.horizontalThin,
+                  ]}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: BOARD_PADDING,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+  boardWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  boardContainer: {
+    width: boardSize,
+    height: boardSize,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: COLOR_BORDER,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+    shadowColor: "#1E3A8A",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-    marginBottom: 16,
+    elevation: 2,
+  },
+  row: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  cellContainer: {
+    flex: 1,
+    height: "100%",
+  },
+  verticalDivider: {
+    height: "100%",
+  },
+  verticalThin: {
+    width: 1,
+    backgroundColor: COLOR_THIN,
+  },
+  verticalThick: {
+    width: 2,
+    backgroundColor: COLOR_BORDER,
+  },
+  horizontalDivider: {
+    width: "100%",
+  },
+  horizontalThin: {
+    height: 1,
+    backgroundColor: COLOR_THIN,
+  },
+  horizontalThick: {
+    height: 2,
+    backgroundColor: COLOR_BORDER,
   },
 });
