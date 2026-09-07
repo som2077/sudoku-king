@@ -226,6 +226,7 @@ export default function HomeScreen({
           onScroll={handleScroll}
           scrollEventThrottle={16}
           decelerationRate="fast"
+          scrollEnabled={!showAwards}
           style={{ flex: 1 }}
         >
           {/* ── 1. HOME TAB ── */}
@@ -400,6 +401,7 @@ export default function HomeScreen({
                         }}
                       >
                         Continue Game
+                        
                       </Text>
                       <View
                         style={{
@@ -454,7 +456,9 @@ export default function HomeScreen({
         </ScrollView>
 
         {/* Bottom Nav */}
-        <BottomNav activeTab={activeTab} setActiveTab={handleTabPress} />
+        {!showAwards && (
+          <BottomNav activeTab={activeTab} setActiveTab={handleTabPress} />
+        )}
 
         <DifficultyBottomSheet
           visible={showDifficultySheet}
