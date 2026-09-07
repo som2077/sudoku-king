@@ -1,7 +1,10 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Text } from "../ui/Text";
 import { Pressable, View } from "react-native";
-import { useGameStore, isDailyChallengeCompleted } from "../../store/useGameStore";
+import {
+  useGameStore,
+  isDailyChallengeCompleted,
+} from "../../store/useGameStore";
 
 const DAY_LABELS: readonly string[] = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -129,7 +132,10 @@ export function WeeklyCalendarStrip() {
             streakStatus = "future";
           } else {
             const dateStr = toLocalDateString(dateAtMidnight);
-            const isCompleted = isDailyChallengeCompleted(dailyChallengesProgress, dateStr);
+            const isCompleted = isDailyChallengeCompleted(
+              dailyChallengesProgress,
+              dateStr,
+            );
             streakStatus = isCompleted ? "streak" : "missed";
           }
 

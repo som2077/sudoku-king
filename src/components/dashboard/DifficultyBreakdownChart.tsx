@@ -17,7 +17,7 @@ export interface DifficultyStat {
   avgSec: number;
 }
 
-const MOCK_DIFFICULTY_STATS: DifficultyStat[] = [
+export const MOCK_DIFFICULTY_STATS: DifficultyStat[] = [
   {
     level: "Easy",
     color: "#16A34A",
@@ -88,10 +88,12 @@ const MOCK_DIFFICULTY_STATS: DifficultyStat[] = [
 
 const CARD_SHADOW = {
   backgroundColor: "#FFFFFF",
-  borderRadius: 20,
-  shadowColor: "#000",
-  shadowOpacity: 0.06,
-  elevation: 1,
+  borderRadius: 25,
+  borderWidth: 0.7,
+  borderColor: "#E5E7EB",
+  // shadowColor: "#000",
+  // shadowOpacity: 0.06,
+  // elevation: 1,
 };
 
 function formatTime(seconds: number | null): string {
@@ -107,28 +109,38 @@ function formatTime(seconds: number | null): string {
 const SIZE = 142;
 const CENTER = SIZE / 2;
 const DONUT_RADIUS = 49;
-const DONUT_STROKE = 19;
+const DONUT_STROKE = 13;
 const CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
 const R_INNER = DONUT_RADIUS - DONUT_STROKE / 2;
 const R_OUTER = DONUT_RADIUS + DONUT_STROKE / 2;
 
 export function DifficultyBreakdownChart({
   stats: overrideStats,
+  forceMock = true,
 }: {
   stats?: DifficultyStat[];
+  forceMock?: boolean;
 }) {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
-  const [showEmptyPreview, setShowEmptyPreview] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<"mock" | "live" | "empty">(
+    forceMock ? "mock" : "live",
+  );
 
   // Read real persistent stats from useGameStore
   const storeDifficultyStats = useGameStore((s) => s.difficultyStats);
   const storeTotalSolved = useGameStore((s) => s.totalSolved) || 0;
 
-  // Use overrideStats -> real store stats (if present) -> MOCK_DIFFICULTY_STATS
+  // Resolve items based on active viewMode (mock by default for UI testing)
   const items: DifficultyStat[] = useMemo(() => {
-    if (showEmptyPreview) return [];
+    if (viewMode === "empty") return [];
     if (overrideStats && overrideStats.length > 0) return overrideStats;
 
+    // In mock mode: display rich mock data across all 6 tiers
+    if (viewMode === "mock") {
+      return MOCK_DIFFICULTY_STATS;
+    }
+
+    // In live mode: read real persistent stats from game store
     if (storeTotalSolved > 0 && storeDifficultyStats) {
       const realItems = MOCK_DIFFICULTY_STATS.map((cfg) => {
         const rec = storeDifficultyStats[cfg.level] || {
@@ -152,14 +164,21 @@ export function DifficultyBreakdownChart({
       if (hasAnySolved) return realItems;
     }
 
-    // Default rich mock data for visual UI review & inspection
-    return MOCK_DIFFICULTY_STATS;
-  }, [overrideStats, storeDifficultyStats, storeTotalSolved, showEmptyPreview]);
+    // Fallback if no real stats yet in live mode
+    return [];
+  }, [overrideStats, viewMode, storeDifficultyStats, storeTotalSolved]);
 
   const totalSolved = useMemo(() => {
-    if (showEmptyPreview) return 0;
+    if (viewMode === "empty") return 0;
     return items.reduce((acc, item) => acc + item.solved, 0);
-  }, [items, showEmptyPreview]);
+  }, [items, viewMode]);
+
+  const cycleMode = () => {
+    if (viewMode === "mock") setViewMode("live");
+    else if (viewMode === "live") setViewMode("empty");
+    else setViewMode("mock");
+    setSelectedLevel(null);
+  };
 
   const hasData = totalSolved > 0;
 
@@ -213,53 +232,81 @@ export function DifficultyBreakdownChart({
   const activeStat = items.find((it) => it.level === selectedLevel) || null;
 
   return (
-    <View style={{ ...CARD_SHADOW, padding: 16, marginTop: 10 }}>
+    <View
+      style={{
+        ...CARD_SHADOW,
+        padding: 16,
+        marginTop: 10,
+        height: 328,
+        justifyContent: "space-between",
+      }}
+    >
       {/* Header */}
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 12,
+          height: 38,
         }}
       >
         <View>
-          <Text style={{ fontSize: 15, fontWeight: "bold", color: "#1C1F2E" }}>
+          <Text style={{ fontSize: 17, fontWeight: "bold", color: "#1C1F2E" }}>
             Difficulty Breakdown
           </Text>
-          {hasData && (
-            <Text style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>
-              {totalSolved} puzzles completed
-            </Text>
-          )}
+          <Text style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>
+            {hasData
+              ? `${totalSolved} puzzles completed`
+              : "0 puzzles completed"}
+          </Text>
         </View>
 
-        {/* State preview switcher (Mock Data / Empty State) */}
+        {/* State preview switcher (Mock / Live / Empty) */}
         <TouchableOpacity
-          onPress={() => {
-            setShowEmptyPreview(!showEmptyPreview);
-            setSelectedLevel(null);
-          }}
+          onPress={cycleMode}
           activeOpacity={0.7}
           style={{
             flexDirection: "row",
             alignItems: "center",
             gap: 4,
-            backgroundColor: showEmptyPreview ? "#FEE2E2" : "#F3F4F6",
+            backgroundColor:
+              viewMode === "mock"
+                ? "#EDE9FE"
+                : viewMode === "live"
+                  ? "#DCFCE7"
+                  : "#FEE2E2",
             paddingHorizontal: 8,
             paddingVertical: 3.5,
             borderRadius: 12,
           }}
         >
-          <Eye size={11} color={showEmptyPreview ? "#DC2626" : "#4B5563"} />
+          <Eye
+            size={11}
+            color={
+              viewMode === "mock"
+                ? "#6D28D9"
+                : viewMode === "live"
+                  ? "#15803D"
+                  : "#DC2626"
+            }
+          />
           <Text
             style={{
               fontSize: 10,
-              fontWeight: "600",
-              color: showEmptyPreview ? "#DC2626" : "#4B5563",
+              fontWeight: "700",
+              color:
+                viewMode === "mock"
+                  ? "#6D28D9"
+                  : viewMode === "live"
+                    ? "#15803D"
+                    : "#DC2626",
             }}
           >
-            {showEmptyPreview ? "Empty" : "Mock"}
+            {viewMode === "mock"
+              ? "Mock"
+              : viewMode === "live"
+                ? "Live"
+                : "Empty"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -270,6 +317,7 @@ export function DifficultyBreakdownChart({
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
+          height: 196,
         }}
       >
         {/* LEFT: Donut Chart */}
@@ -298,7 +346,10 @@ export function DifficultyBreakdownChart({
                       r={DONUT_RADIUS}
                       stroke={seg.color}
                       strokeWidth={isSelected ? DONUT_STROKE + 3 : DONUT_STROKE}
-                      strokeDasharray={[seg.arcLength, CIRCUMFERENCE - seg.arcLength]}
+                      strokeDasharray={[
+                        seg.arcLength,
+                        CIRCUMFERENCE - seg.arcLength,
+                      ]}
                       strokeDashoffset={-seg.offset}
                       fill="none"
                       strokeLinecap="butt"
@@ -372,7 +423,9 @@ export function DifficultyBreakdownChart({
                   >
                     {activeStat.solved}
                   </Text>
-                  <Text style={{ fontSize: 9, color: "#6B7280", fontWeight: "600" }}>
+                  <Text
+                    style={{ fontSize: 9, color: "#6B7280", fontWeight: "600" }}
+                  >
                     {totalSolved > 0
                       ? `${Math.round((activeStat.solved / totalSolved) * 100)}%`
                       : "0%"}
@@ -423,22 +476,36 @@ export function DifficultyBreakdownChart({
         </View>
 
         {/* RIGHT: All Modes (Easy, Medium, Hard, Expert, Master, Extreme) */}
-        <View style={{ flex: 1, marginLeft: 12, justifyContent: "center", gap: 5 }}>
+        <View
+          style={{
+            flex: 1,
+            marginLeft: 12,
+            justifyContent: "center",
+            gap: 5,
+            height: 196,
+          }}
+        >
           {!hasData ? (
             <View
               style={{
                 backgroundColor: "#F9FAFB",
-                borderRadius: 10,
-                padding: 10,
+                borderRadius: 12,
+                padding: 16,
                 alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+                borderStyle: "dashed",
+                height: 196,
               }}
             >
+              <Puzzle size={24} color="#9CA3AF" style={{ marginBottom: 6 }} />
               <Text
                 style={{
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: "700",
                   color: "#374151",
-                  marginBottom: 2,
+                  marginBottom: 3,
                   textAlign: "center",
                 }}
               >
@@ -446,7 +513,7 @@ export function DifficultyBreakdownChart({
               </Text>
               <Text
                 style={{
-                  fontSize: 10,
+                  fontSize: 10.5,
                   color: "#9CA3AF",
                   textAlign: "center",
                   lineHeight: 14,
@@ -477,12 +544,13 @@ export function DifficultyBreakdownChart({
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    paddingVertical: 4.5,
-                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    paddingHorizontal: 9,
                     borderRadius: 8,
                     backgroundColor: isSelected ? item.lightBg : "#F9FAFB",
                     borderWidth: 1,
                     borderColor: isSelected ? item.color : "transparent",
+                    height: 28,
                   }}
                 >
                   {/* Mode Dot & Level Name */}
@@ -490,22 +558,22 @@ export function DifficultyBreakdownChart({
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
-                      gap: 6,
+                      gap: 7,
                       flexShrink: 1,
                     }}
                   >
                     <View
                       style={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: 3.5,
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
                         backgroundColor: item.color,
                       }}
                     />
                     <Text
                       numberOfLines={1}
                       style={{
-                        fontSize: 11,
+                        fontSize: 12.5,
                         fontWeight: isSelected ? "bold" : "600",
                         color: isSelected ? item.textDark : "#1C1F2E",
                       }}
@@ -515,20 +583,26 @@ export function DifficultyBreakdownChart({
                   </View>
 
                   {/* Solved Count & Percentage Chip */}
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 5,
+                    }}
+                  >
                     <View
                       style={{
                         backgroundColor: isSelected ? "#FFFFFF" : "#E5E7EB",
-                        paddingHorizontal: 5,
-                        paddingVertical: 1,
+                        paddingHorizontal: 7,
+                        paddingVertical: 1.5,
                         borderRadius: 6,
-                        minWidth: 44,
+                        minWidth: 48,
                         alignItems: "center",
                       }}
                     >
                       <Text
                         style={{
-                          fontSize: 10,
+                          fontSize: 10.5,
                           fontWeight: "700",
                           color: isSelected ? item.textDark : "#374151",
                         }}
@@ -542,6 +616,87 @@ export function DifficultyBreakdownChart({
             })
           )}
         </View>
+      </View>
+
+      {/* Bottom Info Bar: Shows Best & Avg time when a level is selected, or hint when not */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingTop: 6,
+          borderTopWidth: 0.7,
+          borderTopColor: "#F3F4F6",
+          height: 28,
+        }}
+      >
+        {hasData ? (
+          activeStat ? (
+            <>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+              >
+                <View
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: activeStat.color,
+                  }}
+                />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: "700",
+                    color: activeStat.textDark,
+                  }}
+                >
+                  {activeStat.level}
+                </Text>
+              </View>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+              >
+                <Text style={{ fontSize: 11, color: "#6B7280" }}>
+                  Best:{" "}
+                  <Text style={{ fontWeight: "700", color: "#1C1F2E" }}>
+                    {activeStat.best}
+                  </Text>
+                </Text>
+                <Text style={{ fontSize: 11, color: "#6B7280" }}>
+                  Avg:{" "}
+                  <Text style={{ fontWeight: "700", color: "#1C1F2E" }}>
+                    {activeStat.avg}
+                  </Text>
+                </Text>
+              </View>
+            </>
+          ) : (
+            <Text
+              style={{
+                fontSize: 10.5,
+                color: "#9CA3AF",
+                fontWeight: "500",
+                textAlign: "center",
+                width: "100%",
+              }}
+            >
+              Tap any difficulty to view best & average time
+            </Text>
+          )
+        ) : (
+          <Text
+            style={{
+              fontSize: 10.5,
+              color: "#9CA3AF",
+              fontWeight: "500",
+              textAlign: "center",
+              width: "100%",
+            }}
+          >
+            Solve your first puzzle to unlock difficulty breakdown
+          </Text>
+        )}
       </View>
     </View>
   );

@@ -47,10 +47,12 @@ const MOCK_PERFORMANCE_DATA: Record<TimeTab, DayData[]> = {
 
 const CARD_SHADOW = {
   backgroundColor: "#FFFFFF",
-  borderRadius: 20,
-  shadowColor: "#000",
-  shadowOpacity: 0.06,
-  elevation: 1,
+  borderRadius: 25,
+  borderWidth: 0.7,
+  borderColor: "#E5E7EB",
+  // shadowColor: "#000",
+  // shadowOpacity: 0.06,
+  // elevation: 1,
 };
 
 function formatTime(seconds: number): string {
@@ -62,10 +64,11 @@ function formatTime(seconds: number): string {
   return `${m}:${s}`;
 }
 
-const BAR_MAX_HEIGHT = 130;
+const BAR_MAX_HEIGHT = 140;
+const CHART_AREA_HEIGHT = 175;
 
-const COLOR_WIN = "#1C1F2E"; // Deep Navy
-const COLOR_TIME = "#10B981"; // Emerald Green
+const COLOR_WIN = "#04B2F1"; // Cyan / Light Blue
+const COLOR_TIME = "#AB88EC"; // Lavender / Purple
 
 export function PerformanceChart() {
   const [activeTimeTab, setActiveTimeTab] = useState<TimeTab>("Day");
@@ -105,7 +108,15 @@ export function PerformanceChart() {
   const timeTabs: TimeTab[] = ["Day", "Week", "Month"];
 
   return (
-    <View style={{ ...CARD_SHADOW, padding: 18, marginTop: 10 }}>
+    <View
+      style={{
+        ...CARD_SHADOW,
+        padding: 15,
+        marginTop: 10,
+        height: 328,
+        justifyContent: "space-between",
+      }}
+    >
       {/* Header Row: Title & Timeframe Switcher */}
       <View
         style={{
@@ -115,7 +126,14 @@ export function PerformanceChart() {
           marginBottom: 10,
         }}
       >
-        <Text style={{ fontSize: 15, fontWeight: "bold", color: "#1C1F2E" }}>
+        <Text
+          style={{
+            fontSize: 17,
+            fontWeight: "bold",
+            color: "#1C1F2E",
+            marginLeft: 3,
+          }}
+        >
           Performance
         </Text>
 
@@ -175,11 +193,11 @@ export function PerformanceChart() {
             flexDirection: "row",
             alignItems: "center",
             gap: 4,
-            paddingHorizontal: 8,
+            paddingHorizontal: 10,
             paddingVertical: 3,
-            borderRadius: 12,
+            borderRadius: 50,
             backgroundColor:
-              metricFilter === "Both" ? "#F3F4F6" : "transparent",
+              metricFilter === "Both" ? "#F1F5F9" : "transparent",
           }}
         >
           <Text
@@ -241,7 +259,7 @@ export function PerformanceChart() {
             paddingVertical: 3,
             borderRadius: 12,
             backgroundColor:
-              metricFilter === "BestTime" ? "#ECFDF5" : "transparent",
+              metricFilter === "BestTime" ? "#F1F5F9" : "transparent",
           }}
         >
           <View
@@ -256,7 +274,7 @@ export function PerformanceChart() {
             style={{
               fontSize: 11,
               fontWeight: metricFilter === "BestTime" ? "700" : "500",
-              color: metricFilter === "BestTime" ? "#065F46" : "#64748B",
+              color: metricFilter === "BestTime" ? "#7C3AED" : "#64748B",
             }}
           >
             Best Time
@@ -270,10 +288,10 @@ export function PerformanceChart() {
           const isSelected = index === selectedDay;
           const label = DAY_LABELS[index];
 
-          const winHeight = Math.max(10, (item.winRate / 100) * BAR_MAX_HEIGHT);
+          const winHeight = Math.max(12, (item.winRate / 100) * BAR_MAX_HEIGHT);
           const timeHeight = Math.max(
-            10,
-            (item.bestSec / maxTimeSec) * BAR_MAX_HEIGHT
+            12,
+            (item.bestSec / maxTimeSec) * BAR_MAX_HEIGHT,
           );
 
           const showWin = metricFilter === "Both" || metricFilter === "WinRate";
@@ -281,7 +299,14 @@ export function PerformanceChart() {
             metricFilter === "Both" || metricFilter === "BestTime";
           const isSingle = !showWin || !showTime;
 
-          const barWidth = isSingle ? 24 : 11;
+          const barWidth = isSingle ? 35 : 20;
+
+          // Dynamic height of the bar(s) for this day so the tooltip floats right above it
+          const targetBarHeight = isSingle
+            ? showWin
+              ? winHeight
+              : timeHeight
+            : Math.max(winHeight, timeHeight);
 
           return (
             <TouchableOpacity
@@ -291,72 +316,145 @@ export function PerformanceChart() {
               accessibilityRole="button"
               accessibilityLabel={`${label}: Win Rate ${item.winRate}%, Best Time ${formatTime(item.bestSec)}`}
               accessibilityState={{ selected: isSelected }}
-              style={{ alignItems: "center", flex: 1 }}
+              style={{
+                alignItems: "center",
+                flex: 1,
+                zIndex: isSelected ? 99 : 1,
+              }}
             >
-              {/* Floating Tooltip */}
-              {isSelected ? (
-                <View
-                  style={{
-                    backgroundColor: "#1C1F2E",
-                    borderRadius: 8,
-                    paddingHorizontal: 6,
-                    paddingVertical: 3,
-                    marginBottom: 4,
-                    alignItems: "center",
-                    shadowColor: "#000",
-                    shadowOpacity: 0.15,
-                    shadowRadius: 4,
-                    elevation: 3,
-                  }}
-                >
-                  {isSingle ? (
-                    <Text
-                      style={{
-                        color: "#FFFFFF",
-                        fontSize: 9,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {showWin
-                        ? `${item.winRate}%`
-                        : formatTime(item.bestSec)}
-                    </Text>
-                  ) : (
-                    <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-                      <Text
-                        style={{
-                          color: "#FFFFFF",
-                          fontSize: 9,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {item.winRate}%
-                      </Text>
-                      <Text style={{ color: "#9CA3AF", fontSize: 8 }}>|</Text>
-                      <Text
-                        style={{
-                          color: "#6EE7B7",
-                          fontSize: 9,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {formatTime(item.bestSec)}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              ) : (
-                <View style={{ height: 22 }} />
-              )}
-
-              {/* Bars: Paired or Single */}
+              {/* Column Chart Area: Holds bars at the bottom and floating tooltip dynamically above */}
               <View
                 style={{
-                  height: BAR_MAX_HEIGHT,
+                  height: CHART_AREA_HEIGHT,
+                  width: "100%",
                   justifyContent: "flex-end",
                   alignItems: "center",
+                  position: "relative",
                 }}
               >
+                {/* Floating Tooltip directly above bar according to its height */}
+                {isSelected && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      bottom: targetBarHeight + 5,
+                      alignItems: "center",
+                      zIndex: 100,
+                    }}
+                    pointerEvents="none"
+                  >
+                    <View
+                      style={{
+                        backgroundColor: "#1C1F2E",
+                        borderRadius: 8,
+                        paddingHorizontal: 7,
+                        paddingVertical: 3.5,
+                        alignItems: "center",
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.18,
+                        shadowRadius: 4,
+                        elevation: 4,
+                      }}
+                    >
+                      {isSingle ? (
+                        <Text
+                          style={{
+                            color: "#FFFFFF",
+                            fontSize: 10,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {showWin
+                            ? `${item.winRate}%`
+                            : formatTime(item.bestSec)}
+                        </Text>
+                      ) : (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            gap: 5,
+                            alignItems: "center",
+                          }}
+                        >
+                          {/* Win Rate with Cyan Dot */}
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 3,
+                            }}
+                          >
+                            <View
+                              style={{
+                                width: 5,
+                                height: 5,
+                                borderRadius: 2.5,
+                                backgroundColor: COLOR_WIN,
+                              }}
+                            />
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 9,
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {item.winRate}%
+                            </Text>
+                          </View>
+
+                          <Text style={{ color: "#6B7280", fontSize: 8 }}>
+                            |
+                          </Text>
+
+                          {/* Best Time with Purple Dot */}
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 3,
+                            }}
+                          >
+                            <View
+                              style={{
+                                width: 5,
+                                height: 5,
+                                borderRadius: 2.5,
+                                backgroundColor: COLOR_TIME,
+                              }}
+                            />
+                            <Text
+                              style={{
+                                color: "#FFFFFF",
+                                fontSize: 9,
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {formatTime(item.bestSec)}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Downward Caret Arrow pointing down to the bar */}
+                    <View
+                      style={{
+                        width: 0,
+                        height: 0,
+                        borderLeftWidth: 4,
+                        borderRightWidth: 4,
+                        borderTopWidth: 4,
+                        borderLeftColor: "transparent",
+                        borderRightColor: "transparent",
+                        borderTopColor: "#1C1F2E",
+                      }}
+                    />
+                  </View>
+                )}
+
+                {/* Bars: Paired or Single */}
                 <View
                   style={{
                     flexDirection: "row",
@@ -372,7 +470,7 @@ export function PerformanceChart() {
                         height: winHeight,
                         borderRadius: 4,
                         backgroundColor: COLOR_WIN,
-                        opacity: isSelected ? 1 : 0.7,
+                        opacity: isSelected ? 1 : 0.65,
                       }}
                     />
                   )}
@@ -385,7 +483,7 @@ export function PerformanceChart() {
                         height: timeHeight,
                         borderRadius: 4,
                         backgroundColor: COLOR_TIME,
-                        opacity: isSelected ? 1 : 0.7,
+                        opacity: isSelected ? 1 : 0.65,
                       }}
                     />
                   )}

@@ -1,4 +1,11 @@
-export type Difficulty = 'Fast' | 'Easy' | 'Medium' | 'Hard' | 'Expert' | 'Master' | 'Extreme';
+export type Difficulty =
+  | "Fast"
+  | "Easy"
+  | "Medium"
+  | "Hard"
+  | "Expert"
+  | "Master"
+  | "Extreme";
 
 // 1D array of 81 numbers representing the board (0 for empty)
 export type Board = number[];
@@ -6,7 +13,8 @@ export type Board = number[];
 // Helper functions to get coordinates
 export const getRow = (index: number) => Math.floor(index / 9);
 export const getCol = (index: number) => index % 9;
-export const getBlock = (index: number) => Math.floor(getRow(index) / 3) * 3 + Math.floor(getCol(index) / 3);
+export const getBlock = (index: number) =>
+  Math.floor(getRow(index) / 3) * 3 + Math.floor(getCol(index) / 3);
 
 // Check if placing 'num' at 'index' is valid
 export const isValid = (board: Board, index: number, num: number): boolean => {
@@ -110,8 +118,10 @@ export const countSolutions = (board: Board, count = { value: 0 }): number => {
 
 // Seeded RNG utils
 export function cyrb128(str: string) {
-  let h1 = 1779033703, h2 = 3144134277,
-      h3 = 1013904242, h4 = 2773480762;
+  let h1 = 1779033703,
+    h2 = 3144134277,
+    h3 = 1013904242,
+    h4 = 2773480762;
   for (let i = 0, k; i < str.length; i++) {
     k = str.charCodeAt(i);
     h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
@@ -127,16 +137,18 @@ export function cyrb128(str: string) {
 }
 
 export function mulberry32(a: number) {
-  return function() {
-    var t = a += 0x6D2B79F5;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  return function () {
+    var t = (a += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 
 // Generate a fully valid random board
-export const generateFullBoard = (randomFn: () => number = Math.random): Board => {
+export const generateFullBoard = (
+  randomFn: () => number = Math.random,
+): Board => {
   const board = Array(81).fill(0);
 
   // Fill diagonal 3x3 blocks first for maximum randomness and solver speed
@@ -157,7 +169,10 @@ export const generateFullBoard = (randomFn: () => number = Math.random): Board =
 };
 
 // Generate a playable puzzle with true difficulty-scaled givens
-export const generatePuzzle = (difficulty: Difficulty, seed?: string): { puzzle: Board; solution: Board } => {
+export const generatePuzzle = (
+  difficulty: Difficulty,
+  seed?: string,
+): { puzzle: Board; solution: Board } => {
   const randomFn = seed ? mulberry32(cyrb128(seed)) : Math.random;
   const solution = generateFullBoard(randomFn);
   const puzzle = [...solution];
@@ -172,14 +187,30 @@ export const generatePuzzle = (difficulty: Difficulty, seed?: string): { puzzle:
   // Extreme: ~21 givens (dig 60)
   let holesToDig = 41;
   switch (difficulty) {
-    case 'Fast': holesToDig = 36; break;
-    case 'Easy': holesToDig = 41; break;
-    case 'Medium': holesToDig = 47; break;
-    case 'Hard': holesToDig = 52; break;
-    case 'Expert': holesToDig = 56; break;
-    case 'Master': holesToDig = 58; break;
-    case 'Extreme': holesToDig = 60; break;
-    default: holesToDig = 41; break;
+    case "Fast":
+      holesToDig = 36;
+      break;
+    case "Easy":
+      holesToDig = 41;
+      break;
+    case "Medium":
+      holesToDig = 47;
+      break;
+    case "Hard":
+      holesToDig = 52;
+      break;
+    case "Expert":
+      holesToDig = 56;
+      break;
+    case "Master":
+      holesToDig = 58;
+      break;
+    case "Extreme":
+      holesToDig = 60;
+      break;
+    default:
+      holesToDig = 41;
+      break;
   }
 
   // Multi-pass digging to ensure high difficulty targets are properly reached

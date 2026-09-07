@@ -1,12 +1,17 @@
 import React from "react";
 import { Text } from "../components/Text";
-import { View, TouchableOpacity, ScrollView, useWindowDimensions } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  ScrollView,
+  useWindowDimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Home, Calendar, Settings, Play, Flame } from "lucide-react-native";
+import { Home, Calendar, Settings, Play } from "lucide-react-native";
 import { Image } from "expo-image";
+import { StreakFlame } from "../components/StreakFlame";
 import { useGameStore } from "../store/useGameStore";
 import { useShallow } from "zustand/react/shallow";
-
 import { WeeklyCalendarStrip } from "../components/WeeklyCalendarStrip";
 import { DashboardPager } from "../components/DashboardPager";
 import { AppGradientBackground } from "../components/AppGradientBackground";
@@ -154,7 +159,7 @@ export default function HomeScreen({
       board: s.board,
       mistakes: s.mistakes,
       isGameCompleted: s.isGameCompleted,
-    }))
+    })),
   );
 
   const formatBestTime = (sec: number | null) => {
@@ -231,7 +236,7 @@ export default function HomeScreen({
               <AwardsScreen onBack={() => setShowAwards(false)} />
             ) : (
               <ScrollView
-                style={{ flex: 1, paddingHorizontal: 16 }}
+                style={{ flex: 1, paddingHorizontal: 13 }}
                 showsVerticalScrollIndicator={false}
               >
                 {/* ── Header ── */}
@@ -240,8 +245,8 @@ export default function HomeScreen({
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginTop: 16,
-                    marginBottom: 16,
+                    marginTop: 10,
+                    marginBottom: 10,
                     marginHorizontal: 5,
                   }}
                 >
@@ -259,22 +264,23 @@ export default function HomeScreen({
                       borderWidth: 1,
                       borderColor: "#E5E7EB",
                       borderRadius: 999,
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      shadowColor: "#000",
-                      shadowOpacity: 0.06,
-                      shadowRadius: 4,
-                      shadowOffset: { width: 0, height: 2 },
-                      elevation: 2,
+                      paddingHorizontal: 15,
+                      paddingVertical: 5,
+                      marginRight: 5,
+                      // shadowColor: "#000",
+                      // shadowOpacity: 0.06,
+                      // shadowRadius: 4,
+                      // shadowOffset: { width: 0, height: 2 },
+                      // elevation: 2,
                     }}
                   >
-                    <Flame size={16} color="#F97316" />
+                    <StreakFlame size={22} />
                     <Text
                       style={{
                         color: "#374151",
                         fontWeight: "bold",
-                        marginLeft: 4,
-                        fontSize: 13,
+                        marginLeft: 7,
+                        fontSize: 15,
                       }}
                     >
                       {streak}
@@ -283,7 +289,7 @@ export default function HomeScreen({
                 </View>
 
                 {/* ── Dashboard: Calendar + Pager ── */}
-                <View style={{ marginBottom: 16 }}>
+                <View style={{ marginBottom: 7 }}>
                   {/* Calendar Strip */}
                   <WeeklyCalendarStrip />
 
@@ -297,13 +303,13 @@ export default function HomeScreen({
                 </View>
 
                 {/* ── Action Buttons ── */}
-                <View style={{ gap: 12 }}>
+                <View style={{ gap: 10 }}>
                   {/* ── New Game (Primary — Top) ── */}
                   <TouchableOpacity
                     onPress={() => setShowDifficultySheet(true)}
                     style={{
                       backgroundColor: "#3B82F6",
-                      borderRadius: 18,
+                      borderRadius: 20,
                       paddingVertical: 18,
                       paddingHorizontal: 24,
                       flexDirection: "row",
@@ -313,7 +319,7 @@ export default function HomeScreen({
                       shadowOpacity: 0.35,
                       shadowRadius: 12,
                       shadowOffset: { width: 0, height: 6 },
-                      elevation: 6,
+                      elevation: 5,
                     }}
                   >
                     <View>
@@ -333,7 +339,7 @@ export default function HomeScreen({
                           marginTop: 3,
                         }}
                       >
-                        <Flame size={13} color="rgba(255,255,255,0.85)" />
+                        <StreakFlame size={18} color="rgba(255,255,255,0.85)" />
                         <Text
                           style={{
                             color: "rgba(255,255,255,0.85)",
@@ -370,7 +376,7 @@ export default function HomeScreen({
                     }
                     style={{
                       backgroundColor: "#FFFFFF",
-                      borderRadius: 18,
+                      borderRadius: 20,
                       paddingVertical: 18,
                       paddingHorizontal: 24,
                       flexDirection: "row",
@@ -378,11 +384,11 @@ export default function HomeScreen({
                       justifyContent: "space-between",
                       borderWidth: 1,
                       borderColor: "#E5E7EB",
-                      shadowColor: "#000",
+                      shadowColor: "#00000040",
                       shadowOpacity: 0.06,
                       shadowRadius: 10,
                       shadowOffset: { width: 0, height: 4 },
-                      elevation: 3,
+                      elevation: 2,
                     }}
                   >
                     <View>
