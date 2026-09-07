@@ -1,8 +1,9 @@
 import React from 'react';
 import { Text } from '../ui/Text';
-import { View} from 'react-native';
+import { View } from 'react-native';
+import { useGameStore } from '../../store/useGameStore';
 
-interface LevelStat {
+export interface LevelStat {
   level: string;
   pillColor: string;
   pillTextColor: string;
@@ -11,13 +12,21 @@ interface LevelStat {
   avg: string;    // e.g. "5:10"
 }
 
-// Mock data — wire to real store later
-const LEVEL_STATS: LevelStat[] = [
-  { level: 'Easy',   pillColor: '#D9F5D6', pillTextColor: '#3A7D44', solved: 62, best: '3:21',  avg: '5:10'  },
-  { level: 'Medium', pillColor: '#FFF0DC', pillTextColor: '#B06A00', solved: 51, best: '8:45',  avg: '12:30' },
-  { level: 'Hard',   pillColor: '#FFE5E5', pillTextColor: '#C0392B', solved: 28, best: '18:02', avg: '24:15' },
-  { level: 'Expert', pillColor: '#EAE5FF', pillTextColor: '#5E35B1', solved: 6,  best: '45:10', avg: '51:00' },
+const LEVEL_CONFIGS = [
+  { level: 'Easy',    pillColor: '#D9F5D6', pillTextColor: '#3A7D44' },
+  { level: 'Medium',  pillColor: '#FFF0DC', pillTextColor: '#B06A00' },
+  { level: 'Hard',    pillColor: '#FFE5E5', pillTextColor: '#C0392B' },
+  { level: 'Expert',  pillColor: '#EAE5FF', pillTextColor: '#5E35B1' },
+  { level: 'Master',  pillColor: '#DBEAFE', pillTextColor: '#1D4ED8' },
+  { level: 'Extreme', pillColor: '#FEE2E2', pillTextColor: '#B91C1C' },
 ];
+
+function formatTime(seconds: number | null): string {
+  if (!seconds || seconds <= 0) return '--:--';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
 
 function HeaderCell({ label, alignRight = false }: { label: string; alignRight?: boolean }) {
   return (
@@ -83,7 +92,29 @@ function LevelRow({ stat }: { stat: LevelStat }) {
   );
 }
 
-export function LevelStatsTable() {
+export function LevelStatsTable({ stats: propStats }: { stats?: LevelStat[] } = {}) {
+  const difficultyStats = useGameStore((s) => s.difficultyStats);
+
+  const stats = React.useMemo(() => {
+    if (propStats && propStats.length > 0) return propStats;
+    return LEVEL_CONFIGS.map((cfg) => {
+      const rec = difficultyStats?.[cfg.level] || {
+        solved: 0,
+        played: 0,
+        bestSec: null,
+        totalSec: 0,
+      };
+      const solved = rec.solved || 0;
+      const avgSec = solved > 0 ? Math.round(rec.totalSec / solved) : 0;
+      return {
+        ...cfg,
+        solved,
+        best: formatTime(rec.bestSec),
+        avg: formatTime(avgSec),
+      };
+    });
+  }, [propStats, difficultyStats]);
+
   return (
     <View
       style={{
@@ -110,11 +141,11 @@ export function LevelStatsTable() {
       </View>
 
       {/* Data Rows */}
-      {LEVEL_STATS.map((stat, index) => (
+      {stats.map((stat, index) => (
         <View key={stat.level}>
           <LevelRow stat={stat} />
           {/* Remove bottom border on last row */}
-          {index === LEVEL_STATS.length - 1 && (
+          {index === stats.length - 1 && (
             <View style={{ marginBottom: -1 }} />
           )}
         </View>

@@ -22,11 +22,8 @@ import {
   FileText,
   Volume2,
   Vibrate,
-  Copy,
-  Sparkles,
-  AlertCircle,
-  Layers,
-  Clock,
+  Bell,
+  Crown,
   RotateCcw,
   Mail,
   X,
@@ -36,15 +33,19 @@ import {
 } from "lucide-react-native";
 import { useGameStore, GameSettings } from "../store/useGameStore";
 import { useTranslation, SUPPORTED_LANGUAGES, LanguageMeta } from "../i18n";
+import { localNotificationScheduler } from "../services/localNotificationScheduler";
+import { notificationService } from "../services/notificationService";
 
 interface SettingsScreenProps {
-  // Can add props in future if needed
+  onOpenPaywall?: () => void;
+  onRestorePurchases?: () => void;
 }
 
 type ModalType = "how_to_play" | "rules" | "privacy" | "terms" | null;
 
-export function SettingsScreen({}: SettingsScreenProps) {
+export function SettingsScreen({ onOpenPaywall, onRestorePurchases }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
+  const isPremium = useGameStore((state) => state.isPremium);
   const settings = useGameStore((state) => state.settings);
   const updateSetting = useGameStore((state) => state.updateSetting);
   const resetAllStats = useGameStore((state) => state.resetAllStats);
@@ -80,6 +81,18 @@ export function SettingsScreen({}: SettingsScreenProps) {
     updateSetting(key, val);
     if (key === "vibrationEnabled" && val) {
       Vibration.vibrate(40);
+    }
+  };
+
+  const handleNotificationToggle = async (val: boolean) => {
+    handleToggle("notificationsEnabled", val);
+    if (val) {
+      const granted = await notificationService.requestUserPermission();
+      if (granted) {
+        await localNotificationScheduler.scheduleDailyNotifications(true);
+      }
+    } else {
+      await localNotificationScheduler.cancelAllDailyNotifications();
     }
   };
 
@@ -127,6 +140,95 @@ export function SettingsScreen({}: SettingsScreenProps) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* ── VIP CARD ── */}
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: isPremium ? "#FEF9C3" : "#1E293B",
+              padding: 16,
+              borderWidth: 1,
+              borderColor: isPremium ? "#FDE047" : "#334155",
+              marginBottom: 20,
+            },
+          ]}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flex: 1,
+                marginRight: 10,
+              }}
+            >
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: isPremium ? "#FEF08A" : "#334155",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Crown size={22} color={isPremium ? "#CA8A04" : "#FBBF24"} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                    color: isPremium ? "#854D0E" : "#FFFFFF",
+                  }}
+                >
+                  {isPremium ? "Sudoku King VIP" : "Sudoku King Unlimited"}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: isPremium ? "#A16207" : "#94A3B8",
+                    marginTop: 2,
+                  }}
+                >
+                  {isPremium
+                    ? "Lifetime Ad-Free & Infinite Hints Active 👑"
+                    : "No Ads • Unlimited Hints • Lifetime"}
+                </Text>
+              </View>
+            </View>
+            {!isPremium && (
+              <TouchableOpacity
+                onPress={onOpenPaywall}
+                style={{
+                  backgroundColor: "#FBBF24",
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 12,
+                }}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={{
+                    color: "#78350F",
+                    fontWeight: "bold",
+                    fontSize: 13,
+                  }}
+                >
+                  Unlock
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
         {/* ── SECTION: LANGUAGE ── */}
         <Text style={styles.sectionHeader}>{t('settings.language')}</Text>
         <View style={styles.card}>
@@ -151,9 +253,28 @@ export function SettingsScreen({}: SettingsScreenProps) {
           </TouchableOpacity>
         </View>
 
-        {/* ── SECTION 1: GAMEPLAY PREFERENCES ── */}
-        <Text style={styles.sectionHeader}>{t('settings.gameplayPref')}</Text>
+        {/* ── SECTION 1: PREFERENCES ── */}
+        <Text style={styles.sectionHeader}>{t('settings.preferences')}</Text>
         <View style={styles.card}>
+          {/* Notifications */}
+          <View style={styles.row}>
+            <View style={[styles.iconBox, { backgroundColor: "#EEF2FF" }]}>
+              <Bell size={20} color="#4F46E5" />
+            </View>
+            <View style={styles.rowTextCol}>
+              <Text style={styles.rowTitle}>{t('settings.notifications')}</Text>
+              <Text style={styles.rowSubtitle}>{t('settings.notificationsDesc')}</Text>
+            </View>
+            <Switch
+              value={settings?.notificationsEnabled ?? true}
+              onValueChange={handleNotificationToggle}
+              trackColor={{ false: "#E5E7EB", true: "#A5B4FC" }}
+              thumbColor={settings?.notificationsEnabled ?? true ? "#4F46E5" : "#F9FAFB"}
+            />
+          </View>
+
+          <View style={styles.separator} />
+
           {/* Sound */}
           <View style={styles.row}>
             <View style={[styles.iconBox, { backgroundColor: "#EFF6FF" }]}>
@@ -187,101 +308,6 @@ export function SettingsScreen({}: SettingsScreenProps) {
               onValueChange={(val) => handleToggle("vibrationEnabled", val)}
               trackColor={{ false: "#E5E7EB", true: "#C4B5FD" }}
               thumbColor={settings?.vibrationEnabled ?? true ? "#7C3AED" : "#F9FAFB"}
-            />
-          </View>
-
-          <View style={styles.separator} />
-
-          {/* Highlight Duplicates */}
-          <View style={styles.row}>
-            <View style={[styles.iconBox, { backgroundColor: "#FEF3C7" }]}>
-              <Copy size={20} color="#D97706" />
-            </View>
-            <View style={styles.rowTextCol}>
-              <Text style={styles.rowTitle}>{t('settings.highlightDuplicates')}</Text>
-              <Text style={styles.rowSubtitle}>{t('settings.highlightDuplicatesDesc')}</Text>
-            </View>
-            <Switch
-              value={settings?.highlightDuplicates ?? true}
-              onValueChange={(val) => handleToggle("highlightDuplicates", val)}
-              trackColor={{ false: "#E5E7EB", true: "#FDE68A" }}
-              thumbColor={settings?.highlightDuplicates ?? true ? "#D97706" : "#F9FAFB"}
-            />
-          </View>
-
-          <View style={styles.separator} />
-
-          {/* Highlight Same Numbers */}
-          <View style={styles.row}>
-            <View style={[styles.iconBox, { backgroundColor: "#DCFCE7" }]}>
-              <Sparkles size={20} color="#16A34A" />
-            </View>
-            <View style={styles.rowTextCol}>
-              <Text style={styles.rowTitle}>{t('settings.highlightSameNumbers')}</Text>
-              <Text style={styles.rowSubtitle}>{t('settings.highlightSameNumbersDesc')}</Text>
-            </View>
-            <Switch
-              value={settings?.highlightSameNumbers ?? true}
-              onValueChange={(val) => handleToggle("highlightSameNumbers", val)}
-              trackColor={{ false: "#E5E7EB", true: "#86EFAC" }}
-              thumbColor={settings?.highlightSameNumbers ?? true ? "#16A34A" : "#F9FAFB"}
-            />
-          </View>
-
-          <View style={styles.separator} />
-
-          {/* Auto-Check Mistakes */}
-          <View style={styles.row}>
-            <View style={[styles.iconBox, { backgroundColor: "#FFE4E6" }]}>
-              <AlertCircle size={20} color="#E11D48" />
-            </View>
-            <View style={styles.rowTextCol}>
-              <Text style={styles.rowTitle}>{t('settings.autoCheckMistakes')}</Text>
-              <Text style={styles.rowSubtitle}>{t('settings.autoCheckMistakesDesc')}</Text>
-            </View>
-            <Switch
-              value={settings?.autoCheckMistakes ?? true}
-              onValueChange={(val) => handleToggle("autoCheckMistakes", val)}
-              trackColor={{ false: "#E5E7EB", true: "#FDA4AF" }}
-              thumbColor={settings?.autoCheckMistakes ?? true ? "#E11D48" : "#F9FAFB"}
-            />
-          </View>
-
-          <View style={styles.separator} />
-
-          {/* Highlight Areas */}
-          <View style={styles.row}>
-            <View style={[styles.iconBox, { backgroundColor: "#E0F2FE" }]}>
-              <Layers size={20} color="#0284C7" />
-            </View>
-            <View style={styles.rowTextCol}>
-              <Text style={styles.rowTitle}>{t('settings.highlightAreas')}</Text>
-              <Text style={styles.rowSubtitle}>{t('settings.highlightAreasDesc')}</Text>
-            </View>
-            <Switch
-              value={settings?.highlightAreas ?? true}
-              onValueChange={(val) => handleToggle("highlightAreas", val)}
-              trackColor={{ false: "#E5E7EB", true: "#7DD3FC" }}
-              thumbColor={settings?.highlightAreas ?? true ? "#0284C7" : "#F9FAFB"}
-            />
-          </View>
-
-          <View style={styles.separator} />
-
-          {/* Timer Display */}
-          <View style={styles.row}>
-            <View style={[styles.iconBox, { backgroundColor: "#FFEDD5" }]}>
-              <Clock size={20} color="#EA580C" />
-            </View>
-            <View style={styles.rowTextCol}>
-              <Text style={styles.rowTitle}>{t('settings.showTimer')}</Text>
-              <Text style={styles.rowSubtitle}>{t('settings.showTimerDesc')}</Text>
-            </View>
-            <Switch
-              value={settings?.timerVisible ?? true}
-              onValueChange={(val) => handleToggle("timerVisible", val)}
-              trackColor={{ false: "#E5E7EB", true: "#FDBA74" }}
-              thumbColor={settings?.timerVisible ?? true ? "#EA580C" : "#F9FAFB"}
             />
           </View>
         </View>
@@ -391,6 +417,23 @@ export function SettingsScreen({}: SettingsScreenProps) {
             </View>
             <View style={styles.rowTextCol}>
               <Text style={styles.rowTitle}>{t('settings.privacy')}</Text>
+            </View>
+            <ChevronRight size={18} color="#D1D5DB" />
+          </TouchableOpacity>
+
+          <View style={styles.separator} />
+
+          <TouchableOpacity
+            style={styles.clickableRow}
+            onPress={onRestorePurchases}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.iconBox, { backgroundColor: "#FEF3C7" }]}>
+              <RotateCcw size={20} color="#D97706" />
+            </View>
+            <View style={styles.rowTextCol}>
+              <Text style={styles.rowTitle}>Restore Purchases</Text>
+              <Text style={styles.rowSubtitle}>Restore previously unlocked VIP access</Text>
             </View>
             <ChevronRight size={18} color="#D1D5DB" />
           </TouchableOpacity>

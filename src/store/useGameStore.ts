@@ -27,6 +27,12 @@ export interface DifficultyStatsRecord {
   totalSec: number;
 }
 
+export interface DailyGameStat {
+  played: number;
+  solved: number;
+  bestSec: number | null;
+}
+
 export interface DailyProgressItem {
   completed: boolean;
   timeSec?: number;
@@ -78,6 +84,7 @@ export const getDailyChallengeItem = (
 export interface GameSettings {
   soundEnabled: boolean;
   vibrationEnabled: boolean;
+  notificationsEnabled: boolean;
   highlightDuplicates: boolean;
   highlightSameNumbers: boolean;
   autoCheckMistakes: boolean;
@@ -89,6 +96,7 @@ export interface GameSettings {
 export const defaultGameSettings: GameSettings = {
   soundEnabled: true,
   vibrationEnabled: true,
+  notificationsEnabled: true,
   highlightDuplicates: true,
   highlightSameNumbers: true,
   autoCheckMistakes: true,
@@ -114,6 +122,7 @@ type GameState = {
 
   // Real Persistent Stats
   difficultyStats: Record<string, DifficultyStatsRecord>;
+  dailyHistory: Record<string, DailyGameStat>;
   totalSolved: number;
   totalPlayed: number;
   bestTimeSec: number | null;
@@ -191,6 +200,7 @@ export const useGameStore = create<GameState>()(
 
       // Real Persistent Stats
       difficultyStats: initialDifficultyStats,
+      dailyHistory: {},
       totalSolved: 0,
       totalPlayed: 0,
       bestTimeSec: null,
@@ -226,6 +236,9 @@ export const useGameStore = create<GameState>()(
         const isToday = state.lastSolvedDate === todayStr;
         const newTodaySolved = isToday ? (state.todaySolved || 0) + 1 : 1;
 
+        const prevDaily = state.dailyHistory?.[todayStr] || { played: 1, solved: 0, bestSec: null };
+        const newDailyBest = prevDaily.bestSec === null ? timeSec : Math.min(prevDaily.bestSec, timeSec);
+
         return {
           isGameCompleted: true,
           totalSolved: (state.totalSolved || 0) + 1,
@@ -242,10 +255,19 @@ export const useGameStore = create<GameState>()(
               totalSec: prevDiff.totalSec + timeSec,
             },
           },
+          dailyHistory: {
+            ...(state.dailyHistory || {}),
+            [todayStr]: {
+              played: Math.max(prevDaily.played, prevDaily.solved + 1),
+              solved: prevDaily.solved + 1,
+              bestSec: newDailyBest,
+            },
+          },
         };
       }),
 
       recordGamePlayed: (difficulty) => set((state) => {
+        const todayStr = getLocalDateString();
         const prevStats = state.difficultyStats || initialDifficultyStats;
         const prevDiff = prevStats[difficulty] || {
           solved: 0,
@@ -253,6 +275,8 @@ export const useGameStore = create<GameState>()(
           bestSec: null,
           totalSec: 0,
         };
+        const prevDaily = state.dailyHistory?.[todayStr] || { played: 0, solved: 0, bestSec: null };
+
         return {
           totalPlayed: (state.totalPlayed || 0) + 1,
           difficultyStats: {
@@ -260,6 +284,13 @@ export const useGameStore = create<GameState>()(
             [difficulty]: {
               ...prevDiff,
               played: prevDiff.played + 1,
+            },
+          },
+          dailyHistory: {
+            ...(state.dailyHistory || {}),
+            [todayStr]: {
+              ...prevDaily,
+              played: prevDaily.played + 1,
             },
           },
         };
@@ -284,6 +315,7 @@ export const useGameStore = create<GameState>()(
           streak: 0,
           todaySolved: 0,
           difficultyStats: initialDifficultyStats,
+          dailyHistory: {},
         }),
 
       fetchRemoteConfig: async () => {
@@ -436,6 +468,7 @@ export const useGameStore = create<GameState>()(
         } catch (e) { console.log('Analytics Error:', e); }
 
         set((state) => {
+          const todayStr = getLocalDateString();
           const prevStats = state.difficultyStats || initialDifficultyStats;
           const prevDiff = prevStats[difficulty] || {
             solved: 0,
@@ -443,6 +476,8 @@ export const useGameStore = create<GameState>()(
             bestSec: null,
             totalSec: 0,
           };
+          const prevDaily = state.dailyHistory?.[todayStr] || { played: 0, solved: 0, bestSec: null };
+
           return {
             board: newBoard,
             solution,
@@ -461,6 +496,13 @@ export const useGameStore = create<GameState>()(
               [difficulty]: {
                 ...prevDiff,
                 played: prevDiff.played + 1,
+              },
+            },
+            dailyHistory: {
+              ...(state.dailyHistory || {}),
+              [todayStr]: {
+                ...prevDaily,
+                played: prevDaily.played + 1,
               },
             },
           };
@@ -489,6 +531,8 @@ export const useGameStore = create<GameState>()(
             bestSec: null,
             totalSec: 0,
           };
+          const prevDaily = state.dailyHistory?.[dateStr] || { played: 0, solved: 0, bestSec: null };
+
           return {
             board: newBoard,
             solution,
@@ -507,6 +551,13 @@ export const useGameStore = create<GameState>()(
               [difficulty]: {
                 ...prevDiff,
                 played: prevDiff.played + 1,
+              },
+            },
+            dailyHistory: {
+              ...(state.dailyHistory || {}),
+              [dateStr]: {
+                ...prevDaily,
+                played: prevDaily.played + 1,
               },
             },
           };
@@ -533,6 +584,11 @@ export const useGameStore = create<GameState>()(
             }
           }
 
+          const prevDaily = state.dailyHistory?.[dateStr] || { played: 1, solved: 0, bestSec: null };
+          const newDailyBest = timeSec > 0
+            ? (prevDaily.bestSec === null ? timeSec : Math.min(prevDaily.bestSec, timeSec))
+            : prevDaily.bestSec;
+
           return {
             lastSolvedDate: dateStr === todayStr ? todayStr : state.lastSolvedDate,
             streak: dateStr === todayStr ? newStreak : state.streak,
@@ -544,6 +600,14 @@ export const useGameStore = create<GameState>()(
                 mistakes,
                 completedAt: new Date().toISOString(),
                 difficulty: diff,
+              },
+            },
+            dailyHistory: {
+              ...(state.dailyHistory || {}),
+              [dateStr]: {
+                played: Math.max(prevDaily.played, prevDaily.solved + 1),
+                solved: prevDaily.solved + 1,
+                bestSec: newDailyBest,
               },
             },
           };

@@ -30,33 +30,47 @@ import {
 } from "lucide-react-native";
 import { useTranslation } from "../../i18n";
 
+const TimerText = React.memo(function TimerText() {
+  const timer = useGameStore((s) => s.timer);
+  const timerVisible = useGameStore((s) => s.settings?.timerVisible ?? true);
+  if (!timerVisible) return <Text style={styles.timerText}>{""}</Text>;
+  const m = Math.floor(timer / 60).toString().padStart(2, "0");
+  const s = (timer % 60).toString().padStart(2, "0");
+  return <Text style={styles.timerText}>{`${m}:${s}`}</Text>;
+});
+
+const PauseTimerText = React.memo(function PauseTimerText() {
+  const timer = useGameStore((s) => s.timer);
+  const m = Math.floor(timer / 60).toString().padStart(2, "0");
+  const s = (timer % 60).toString().padStart(2, "0");
+  return <Text style={styles.pauseSubtitle}>{`${m}:${s}`}</Text>;
+});
+
 export default function TopBar({
   showRewardedAd,
+  onOpenPaywall,
 }: {
   showRewardedAd: (cb: () => void) => void;
+  onOpenPaywall?: () => void;
 }) {
   const insets = useSafeAreaInsets();
-  const {
-    mistakes,
-    timer,
-    setScreen,
-    difficulty,
-    currentDailyChallenge,
-    board,
-    settings,
-    updateSetting,
-    undo,
-    erase,
-    isNotesMode,
-    toggleNotesMode,
-    hintsRemaining,
-    useHint,
-    isPremium,
-    addHint,
-  } = useGameStore();
+  const mistakes = useGameStore((s) => s.mistakes);
+  const setScreen = useGameStore((s) => s.setScreen);
+  const difficulty = useGameStore((s) => s.difficulty);
+  const currentDailyChallenge = useGameStore((s) => s.currentDailyChallenge);
+  const board = useGameStore((s) => s.board);
+  const settings = useGameStore((s) => s.settings);
+  const updateSetting = useGameStore((s) => s.updateSetting);
+  const undo = useGameStore((s) => s.undo);
+  const erase = useGameStore((s) => s.erase);
+  const isNotesMode = useGameStore((s) => s.isNotesMode);
+  const toggleNotesMode = useGameStore((s) => s.toggleNotesMode);
+  const hintsRemaining = useGameStore((s) => s.hintsRemaining);
+  const useHint = useGameStore((s) => s.useHint);
+  const isPremium = useGameStore((s) => s.isPremium);
+  const addHint = useGameStore((s) => s.addHint);
 
   const { t } = useTranslation();
-  const timerVisible = settings?.timerVisible ?? true;
   const [isPaused, setIsPaused] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -120,6 +134,14 @@ export default function TopBar({
         t('game.watchAdPrompt'),
         [
           { text: t('game.cancel'), style: "cancel" },
+          ...(onOpenPaywall
+            ? [
+                {
+                  text: "Unlock Infinite Hints (VIP)",
+                  onPress: onOpenPaywall,
+                },
+              ]
+            : []),
           {
             text: t('game.watchAd'),
             onPress: () =>
@@ -205,9 +227,7 @@ export default function TopBar({
 
           <Text style={styles.mistakesText}>{t('game.mistakes')}: {mistakes}/3</Text>
 
-          <Text style={styles.timerText}>
-            {timerVisible ? formatTime(timer) : ""}
-          </Text>
+          <TimerText />
         </View>
 
         {/* ── Row 3: Action Tool Cards (Undo | Eraser | Pencil | Hint) ── */}
@@ -277,7 +297,7 @@ export default function TopBar({
               <Pause size={36} color="#2563EB" strokeWidth={2.5} />
             </View>
             <Text style={styles.pauseTitle}>{t('game.paused')}</Text>
-            <Text style={styles.pauseSubtitle}>{formatTime(timer)}</Text>
+            <PauseTimerText />
             <TouchableOpacity
               onPress={() => setIsPaused(false)}
               style={styles.resumeBtn}

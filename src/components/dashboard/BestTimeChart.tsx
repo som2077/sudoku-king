@@ -1,17 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Text } from "../ui/Text";
 import { View, TouchableOpacity } from "react-native";
+import { useGameStore } from "../../store/useGameStore";
 
 type ChartTab = "Day" | "Week" | "Month";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-// Time in seconds: Mon=3:21 (201s), Tue=4:15, Wed=2:50, Thu=5:10, Fri=3:45, Sat=4:30, Sun=2:40
-const MOCK_DATA: Record<ChartTab, number[]> = {
-  Day: [201, 255, 170, 310, 225, 270, 160],
-  Week: [240, 195, 210, 180, 260, 220, 175],
-  Month: [210, 230, 185, 245, 190, 205, 165],
-};
 
 const TODAY_INDEX = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
 
@@ -46,7 +40,7 @@ function Bar({
   onPress: () => void;
 }) {
   const BAR_MAX_HEIGHT = 150;
-  const height = Math.max(12, (value / maxValue) * BAR_MAX_HEIGHT);
+  const height = maxValue > 0 && value > 0 ? Math.max(12, (value / maxValue) * BAR_MAX_HEIGHT) : 4;
 
   return (
     <TouchableOpacity
@@ -86,7 +80,7 @@ function Bar({
             width: 35,
             height,
             borderRadius: 6,
-            backgroundColor: isSelected ? "#1C1F2E" : "#F3F4F6",
+            backgroundColor: isSelected ? "#1C1F2E" : value > 0 ? "#E5E7EB" : "#F3F4F6",
           }}
         />
       </View>
@@ -115,7 +109,29 @@ export function BestTimeChart({ bestTime, data: propData }: BestTimeChartProps) 
   const [activeTab, setActiveTab] = useState<ChartTab>("Day");
   const [selectedDay, setSelectedDay] = useState(TODAY_INDEX);
 
-  const data = propData ? propData[activeTab] : MOCK_DATA[activeTab];
+  const dailyHistory = useGameStore((s) => s.dailyHistory) || {};
+
+  const data = useMemo(() => {
+    if (propData) return propData[activeTab];
+
+    const now = new Date();
+    const nowDay = now.getDay();
+    const mondayDiff = now.getDate() - nowDay + (nowDay === 0 ? -6 : 1);
+    const monday = new Date(now);
+    monday.setDate(mondayDiff);
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const key = `${y}-${m}-${day}`;
+      const stat = dailyHistory[key];
+      return stat?.bestSec || 0;
+    });
+  }, [propData, activeTab, dailyHistory]);
+
   const maxValue = Math.max(...data, 1);
   const tabs: ChartTab[] = ["Day", "Week", "Month"];
 

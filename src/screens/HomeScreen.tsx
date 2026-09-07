@@ -7,7 +7,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Home, Calendar, Settings, Play } from "lucide-react-native";
+import { Home, Calendar, Settings, Play, Crown } from "lucide-react-native";
 import { Image } from "expo-image";
 import { StreakFlame } from "../components/StreakFlame";
 import { useGameStore } from "../store/useGameStore";
@@ -30,6 +30,8 @@ type HomeScreenProps = {
   history?: any[];
   isPremium?: boolean;
   setPremium?: (val: boolean) => void;
+  onOpenPaywall?: () => void;
+  onRestorePurchases?: () => void;
 };
 
 type Tab = "home" | "daily" | "settings";
@@ -142,6 +144,8 @@ export default function HomeScreen({
   history,
   isPremium,
   setPremium,
+  onOpenPaywall,
+  onRestorePurchases,
 }: HomeScreenProps) {
   const [showDifficultySheet, setShowDifficultySheet] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<Tab>("home");
@@ -300,37 +304,62 @@ export default function HomeScreen({
                     style={{ width: 140, height: 40 }}
                     contentFit="contain"
                   />
-                  <TouchableOpacity
-                    onPress={() => setShowAwards(true)}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      backgroundColor: "#FFFFFF",
-                      borderWidth: 1,
-                      borderColor: "#E5E7EB",
-                      borderRadius: 999,
-                      paddingHorizontal: 15,
-                      paddingVertical: 5,
-                      marginRight: 5,
-                      // shadowColor: "#000",
-                      // shadowOpacity: 0.06,
-                      // shadowRadius: 4,
-                      // shadowOffset: { width: 0, height: 2 },
-                      // elevation: 2,
-                    }}
-                  >
-                    <StreakFlame size={22} />
-                    <Text
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <TouchableOpacity
+                      onPress={onOpenPaywall}
                       style={{
-                        color: "#374151",
-                        fontWeight: "bold",
-                        marginLeft: 7,
-                        fontSize: 15,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        backgroundColor: isPremium ? "#FEF3C7" : "#FFFFFF",
+                        borderWidth: 1,
+                        borderColor: isPremium ? "#FDE68A" : "#E5E7EB",
+                        borderRadius: 999,
+                        paddingHorizontal: 12,
+                        paddingVertical: 5,
+                        marginRight: 8,
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Crown size={18} color={isPremium ? "#D97706" : "#EAB308"} />
+                      <Text
+                        style={{
+                          color: isPremium ? "#B45309" : "#374151",
+                          fontWeight: "bold",
+                          marginLeft: 5,
+                          fontSize: 13,
+                        }}
+                      >
+                        {isPremium ? "PRO" : "VIP"}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => setShowAwards(true)}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        backgroundColor: "#FFFFFF",
+                        borderWidth: 1,
+                        borderColor: "#E5E7EB",
+                        borderRadius: 999,
+                        paddingHorizontal: 15,
+                        paddingVertical: 5,
+                        marginRight: 5,
                       }}
                     >
-                      {streak}
-                    </Text>
-                  </TouchableOpacity>
+                      <StreakFlame size={22} />
+                      <Text
+                        style={{
+                          color: "#374151",
+                          fontWeight: "bold",
+                          marginLeft: 7,
+                          fontSize: 15,
+                        }}
+                      >
+                        {streak}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {/* ── Dashboard: Calendar + Pager ── */}
@@ -499,7 +528,10 @@ export default function HomeScreen({
               flex: 1,
             }}
           >
-            <SettingsScreen />
+            <SettingsScreen
+              onOpenPaywall={onOpenPaywall}
+              onRestorePurchases={onRestorePurchases}
+            />
           </View>
         </ScrollView>
 

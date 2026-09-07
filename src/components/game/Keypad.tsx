@@ -16,13 +16,22 @@ export default function Keypad({
 }: {
   showRewardedAd?: (cb: () => void) => void;
 }) {
-  const { board, placeNumber, isNotesMode, toggleNote } = useGameStore();
+  const board = useGameStore((s) => s.board);
+  const placeNumber = useGameStore((s) => s.placeNumber);
+  const isNotesMode = useGameStore((s) => s.isNotesMode);
+  const toggleNote = useGameStore((s) => s.toggleNote);
 
   // Count how many times each number appears correctly on the board (to dim completed numbers)
-  const numberCounts = Array(10).fill(0);
-  board.forEach((cell) => {
-    if (cell.value !== null && !cell.isError) numberCounts[cell.value]++;
-  });
+  const numberCounts = React.useMemo(() => {
+    const counts = Array(10).fill(0);
+    for (let i = 0; i < board.length; i++) {
+      const cell = board[i];
+      if (cell.value !== null && !cell.isError) {
+        counts[cell.value]++;
+      }
+    }
+    return counts;
+  }, [board]);
   const isComplete = (num: number) => numberCounts[num] >= 9;
 
   const handleNumberPress = (num: number) => {

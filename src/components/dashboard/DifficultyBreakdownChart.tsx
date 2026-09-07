@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import Svg, { Circle, Line, G } from "react-native-svg";
 import { Text } from "../ui/Text";
-import { Trophy, Zap, Clock, Puzzle, Eye } from "lucide-react-native";
+import { Trophy, Zap, Clock, Puzzle } from "lucide-react-native";
 import { useGameStore } from "../../store/useGameStore";
 
 export interface DifficultyStat {
@@ -17,72 +17,42 @@ export interface DifficultyStat {
   avgSec: number;
 }
 
-export const MOCK_DIFFICULTY_STATS: DifficultyStat[] = [
+export const DIFFICULTY_CONFIGS = [
   {
     level: "Easy",
     color: "#16A34A",
     lightBg: "#DCFCE7",
     textDark: "#15803D",
-    solved: 52,
-    best: "3:21",
-    avg: "5:10",
-    bestSec: 201,
-    avgSec: 310,
   },
   {
     level: "Medium",
     color: "#F59E0B",
     lightBg: "#FEF3C7",
     textDark: "#B45309",
-    solved: 38,
-    best: "6:45",
-    avg: "9:20",
-    bestSec: 405,
-    avgSec: 560,
   },
   {
     level: "Hard",
     color: "#EA580C",
     lightBg: "#FFEDD5",
     textDark: "#C2410C",
-    solved: 24,
-    best: "14:12",
-    avg: "18:30",
-    bestSec: 852,
-    avgSec: 1110,
   },
   {
     level: "Expert",
     color: "#7C3AED",
     lightBg: "#EDE9FE",
     textDark: "#6D28D9",
-    solved: 12,
-    best: "26:50",
-    avg: "34:10",
-    bestSec: 1610,
-    avgSec: 2050,
   },
   {
     level: "Master",
     color: "#3B82F6",
     lightBg: "#DBEAFE",
     textDark: "#1D4ED8",
-    solved: 7,
-    best: "42:15",
-    avg: "55:00",
-    bestSec: 2535,
-    avgSec: 3300,
   },
   {
     level: "Extreme",
     color: "#EF4444",
     lightBg: "#FEE2E2",
     textDark: "#B91C1C",
-    solved: 3,
-    best: "58:30",
-    avg: "1:12:00",
-    bestSec: 3510,
-    avgSec: 4320,
   },
 ];
 
@@ -91,9 +61,6 @@ const CARD_SHADOW = {
   borderRadius: 25,
   borderWidth: 0.7,
   borderColor: "#E5E7EB",
-  // shadowColor: "#000",
-  // shadowOpacity: 0.06,
-  // elevation: 1,
 };
 
 function formatTime(seconds: number | null): string {
@@ -116,69 +83,41 @@ const R_OUTER = DONUT_RADIUS + DONUT_STROKE / 2;
 
 export function DifficultyBreakdownChart({
   stats: overrideStats,
-  forceMock = true,
 }: {
   stats?: DifficultyStat[];
-  forceMock?: boolean;
 }) {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"mock" | "live" | "empty">(
-    forceMock ? "mock" : "live",
-  );
 
   // Read real persistent stats from useGameStore
   const storeDifficultyStats = useGameStore((s) => s.difficultyStats);
-  const storeTotalSolved = useGameStore((s) => s.totalSolved) || 0;
 
-  // Resolve items based on active viewMode (mock by default for UI testing)
+  // Resolve items based on real persistent stats
   const items: DifficultyStat[] = useMemo(() => {
-    if (viewMode === "empty") return [];
     if (overrideStats && overrideStats.length > 0) return overrideStats;
 
-    // In mock mode: display rich mock data across all 6 tiers
-    if (viewMode === "mock") {
-      return MOCK_DIFFICULTY_STATS;
-    }
-
-    // In live mode: read real persistent stats from game store
-    if (storeTotalSolved > 0 && storeDifficultyStats) {
-      const realItems = MOCK_DIFFICULTY_STATS.map((cfg) => {
-        const rec = storeDifficultyStats[cfg.level] || {
-          solved: 0,
-          played: 0,
-          bestSec: null,
-          totalSec: 0,
-        };
-        const solved = rec.solved || 0;
-        const avgSec = solved > 0 ? Math.round(rec.totalSec / solved) : 0;
-        return {
-          ...cfg,
-          solved,
-          best: formatTime(rec.bestSec),
-          avg: formatTime(avgSec),
-          bestSec: rec.bestSec,
-          avgSec,
-        };
-      });
-      const hasAnySolved = realItems.some((it) => it.solved > 0);
-      if (hasAnySolved) return realItems;
-    }
-
-    // Fallback if no real stats yet in live mode
-    return [];
-  }, [overrideStats, viewMode, storeDifficultyStats, storeTotalSolved]);
+    return DIFFICULTY_CONFIGS.map((cfg) => {
+      const rec = storeDifficultyStats?.[cfg.level] || {
+        solved: 0,
+        played: 0,
+        bestSec: null,
+        totalSec: 0,
+      };
+      const solved = rec.solved || 0;
+      const avgSec = solved > 0 ? Math.round(rec.totalSec / solved) : 0;
+      return {
+        ...cfg,
+        solved,
+        best: formatTime(rec.bestSec),
+        avg: formatTime(avgSec),
+        bestSec: rec.bestSec,
+        avgSec,
+      };
+    });
+  }, [overrideStats, storeDifficultyStats]);
 
   const totalSolved = useMemo(() => {
-    if (viewMode === "empty") return 0;
     return items.reduce((acc, item) => acc + item.solved, 0);
-  }, [items, viewMode]);
-
-  const cycleMode = () => {
-    if (viewMode === "mock") setViewMode("live");
-    else if (viewMode === "live") setViewMode("empty");
-    else setViewMode("mock");
-    setSelectedLevel(null);
-  };
+  }, [items]);
 
   const hasData = totalSolved > 0;
 
@@ -260,55 +199,6 @@ export function DifficultyBreakdownChart({
               : "0 puzzles completed"}
           </Text>
         </View>
-
-        {/* State preview switcher (Mock / Live / Empty) */}
-        <TouchableOpacity
-          onPress={cycleMode}
-          activeOpacity={0.7}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
-            backgroundColor:
-              viewMode === "mock"
-                ? "#EDE9FE"
-                : viewMode === "live"
-                  ? "#DCFCE7"
-                  : "#FEE2E2",
-            paddingHorizontal: 8,
-            paddingVertical: 3.5,
-            borderRadius: 12,
-          }}
-        >
-          <Eye
-            size={11}
-            color={
-              viewMode === "mock"
-                ? "#6D28D9"
-                : viewMode === "live"
-                  ? "#15803D"
-                  : "#DC2626"
-            }
-          />
-          <Text
-            style={{
-              fontSize: 10,
-              fontWeight: "700",
-              color:
-                viewMode === "mock"
-                  ? "#6D28D9"
-                  : viewMode === "live"
-                    ? "#15803D"
-                    : "#DC2626",
-            }}
-          >
-            {viewMode === "mock"
-              ? "Mock"
-              : viewMode === "live"
-                ? "Live"
-                : "Empty"}
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Side-by-Side: Chart on LEFT, All Modes on RIGHT */}

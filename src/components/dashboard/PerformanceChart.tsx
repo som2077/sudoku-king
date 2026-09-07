@@ -2,58 +2,24 @@ import React, { useState, useMemo } from "react";
 import { Text } from "../ui/Text";
 import { View, TouchableOpacity } from "react-native";
 import { Trophy, Zap, TrendingUp } from "lucide-react-native";
-import { useGameStore } from "../../store/useGameStore";
+import { useGameStore, getDailyChallengeItem } from "../../store/useGameStore";
 import { useTranslation } from "../../i18n";
 
 type TimeTab = "Day" | "Week" | "Month";
 type MetricFilter = "Both" | "WinRate" | "BestTime";
 
-const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-interface DayData {
+interface ChartItem {
+  label: string;
   winRate: number; // %
   bestSec: number; // seconds
   hasPlayed: boolean;
 }
-
-const MOCK_PERFORMANCE_DATA: Record<TimeTab, DayData[]> = {
-  Day: [
-    { winRate: 45, bestSec: 225, hasPlayed: true }, // Mon: 45%, 3:45
-    { winRate: 70, bestSec: 170, hasPlayed: true }, // Tue: 70%, 2:50
-    { winRate: 60, bestSec: 195, hasPlayed: true }, // Wed: 60%, 3:15
-    { winRate: 90, bestSec: 130, hasPlayed: true }, // Thu: 90%, 2:10
-    { winRate: 80, bestSec: 160, hasPlayed: true }, // Fri: 80%, 2:40
-    { winRate: 65, bestSec: 210, hasPlayed: true }, // Sat: 65%, 3:30
-    { winRate: 85, bestSec: 145, hasPlayed: true }, // Sun: 85%, 2:25
-  ],
-  Week: [
-    { winRate: 65, bestSec: 200, hasPlayed: true },
-    { winRate: 55, bestSec: 220, hasPlayed: true },
-    { winRate: 75, bestSec: 175, hasPlayed: true },
-    { winRate: 85, bestSec: 150, hasPlayed: true },
-    { winRate: 70, bestSec: 190, hasPlayed: true },
-    { winRate: 80, bestSec: 165, hasPlayed: true },
-    { winRate: 90, bestSec: 135, hasPlayed: true },
-  ],
-  Month: [
-    { winRate: 60, bestSec: 210, hasPlayed: true },
-    { winRate: 70, bestSec: 180, hasPlayed: true },
-    { winRate: 50, bestSec: 240, hasPlayed: true },
-    { winRate: 80, bestSec: 165, hasPlayed: true },
-    { winRate: 95, bestSec: 125, hasPlayed: true },
-    { winRate: 75, bestSec: 170, hasPlayed: true },
-    { winRate: 85, bestSec: 140, hasPlayed: true },
-  ],
-};
 
 const CARD_SHADOW = {
   backgroundColor: "#FFFFFF",
   borderRadius: 25,
   borderWidth: 0.7,
   borderColor: "#E5E7EB",
-  // shadowColor: "#000",
-  // shadowOpacity: 0.06,
-  // elevation: 1,
 };
 
 function formatTime(seconds: number): string {
@@ -80,34 +46,179 @@ export function PerformanceChart() {
     return day === 0 ? 6 : day - 1;
   });
 
-  const totalSolved = useGameStore((s) => s.totalSolved) || 0;
-  const totalPlayed = useGameStore((s) => s.totalPlayed) || 0;
+  const dailyHistory = useGameStore((s) => s.dailyHistory) || {};
+  const dailyChallengesProgress = useGameStore((s) => s.dailyChallengesProgress) || {};
+  const todaySolved = useGameStore((s) => s.todaySolved) || 0;
   const bestTimeSec = useGameStore((s) => s.bestTimeSec) || 0;
 
-  // Use real data if present, otherwise fallback to rich mock data for visual inspection
-  const data: DayData[] = useMemo(() => {
-    if (totalPlayed > 0 && totalSolved > 0) {
-      const todayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-      const currentWinRate = Math.round((totalSolved / totalPlayed) * 100);
+  const data: ChartItem[] = useMemo(() => {
+    const toDateKey = (d: Date): string => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
 
-      return DAY_LABELS.map((_, i) => {
-        if (i === todayIdx) {
-          return {
-            winRate: currentWinRate,
-            bestSec: bestTimeSec,
-            hasPlayed: true,
-          };
+    const getDayStat = (dateStr: string, isTodayDate: boolean) => {
+      let stat = dailyHistory[dateStr];
+      const challengeItem = getDailyChallengeItem(dailyChallengesProgress, dateStr);
+
+      let played = stat?.played || 0;
+      let solved = stat?.solved || 0;
+      let best = stat?.bestSec ?? null;
+
+      if (challengeItem?.completed) {
+        solved = Math.max(solved, 1);
+        played = Math.max(played, solved);
+        if (challengeItem.timeSec) {
+          best = best === null ? challengeItem.timeSec : Math.min(best, challengeItem.timeSec);
         }
-        // Fallback surrounding days from mock data for realistic aesthetic
-        return MOCK_PERFORMANCE_DATA[activeTimeTab][i];
+      }
+
+      if (isTodayDate && todaySolved > 0) {
+        solved = Math.max(solved, todaySolved);
+        played = Math.max(played, solved);
+        if (bestTimeSec > 0) {
+          best = best === null ? bestTimeSec : Math.min(best, bestTimeSec);
+        }
+      }
+
+      return {
+        played,
+        solved,
+        bestSec: best || 0,
+        hasPlayed: played > 0 || solved > 0,
+      };
+    };
+
+    if (activeTimeTab === "Day") {
+      const now = new Date();
+      const nowDay = now.getDay();
+      const mondayDiff = now.getDate() - nowDay + (nowDay === 0 ? -6 : 1);
+      const monday = new Date(now);
+      monday.setDate(mondayDiff);
+
+      const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      return dayLabels.map((lbl, i) => {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const key = toDateKey(d);
+        const isToday = key === toDateKey(now);
+        const s = getDayStat(key, isToday);
+        const winRate = s.played > 0
+          ? Math.min(100, Math.round((s.solved / s.played) * 100))
+          : (s.solved > 0 ? 100 : 0);
+
+        return {
+          label: lbl,
+          winRate,
+          bestSec: s.bestSec,
+          hasPlayed: s.hasPlayed,
+        };
       });
     }
 
-    return MOCK_PERFORMANCE_DATA[activeTimeTab];
-  }, [totalSolved, totalPlayed, bestTimeSec, activeTimeTab]);
+    if (activeTimeTab === "Week") {
+      const now = new Date();
+      const nowDay = now.getDay();
+      const thisMonday = new Date(now);
+      thisMonday.setDate(now.getDate() - nowDay + (nowDay === 0 ? -6 : 1));
 
-  const maxTimeSec = Math.max(...data.map((d) => d.bestSec), 1);
+      const weeks: ChartItem[] = [];
+      for (let w = 6; w >= 0; w--) {
+        const weekMon = new Date(thisMonday);
+        weekMon.setDate(thisMonday.getDate() - w * 7);
+
+        let weekPlayed = 0;
+        let weekSolved = 0;
+        let weekBest: number | null = null;
+
+        for (let d = 0; d < 7; d++) {
+          const dayDate = new Date(weekMon);
+          dayDate.setDate(weekMon.getDate() + d);
+          const key = toDateKey(dayDate);
+          const isToday = key === toDateKey(now);
+          const s = getDayStat(key, isToday);
+
+          weekPlayed += s.played;
+          weekSolved += s.solved;
+          if (s.bestSec > 0) {
+            weekBest = weekBest === null ? s.bestSec : Math.min(weekBest, s.bestSec);
+          }
+        }
+
+        const hasPlayed = weekPlayed > 0 || weekSolved > 0;
+        const winRate = weekPlayed > 0
+          ? Math.min(100, Math.round((weekSolved / weekPlayed) * 100))
+          : (weekSolved > 0 ? 100 : 0);
+        const label = w === 0 ? "Now" : `${w}w`;
+
+        weeks.push({
+          label,
+          winRate,
+          bestSec: weekBest || 0,
+          hasPlayed,
+        });
+      }
+      return weeks;
+    }
+
+    // Month view: last 7 months
+    const now = new Date();
+    const months: ChartItem[] = [];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    for (let m = 6; m >= 0; m--) {
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - m, 1);
+      const targetYear = targetDate.getFullYear();
+      const targetMonth = targetDate.getMonth();
+      const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+      let monthPlayed = 0;
+      let monthSolved = 0;
+      let monthBest: number | null = null;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayDate = new Date(targetYear, targetMonth, d);
+        const key = toDateKey(dayDate);
+        const isToday = key === toDateKey(now);
+        const s = getDayStat(key, isToday);
+
+        monthPlayed += s.played;
+        monthSolved += s.solved;
+        if (s.bestSec > 0) {
+          monthBest = monthBest === null ? s.bestSec : Math.min(monthBest, s.bestSec);
+        }
+      }
+
+      const hasPlayed = monthPlayed > 0 || monthSolved > 0;
+      const winRate = monthPlayed > 0
+        ? Math.min(100, Math.round((monthSolved / monthPlayed) * 100))
+        : (monthSolved > 0 ? 100 : 0);
+
+      months.push({
+        label: monthNames[targetMonth],
+        winRate,
+        bestSec: monthBest || 0,
+        hasPlayed,
+      });
+    }
+    return months;
+  }, [activeTimeTab, dailyHistory, dailyChallengesProgress, todaySolved, bestTimeSec]);
+
+  const playedItems = data.filter((d) => d.hasPlayed && d.bestSec > 0);
+  const maxTimeSec = playedItems.length > 0 ? Math.max(...playedItems.map((d) => d.bestSec), 1) : 1;
   const timeTabs: TimeTab[] = ["Day", "Week", "Month"];
+
+  const handleTabChange = (tab: TimeTab) => {
+    setActiveTimeTab(tab);
+    if (tab === "Day") {
+      const day = new Date().getDay();
+      setSelectedDay(day === 0 ? 6 : day - 1);
+    } else {
+      setSelectedDay(6); // Select current week/month (last index)
+    }
+  };
 
   return (
     <View
@@ -151,7 +262,7 @@ export function PerformanceChart() {
           {timeTabs.map((tab) => (
             <TouchableOpacity
               key={tab}
-              onPress={() => setActiveTimeTab(tab)}
+              onPress={() => handleTabChange(tab)}
               style={{
                 paddingHorizontal: 10,
                 paddingVertical: 4,
@@ -288,13 +399,15 @@ export function PerformanceChart() {
       <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
         {data.map((item, index) => {
           const isSelected = index === selectedDay;
-          const label = DAY_LABELS[index];
+          const label = item.label;
 
-          const winHeight = Math.max(12, (item.winRate / 100) * BAR_MAX_HEIGHT);
-          const timeHeight = Math.max(
-            12,
-            (item.bestSec / maxTimeSec) * BAR_MAX_HEIGHT,
-          );
+          const isPlayed = item.hasPlayed && (item.winRate > 0 || item.bestSec > 0);
+          const winHeight = isPlayed && item.winRate > 0
+            ? Math.max(12, (item.winRate / 100) * BAR_MAX_HEIGHT)
+            : 4;
+          const timeHeight = isPlayed && item.bestSec > 0 && maxTimeSec > 0
+            ? Math.max(12, (item.bestSec / maxTimeSec) * BAR_MAX_HEIGHT)
+            : 4;
 
           const showWin = metricFilter === "Both" || metricFilter === "WinRate";
           const showTime =
@@ -304,19 +417,25 @@ export function PerformanceChart() {
           const barWidth = isSingle ? 35 : 20;
 
           // Dynamic height of the bar(s) for this day so the tooltip floats right above it
-          const targetBarHeight = isSingle
-            ? showWin
-              ? winHeight
-              : timeHeight
-            : Math.max(winHeight, timeHeight);
+          const targetBarHeight = !isPlayed
+            ? 4
+            : isSingle
+              ? showWin
+                ? winHeight
+                : timeHeight
+              : Math.max(winHeight, timeHeight);
 
           return (
             <TouchableOpacity
-              key={index}
+              key={`${activeTimeTab}-${index}`}
               activeOpacity={0.8}
               onPress={() => setSelectedDay(index)}
               accessibilityRole="button"
-              accessibilityLabel={`${label}: Win Rate ${item.winRate}%, Best Time ${formatTime(item.bestSec)}`}
+              accessibilityLabel={
+                item.hasPlayed
+                  ? `${label}: Win Rate ${item.winRate}%, Best Time ${formatTime(item.bestSec)}`
+                  : `${label}: No games played`
+              }
               accessibilityState={{ selected: isSelected }}
               style={{
                 alignItems: "center",
@@ -359,7 +478,17 @@ export function PerformanceChart() {
                         elevation: 4,
                       }}
                     >
-                      {isSingle ? (
+                      {!item.hasPlayed ? (
+                        <Text
+                          style={{
+                            color: "#9CA3AF",
+                            fontSize: 9.5,
+                            fontWeight: "600",
+                          }}
+                        >
+                          No games
+                        </Text>
+                      ) : isSingle ? (
                         <Text
                           style={{
                             color: "#FFFFFF",
@@ -456,43 +585,54 @@ export function PerformanceChart() {
                   </View>
                 )}
 
-                {/* Bars: Paired or Single */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "flex-end",
-                    gap: 3,
-                  }}
-                >
-                  {/* Win Rate Bar */}
-                  {showWin && (
-                    <View
-                      style={{
-                        width: barWidth,
-                        height: winHeight,
-                        borderRadius: 4,
-                        backgroundColor: COLOR_WIN,
-                        opacity: isSelected ? 1 : 0.65,
-                      }}
-                    />
-                  )}
+                {/* Bars: Paired or Single or Unplayed Baseline */}
+                {!item.hasPlayed ? (
+                  <View
+                    style={{
+                      width: isSingle ? 28 : 34,
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: isSelected ? "#9CA3AF" : "#E5E7EB",
+                    }}
+                  />
+                ) : (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "flex-end",
+                      gap: 3,
+                    }}
+                  >
+                    {/* Win Rate Bar */}
+                    {showWin && (
+                      <View
+                        style={{
+                          width: barWidth,
+                          height: winHeight,
+                          borderRadius: 4,
+                          backgroundColor: COLOR_WIN,
+                          opacity: isSelected ? 1 : 0.65,
+                        }}
+                      />
+                    )}
 
-                  {/* Best Time Bar */}
-                  {showTime && (
-                    <View
-                      style={{
-                        width: barWidth,
-                        height: timeHeight,
-                        borderRadius: 4,
-                        backgroundColor: COLOR_TIME,
-                        opacity: isSelected ? 1 : 0.65,
-                      }}
-                    />
-                  )}
-                </View>
+                    {/* Best Time Bar */}
+                    {showTime && (
+                      <View
+                        style={{
+                          width: barWidth,
+                          height: timeHeight,
+                          borderRadius: 4,
+                          backgroundColor: COLOR_TIME,
+                          opacity: isSelected ? 1 : 0.65,
+                        }}
+                      />
+                    )}
+                  </View>
+                )}
               </View>
 
-              {/* Day Label */}
+              {/* Day / Week / Month Label */}
               <Text
                 style={{
                   fontSize: 10,

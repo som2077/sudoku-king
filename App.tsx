@@ -12,6 +12,7 @@ import Board from './src/components/Board';
 import Keypad from './src/components/Keypad';
 import TopBar from './src/components/TopBar';
 import HomeScreen from './src/screens/HomeScreen';
+import Paywall from './src/components/ui/Paywall';
 import { useGameStore } from './src/store/useGameStore';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -29,21 +30,41 @@ import {
   showRewardedAd as adManagerShowRewarded,
   showInterstitialAd as adManagerShowInterstitial,
 } from './src/services/adManager';
+import InAppNotificationBanner from './src/components/InAppNotificationBanner';
+import { notificationService, type NotificationPayload } from './src/services/notificationService';
+import { localNotificationScheduler } from './src/services/localNotificationScheduler';
 
 export default function App() {
   const {
     screen, setScreen,
-    mistakes, board, secondChance, timer,
+    mistakes, board, secondChance,
     isPremium, setPremium, fetchRemoteConfig,
     history, startNewGame, addHint, useHint,
     currentDailyChallenge, completeDailyChallenge,
-    difficulty, recordGameWon
+    difficulty, recordGameWon, startDailyChallenge
   } = useGameStore();
 
   const isGameOver = mistakes >= 3;
   const isGameWon = board.length > 0 && board.every(cell => cell.value !== null && !cell.isError) && mistakes < 3;
 
   const [bannerLoaded, setBannerLoaded] = useState(false);
+  const [foregroundNotification, setForegroundNotification] = useState<NotificationPayload | null>(null);
+  const [showCustomPaywall, setShowCustomPaywall] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+
+  const handleNotificationAction = (payload: NotificationPayload) => {
+    console.log('🎯 [Notification Action Handler]:', payload);
+    const action = payload.data?.action || payload.data?.screen;
+    if (action === 'daily' || payload.title?.toLowerCase().includes('daily') || payload.data?.slotId?.includes('streak') || payload.data?.slotId?.includes('morning')) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      startDailyChallenge(todayStr);
+    } else if (action === 'quick_game' || action === 'play') {
+      const diff = (payload.data?.difficulty as any) || 'easy';
+      startNewGame(diff);
+    } else {
+      setScreen('home');
+    }
+  };
 
   const [fontsLoaded] = useFonts({
     BricolageGrotesque_400Regular,
@@ -76,7 +97,10 @@ export default function App() {
       try {
         if (rcKey && rcKey !== "goog_REPLACE_WITH_REAL_API_KEY") {
           const customerInfo = await Purchases.getCustomerInfo();
-          if (typeof customerInfo.entitlements.active['Premium'] !== "undefined") {
+          if (
+            typeof customerInfo.entitlements.active['suduko_king_unlimited'] !== "undefined" ||
+            typeof customerInfo.entitlements.active['Premium'] !== "undefined"
+          ) {
             setPremium(true);
           }
         }
@@ -85,6 +109,51 @@ export default function App() {
       }
     };
     checkPremiumStatus();
+
+    // Initialize Firebase Cloud Messaging Push Notifications
+    notificationService.initialize(
+      (payload) => handleNotificationAction(payload),
+      (payload) => setForegroundNotification(payload),
+    );
+
+    // Initialize Local 6 Daily Recurring Notifications
+    let responseSubscription: { remove: () => void } | null = null;
+    try {
+      const ExpoNotifications = require('expo-notifications');
+      if (ExpoNotifications?.setNotificationHandler) {
+        ExpoNotifications.setNotificationHandler({
+          handleNotification: async () => ({
+            shouldShowAlert: false,
+            shouldPlaySound: true,
+            shouldSetBadge: false,
+            shouldShowBanner: false,
+            shouldShowList: true,
+          }),
+        });
+      }
+      localNotificationScheduler.scheduleDailyNotifications();
+
+      if (ExpoNotifications?.addNotificationResponseReceivedListener) {
+        responseSubscription = ExpoNotifications.addNotificationResponseReceivedListener(
+          (response: any) => {
+            const content = response?.notification?.request?.content;
+            if (content?.data) {
+              handleNotificationAction({
+                title: content.title ?? undefined,
+                body: content.body ?? undefined,
+                data: content.data as Record<string, string>,
+              });
+            }
+          },
+        );
+      }
+    } catch (e) {
+      console.log('ℹ️ [Local Notifications] Scheduler waiting for native rebuild:', e);
+    }
+
+    return () => {
+      responseSubscription?.remove?.();
+    };
   }, []);
 
   const showRewardedAd = (onReward: () => void) => {
@@ -100,6 +169,33 @@ export default function App() {
       adManagerShowInterstitial(() => setScreen('home'), isPremium);
     } else {
       setScreen('home');
+    }
+  };
+
+  const handleCustomPurchase = async () => {
+    try {
+      setIsPurchasing(true);
+      const offerings = await Purchases.getOfferings();
+      if (offerings.current && offerings.current.availablePackages.length > 0) {
+        const pkg = offerings.current.availablePackages[0];
+        const { customerInfo } = await Purchases.purchasePackage(pkg);
+        if (
+          typeof customerInfo.entitlements.active['suduko_king_unlimited'] !== "undefined" ||
+          typeof customerInfo.entitlements.active['Premium'] !== "undefined"
+        ) {
+          setPremium(true);
+          setShowCustomPaywall(false);
+          Alert.alert("Success", "Thank you! You are now Premium.");
+        }
+      } else {
+        Alert.alert("Store Error", "No products available in the current offering.");
+      }
+    } catch (e: any) {
+      if (!e.userCancelled) {
+        Alert.alert("Purchase Failed", e.message || "Could not complete purchase.");
+      }
+    } finally {
+      setIsPurchasing(false);
     }
   };
 
@@ -121,9 +217,13 @@ export default function App() {
       } else if (paywallResult === RevenueCatUI.PAYWALL_RESULT.RESTORED) {
         setPremium(true);
         Alert.alert("Success", "Purchases successfully restored.");
+      } else if (paywallResult === RevenueCatUI.PAYWALL_RESULT.ERROR) {
+        console.log("⚠️ [RevenueCat] Native paywall returned ERROR, falling back to in-app paywall");
+        setShowCustomPaywall(true);
       }
     } catch (e: any) {
-      Alert.alert("Error", "Something went wrong loading the paywall.");
+      console.log("⚠️ [RevenueCat] Error presenting native paywall, falling back:", e);
+      setShowCustomPaywall(true);
     }
   };
 
@@ -136,7 +236,10 @@ export default function App() {
       }
 
       const customerInfo = await Purchases.restorePurchases();
-      if (typeof customerInfo.entitlements.active['Premium'] !== "undefined") {
+      if (
+        typeof customerInfo.entitlements.active['suduko_king_unlimited'] !== "undefined" ||
+        typeof customerInfo.entitlements.active['Premium'] !== "undefined"
+      ) {
         setPremium(true);
         Alert.alert("Success", "Purchases successfully restored.");
       } else {
@@ -203,6 +306,11 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
+      <InAppNotificationBanner
+        notification={foregroundNotification}
+        onPress={(payload) => handleNotificationAction(payload)}
+        onDismiss={() => setForegroundNotification(null)}
+      />
       {screen === 'home' ? (
         <HomeScreen
           setScreen={setScreen}
@@ -210,6 +318,8 @@ export default function App() {
           history={history}
           isPremium={isPremium}
           setPremium={setPremium}
+          onOpenPaywall={buyPremium}
+          onRestorePurchases={restorePurchases}
         />
       ) : (
         <View style={{ flex: 1, backgroundColor: '#1E3A8A' }}>
@@ -220,7 +330,7 @@ export default function App() {
             style={StyleSheet.absoluteFill}
           />
           <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <TopBar showRewardedAd={showRewardedAd} />
+            <TopBar showRewardedAd={showRewardedAd} onOpenPaywall={buyPremium} />
 
             {/* ── White Sheet Container: Board, Keypad & Banner Ad ── */}
             <View style={styles.playingWhiteSheet}>
@@ -300,7 +410,7 @@ export default function App() {
                 }}>
                   {isGameWon
                     ? (currentDailyChallenge
-                        ? `You solved ${currentDailyChallenge} in ${formatWinTime(timer)}! Crown earned! 🎉`
+                        ? `You solved ${currentDailyChallenge} in ${formatWinTime(useGameStore.getState().timer)}! Crown earned! 🎉`
                         : 'Excellent job solving this puzzle! 🎉')
                     : 'You made 3 mistakes. Better luck next time!'}
                 </Text>
@@ -345,6 +455,14 @@ export default function App() {
 
         </View>
       )}
+
+      <Paywall
+        visible={showCustomPaywall}
+        onClose={() => setShowCustomPaywall(false)}
+        onPurchase={handleCustomPurchase}
+        onRestore={restorePurchases}
+        isLoading={isPurchasing}
+      />
       <StatusBar style={screen === 'playing' ? 'light' : 'dark'} />
     </SafeAreaProvider>
   );

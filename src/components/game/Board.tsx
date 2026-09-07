@@ -11,10 +11,11 @@ const COLOR_BORDER = "#5C6AF0"; // Modern vibrant periwinkle/indigo border
 const COLOR_THIN = "#00000030"; // Subtle lavender-gray inner divider
 
 export default function Board() {
-  const { board, selectedCell, selectCell, settings } = useGameStore();
-
-  const highlightAreas = settings?.highlightAreas ?? true;
-  const highlightSameNumbers = settings?.highlightSameNumbers ?? true;
+  const board = useGameStore((s) => s.board);
+  const selectedCell = useGameStore((s) => s.selectedCell);
+  const selectCell = useGameStore((s) => s.selectCell);
+  const highlightAreas = useGameStore((s) => s.settings?.highlightAreas ?? true);
+  const highlightSameNumbers = useGameStore((s) => s.settings?.highlightSameNumbers ?? true);
 
   if (!board || board.length !== 81) {
     return null;

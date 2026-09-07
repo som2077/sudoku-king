@@ -1,16 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Text } from "../ui/Text";
 import { View, TouchableOpacity } from "react-native";
+import { useGameStore } from "../../store/useGameStore";
 
 type ChartTab = "Day" | "Week" | "Month";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-const MOCK_DATA: Record<ChartTab, number[]> = {
-  Day: [40, 55, 60, 90, 70, 50, 65],
-  Week: [60, 45, 75, 80, 55, 70, 85],
-  Month: [50, 65, 45, 70, 90, 60, 75],
-};
 
 const TODAY_INDEX = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
 
@@ -19,8 +14,6 @@ const CARD_SHADOW = {
   borderRadius: 20,
   shadowColor: "#000",
   shadowOpacity: 0.06,
-  // shadowRadius: 10,
-  // shadowOffset: { width: 0, height: 4 },
   elevation: 1,
 };
 
@@ -38,7 +31,7 @@ function Bar({
   onPress: () => void;
 }) {
   const BAR_MAX_HEIGHT = 150;
-  const height = Math.max(6, (value / maxValue) * BAR_MAX_HEIGHT);
+  const height = maxValue > 0 && value > 0 ? Math.max(6, (value / maxValue) * BAR_MAX_HEIGHT) : 4;
 
   return (
     <TouchableOpacity
@@ -78,7 +71,7 @@ function Bar({
             width: 35,
             height,
             borderRadius: 6,
-            backgroundColor: isSelected ? "#1C1F2E" : "#F3F4F6",
+            backgroundColor: isSelected ? "#1C1F2E" : value > 0 ? "#E5E7EB" : "#F3F4F6",
           }}
         />
       </View>
@@ -98,10 +91,41 @@ function Bar({
   );
 }
 
-export function WinRateChart() {
+interface WinRateChartProps {
+  data?: Record<ChartTab, number[]>;
+}
+
+export function WinRateChart({ data: propData }: WinRateChartProps = {}) {
   const [activeTab, setActiveTab] = useState<ChartTab>("Day");
   const [selectedDay, setSelectedDay] = useState(TODAY_INDEX);
-  const data = MOCK_DATA[activeTab];
+
+  const dailyHistory = useGameStore((s) => s.dailyHistory) || {};
+  const totalSolved = useGameStore((s) => s.totalSolved) || 0;
+  const totalPlayed = useGameStore((s) => s.totalPlayed) || 0;
+
+  const data = useMemo(() => {
+    if (propData) return propData[activeTab];
+
+    const now = new Date();
+    const nowDay = now.getDay();
+    const mondayDiff = now.getDate() - nowDay + (nowDay === 0 ? -6 : 1);
+    const monday = new Date(now);
+    monday.setDate(mondayDiff);
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const key = `${y}-${m}-${day}`;
+      const stat = dailyHistory[key];
+      if (stat && stat.played > 0) {
+        return Math.min(100, Math.round((stat.solved / stat.played) * 100));
+      }
+      return 0;
+    });
+  }, [propData, activeTab, dailyHistory]);
   const maxValue = Math.max(...data, 1);
   const tabs: ChartTab[] = ["Day", "Week", "Month"];
 
