@@ -10,7 +10,10 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full apple-blur-nav transition-all">
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-8">
-        <Link href="/" className="flex items-center gap-2.5 group apple-press-subtle">
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 group apple-press-subtle"
+        >
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-b from-amber-400 to-amber-500 text-slate-950 shadow-[0_2px_8px_rgba(245,158,11,0.25),inset_0_1px_0_rgba(255,255,255,0.6)] border border-amber-300/60 group-hover:scale-105 transition-transform duration-200">
             <Crown className="h-5 w-5 fill-current" />
           </div>
