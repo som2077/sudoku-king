@@ -613,11 +613,7 @@ const styles = StyleSheet.create({
   playingWhiteSheet: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+    padding: 4,
     alignItems: "center",
     shadowColor: "#000",
     shadowOpacity: 0.08,
@@ -629,7 +625,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 50,
     minHeight: 52,
   },
   bannerPlaceholder: {

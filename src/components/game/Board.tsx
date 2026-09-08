@@ -4,7 +4,7 @@ import Cell from "./Cell";
 import { useGameStore } from "../../store/useGameStore";
 import { getRow, getCol, getBlock } from "../../utils/sudokuLogic";
 
-const COLOR_BORDER = "#1E293B"; // Crisp premium dark slate for 3x3 block borders & outer frame
+const COLOR_BORDER = "#000000"; // Crisp premium dark border for 3x3 block borders & outer frame
 const COLOR_THIN = "#E2E8F0"; // Clean, elegant divider between individual cells
 
 export default function Board() {
@@ -19,13 +19,14 @@ export default function Board() {
     (s) => s.settings?.highlightSameNumbers ?? true,
   );
 
-  // Pixel-perfect cell and board calculation to guarantee 100% square cells with no sub-pixel jitter
-  const { cellSize, boardSize } = useMemo(() => {
-    const availableWidth = Math.min(screenWidth - 32, 420);
+  // Pixel-perfect cell, block and board calculation to guarantee 100% square cells with no sub-pixel jitter
+  const { cellSize, blockSize, boardSize } = useMemo(() => {
+    const availableWidth = Math.min(screenWidth - 3, 500);
     // Outer border (2px each side = 4px) + 6 thin dividers (1px each = 6px) + 2 thick dividers (2px each = 4px) = 14px
     const cell = Math.floor((availableWidth - 14) / 9);
-    const total = cell * 9 + 14;
-    return { cellSize: cell, boardSize: total };
+    const block = cell * 3 + 2; // 3 cells + 2 thin (1px) dividers
+    const total = block * 3 + 8; // 3 blocks + 2 thick (2px) dividers + 4px outer borders = cell * 9 + 14
+    return { cellSize: cell, blockSize: block, boardSize: total };
   }, [screenWidth]);
 
   if (!board || board.length !== 81) {
@@ -40,94 +41,90 @@ export default function Board() {
   return (
     <View style={styles.boardWrapper}>
       <View
-        style={[
-          styles.boardContainer,
-          { width: boardSize, height: boardSize },
-        ]}
+        style={[styles.boardContainer, { width: boardSize, height: boardSize }]}
       >
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((row) => {
-          const isThickHorizontal = row === 2 || row === 5;
-          const isNotLastRow = row < 8;
+        {[0, 1, 2].map((blockRow) => (
+          <React.Fragment key={`block-row-${blockRow}`}>
+            <View style={[styles.blockRow, { height: blockSize }]}>
+              {[0, 1, 2].map((blockCol) => (
+                <React.Fragment key={`block-${blockRow}-${blockCol}`}>
+                  <View
+                    style={[
+                      styles.blockContainer,
+                      { width: blockSize, height: blockSize },
+                    ]}
+                  >
+                    {[0, 1, 2].map((subRow) => {
+                      const row = blockRow * 3 + subRow;
+                      return (
+                        <React.Fragment key={`sub-row-${subRow}`}>
+                          <View style={[styles.subRow, { height: cellSize }]}>
+                            {[0, 1, 2].map((subCol) => {
+                              const col = blockCol * 3 + subCol;
+                              const i = row * 9 + col;
+                              const cell = board[i];
+                              if (!cell) return null;
 
-          return (
-            <React.Fragment key={`row-group-${row}`}>
-              <View style={[styles.row, { height: cellSize }]}>
-                {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((col) => {
-                  const i = row * 9 + col;
-                  const cell = board[i];
-                  if (!cell) return null;
+                              let isHighlighted = false;
+                              let isSameValue = false;
 
-                  let isHighlighted = false;
-                  let isSameValue = false;
+                              if (selectedCell !== null) {
+                                if (
+                                  highlightAreas &&
+                                  (row === getRow(selectedCell) ||
+                                    col === getCol(selectedCell) ||
+                                    getBlock(i) === getBlock(selectedCell))
+                                ) {
+                                  isHighlighted = true;
+                                }
+                                if (
+                                  highlightSameNumbers &&
+                                  selectedVal !== null &&
+                                  cell.value === selectedVal
+                                ) {
+                                  isSameValue = true;
+                                }
+                              }
 
-                  if (selectedCell !== null) {
-                    if (
-                      highlightAreas &&
-                      (row === getRow(selectedCell) ||
-                        col === getCol(selectedCell) ||
-                        getBlock(i) === getBlock(selectedCell))
-                    ) {
-                      isHighlighted = true;
-                    }
-                    if (
-                      highlightSameNumbers &&
-                      selectedVal !== null &&
-                      cell.value === selectedVal
-                    ) {
-                      isSameValue = true;
-                    }
-                  }
-
-                  const isThickVertical = col === 2 || col === 5;
-                  const isNotLastCol = col < 8;
-
-                  return (
-                    <React.Fragment key={`cell-group-${i}`}>
-                      <View
-                        style={[
-                          styles.cellContainer,
-                          { width: cellSize, height: cellSize },
-                        ]}
-                      >
-                        <Cell
-                          index={i}
-                          value={cell.value}
-                          notes={cell.notes}
-                          isSelected={selectedCell === i}
-                          isLocked={cell.isLocked}
-                          isError={cell.isError}
-                          isHighlighted={isHighlighted}
-                          isSameValue={isSameValue}
-                          onPress={selectCell}
-                        />
-                      </View>
-                      {isNotLastCol && (
-                        <View
-                          style={[
-                            styles.verticalDivider,
-                            isThickVertical
-                              ? styles.verticalThick
-                              : styles.verticalThin,
-                          ]}
-                        />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </View>
-              {isNotLastRow && (
-                <View
-                  style={[
-                    styles.horizontalDivider,
-                    isThickHorizontal
-                      ? styles.horizontalThick
-                      : styles.horizontalThin,
-                  ]}
-                />
-              )}
-            </React.Fragment>
-          );
-        })}
+                              return (
+                                <React.Fragment key={`cell-group-${i}`}>
+                                  <View
+                                    style={[
+                                      styles.cellContainer,
+                                      { width: cellSize, height: cellSize },
+                                    ]}
+                                  >
+                                    <Cell
+                                      index={i}
+                                      value={cell.value}
+                                      notes={cell.notes}
+                                      isSelected={selectedCell === i}
+                                      isLocked={cell.isLocked}
+                                      isError={cell.isError}
+                                      isHighlighted={isHighlighted}
+                                      isSameValue={isSameValue}
+                                      onPress={selectCell}
+                                    />
+                                  </View>
+                                  {subCol < 2 && (
+                                    <View style={styles.verticalThin} />
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </View>
+                          {subRow < 2 && <View style={styles.horizontalThin} />}
+                        </React.Fragment>
+                      );
+                    })}
+                  </View>
+                  {blockCol < 2 && <View style={styles.verticalThick} />}
+                </React.Fragment>
+              ))}
+            </View>
+            {blockRow < 2 && <View style={styles.horizontalThick} />}
+          </React.Fragment>
+        ))}
       </View>
     </View>
   );
@@ -140,13 +137,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   boardContainer: {
-    borderRadius: 8,
+    borderRadius: 0,
     borderWidth: 2,
     borderColor: COLOR_BORDER,
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
   },
-  row: {
+  blockRow: {
+    flexDirection: "row",
+    width: "100%",
+  },
+  blockContainer: {
+    flexDirection: "column",
+  },
+  subRow: {
     flexDirection: "row",
     width: "100%",
   },
@@ -154,26 +158,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  verticalDivider: {
-    height: "100%",
-  },
   verticalThin: {
     width: 1,
+    height: "100%",
     backgroundColor: COLOR_THIN,
   },
   verticalThick: {
     width: 2,
+    height: "100%",
     backgroundColor: COLOR_BORDER,
-  },
-  horizontalDivider: {
-    width: "100%",
   },
   horizontalThin: {
     height: 1,
+    width: "100%",
     backgroundColor: COLOR_THIN,
   },
   horizontalThick: {
     height: 2,
+    width: "100%",
     backgroundColor: COLOR_BORDER,
   },
 });
