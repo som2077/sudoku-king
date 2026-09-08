@@ -130,8 +130,14 @@ type GameState = {
   todaySolved: number;
   lastSolvedDate: string | null;
   streak: number;
+  hasSeenWelcome: boolean;
+  hasCompletedOnboarding: boolean;
 
   // Actions
+  completeWelcome: () => void;
+  resetWelcome: () => void;
+  completeOnboarding: (startingDifficulty?: Difficulty) => void;
+  resetOnboarding: () => void;
   recordGameWon: (difficulty: Difficulty, timeSec: number) => void;
   recordGamePlayed: (difficulty: Difficulty) => void;
   setScreen: (screen: 'home' | 'playing') => void;
@@ -208,6 +214,17 @@ export const useGameStore = create<GameState>()(
       todaySolved: 0,
       lastSolvedDate: null,
       streak: 0,
+      hasSeenWelcome: false,
+      hasCompletedOnboarding: false,
+
+      completeWelcome: () => set({ hasSeenWelcome: true }),
+      resetWelcome: () => set({ hasSeenWelcome: false, hasCompletedOnboarding: false }),
+      completeOnboarding: (startingDifficulty) => set((state) => ({
+        hasSeenWelcome: true,
+        hasCompletedOnboarding: true,
+        difficulty: startingDifficulty || state.difficulty || 'Easy',
+      })),
+      resetOnboarding: () => set({ hasCompletedOnboarding: false }),
 
       recordGameWon: (difficulty, timeSec) => set((state) => {
         if (state.isGameCompleted) return state;

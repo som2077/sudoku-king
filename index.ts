@@ -1,16 +1,19 @@
-import { registerRootComponent } from 'expo';
+import { registerRootComponent } from "expo";
 
-import { getMessaging, setBackgroundMessageHandler } from '@react-native-firebase/messaging';
-import App from './App';
+import {
+  getMessaging,
+  setBackgroundMessageHandler,
+} from "@react-native-firebase/messaging";
+import App from "./App";
 
 // Register background and quit state notification handler for FCM
 try {
   const messaging = getMessaging();
   setBackgroundMessageHandler(messaging, async (remoteMessage) => {
-    console.log('🌙 [FCM] Background/Quit message received:', remoteMessage);
+    console.log("🌙 [FCM] Background/Quit message received:", remoteMessage);
   });
 } catch (error) {
-  console.warn('⚠️ [FCM] Failed to set background message handler:', error);
+  console.warn("⚠️ [FCM] Failed to set background message handler:", error);
 }
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);

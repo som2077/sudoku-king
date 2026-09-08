@@ -1,22 +1,30 @@
-import { StatusBar } from 'expo-status-bar';
-import { Text } from './src/components/Text';
-import { View, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from 'react-native';
-import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
-import { useEffect, useState, useRef } from 'react';
-import { StatusBar as NativeStatusBar } from 'react-native';
-import { getAnalytics, logEvent } from '@react-native-firebase/analytics';
-import Purchases from 'react-native-purchases';
-import RevenueCatUI from 'react-native-purchases-ui';
-import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
-import Board from './src/components/Board';
-import Keypad from './src/components/Keypad';
-import TopBar from './src/components/TopBar';
-import HomeScreen from './src/screens/HomeScreen';
-import Paywall from './src/components/ui/Paywall';
-import { useGameStore } from './src/store/useGameStore';
-import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from "expo-status-bar";
+import { Text } from "./src/components/Text";
+import {
+  View,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { useEffect, useState, useRef } from "react";
+import { StatusBar as NativeStatusBar } from "react-native";
+import { getAnalytics, logEvent } from "@react-native-firebase/analytics";
+import Purchases from "react-native-purchases";
+import RevenueCatUI from "react-native-purchases-ui";
+import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
+import Board from "./src/components/Board";
+import Keypad from "./src/components/Keypad";
+import TopBar from "./src/components/TopBar";
+import HomeScreen from "./src/screens/HomeScreen";
+import WelcomeScreen from "./src/screens/WelcomeScreen";
+import OnboardingScreen from "./src/screens/OnboardingScreen";
+import Paywall from "./src/components/ui/Paywall";
+import { useGameStore } from "./src/store/useGameStore";
+import { LinearGradient } from "expo-linear-gradient";
 
-import { getRevenueCatApiKey } from './src/utils/secrets';
+import { getRevenueCatApiKey } from "./src/utils/secrets";
 import {
   useFonts,
   BricolageGrotesque_400Regular,
@@ -24,45 +32,73 @@ import {
   BricolageGrotesque_600SemiBold,
   BricolageGrotesque_700Bold,
   BricolageGrotesque_800ExtraBold,
-} from '@expo-google-fonts/bricolage-grotesque';
+} from "@expo-google-fonts/bricolage-grotesque";
 import {
   BANNER_AD_UNIT_ID,
   showRewardedAd as adManagerShowRewarded,
   showInterstitialAd as adManagerShowInterstitial,
-} from './src/services/adManager';
-import InAppNotificationBanner from './src/components/InAppNotificationBanner';
-import { notificationService, type NotificationPayload } from './src/services/notificationService';
-import { localNotificationScheduler } from './src/services/localNotificationScheduler';
+} from "./src/services/adManager";
+import InAppNotificationBanner from "./src/components/InAppNotificationBanner";
+import {
+  notificationService,
+  type NotificationPayload,
+} from "./src/services/notificationService";
+import { localNotificationScheduler } from "./src/services/localNotificationScheduler";
 
 export default function App() {
   const {
-    screen, setScreen,
-    mistakes, board, secondChance,
-    isPremium, setPremium, fetchRemoteConfig,
-    history, startNewGame, addHint, useHint,
-    currentDailyChallenge, completeDailyChallenge,
-    difficulty, recordGameWon, startDailyChallenge
+    screen,
+    setScreen,
+    mistakes,
+    board,
+    secondChance,
+    isPremium,
+    setPremium,
+    fetchRemoteConfig,
+    history,
+    startNewGame,
+    addHint,
+    useHint,
+    currentDailyChallenge,
+    completeDailyChallenge,
+    difficulty,
+    recordGameWon,
+    startDailyChallenge,
+    hasSeenWelcome,
+    completeWelcome,
+    resetWelcome,
+    hasCompletedOnboarding,
+    completeOnboarding,
   } = useGameStore();
 
   const isGameOver = mistakes >= 3;
-  const isGameWon = board.length > 0 && board.every(cell => cell.value !== null && !cell.isError) && mistakes < 3;
+  const isGameWon =
+    board.length > 0 &&
+    board.every((cell) => cell.value !== null && !cell.isError) &&
+    mistakes < 3;
 
   const [bannerLoaded, setBannerLoaded] = useState(false);
-  const [foregroundNotification, setForegroundNotification] = useState<NotificationPayload | null>(null);
+  const [foregroundNotification, setForegroundNotification] =
+    useState<NotificationPayload | null>(null);
   const [showCustomPaywall, setShowCustomPaywall] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   const handleNotificationAction = (payload: NotificationPayload) => {
-    console.log('🎯 [Notification Action Handler]:', payload);
+    console.log("🎯 [Notification Action Handler]:", payload);
     const action = payload.data?.action || payload.data?.screen;
-    if (action === 'daily' || payload.title?.toLowerCase().includes('daily') || payload.data?.slotId?.includes('streak') || payload.data?.slotId?.includes('morning')) {
-      const todayStr = new Date().toISOString().split('T')[0];
+    if (
+      action === "daily" ||
+      payload.title?.toLowerCase().includes("daily") ||
+      payload.data?.slotId?.includes("streak") ||
+      payload.data?.slotId?.includes("morning")
+    ) {
+      const todayStr = new Date().toISOString().split("T")[0];
       startDailyChallenge(todayStr);
-    } else if (action === 'quick_game' || action === 'play') {
-      const diff = (payload.data?.difficulty as any) || 'easy';
+    } else if (action === "quick_game" || action === "play") {
+      const diff = (payload.data?.difficulty as any) || "easy";
       startNewGame(diff);
     } else {
-      setScreen('home');
+      setScreen("home");
     }
   };
 
@@ -75,12 +111,12 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (screen === 'playing') {
-      NativeStatusBar.setBarStyle('light-content');
+    if (screen === "playing") {
+      NativeStatusBar.setBarStyle("light-content");
     } else {
-      NativeStatusBar.setBarStyle('dark-content');
+      NativeStatusBar.setBarStyle("dark-content");
     }
-    NativeStatusBar.setBackgroundColor('transparent', true);
+    NativeStatusBar.setBackgroundColor("transparent", true);
     NativeStatusBar.setTranslucent(true);
 
     fetchRemoteConfig();
@@ -89,7 +125,9 @@ export default function App() {
     if (rcKey && rcKey !== "goog_REPLACE_WITH_REAL_API_KEY") {
       Purchases.configure({ apiKey: rcKey });
     } else {
-      console.log("⚠️ [RevenueCat] Skipping initialization: Real API key not set yet.");
+      console.log(
+        "⚠️ [RevenueCat] Skipping initialization: Real API key not set yet.",
+      );
       setPremium(false);
     }
 
@@ -98,8 +136,9 @@ export default function App() {
         if (rcKey && rcKey !== "goog_REPLACE_WITH_REAL_API_KEY") {
           const customerInfo = await Purchases.getCustomerInfo();
           if (
-            typeof customerInfo.entitlements.active['suduko_king_unlimited'] !== "undefined" ||
-            typeof customerInfo.entitlements.active['Premium'] !== "undefined"
+            typeof customerInfo.entitlements.active["suduko_king_unlimited"] !==
+              "undefined" ||
+            typeof customerInfo.entitlements.active["Premium"] !== "undefined"
           ) {
             setPremium(true);
           }
@@ -119,7 +158,7 @@ export default function App() {
     // Initialize Local 6 Daily Recurring Notifications
     let responseSubscription: { remove: () => void } | null = null;
     try {
-      const ExpoNotifications = require('expo-notifications');
+      const ExpoNotifications = require("expo-notifications");
       if (ExpoNotifications?.setNotificationHandler) {
         ExpoNotifications.setNotificationHandler({
           handleNotification: async () => ({
@@ -131,24 +170,33 @@ export default function App() {
           }),
         });
       }
-      localNotificationScheduler.scheduleDailyNotifications();
+
+      const { settings: currentSettings, hasCompletedOnboarding: isOnboarded } =
+        useGameStore.getState();
+      if (isOnboarded && currentSettings.notificationsEnabled) {
+        localNotificationScheduler.scheduleDailyNotifications();
+      }
 
       if (ExpoNotifications?.addNotificationResponseReceivedListener) {
-        responseSubscription = ExpoNotifications.addNotificationResponseReceivedListener(
-          (response: any) => {
-            const content = response?.notification?.request?.content;
-            if (content?.data) {
-              handleNotificationAction({
-                title: content.title ?? undefined,
-                body: content.body ?? undefined,
-                data: content.data as Record<string, string>,
-              });
-            }
-          },
-        );
+        responseSubscription =
+          ExpoNotifications.addNotificationResponseReceivedListener(
+            (response: any) => {
+              const content = response?.notification?.request?.content;
+              if (content?.data) {
+                handleNotificationAction({
+                  title: content.title ?? undefined,
+                  body: content.body ?? undefined,
+                  data: content.data as Record<string, string>,
+                });
+              }
+            },
+          );
       }
     } catch (e) {
-      console.log('ℹ️ [Local Notifications] Scheduler waiting for native rebuild:', e);
+      console.log(
+        "ℹ️ [Local Notifications] Scheduler waiting for native rebuild:",
+        e,
+      );
     }
 
     return () => {
@@ -159,16 +207,16 @@ export default function App() {
   const showRewardedAd = (onReward: () => void) => {
     adManagerShowRewarded(
       onReward,
-      (errMsg) => Alert.alert('Ad Notice', errMsg),
+      (errMsg) => Alert.alert("Ad Notice", errMsg),
       isPremium,
     );
   };
 
   const handleBackToHome = () => {
     if (isGameWon) {
-      adManagerShowInterstitial(() => setScreen('home'), isPremium);
+      adManagerShowInterstitial(() => setScreen("home"), isPremium);
     } else {
-      setScreen('home');
+      setScreen("home");
     }
   };
 
@@ -180,19 +228,26 @@ export default function App() {
         const pkg = offerings.current.availablePackages[0];
         const { customerInfo } = await Purchases.purchasePackage(pkg);
         if (
-          typeof customerInfo.entitlements.active['suduko_king_unlimited'] !== "undefined" ||
-          typeof customerInfo.entitlements.active['Premium'] !== "undefined"
+          typeof customerInfo.entitlements.active["suduko_king_unlimited"] !==
+            "undefined" ||
+          typeof customerInfo.entitlements.active["Premium"] !== "undefined"
         ) {
           setPremium(true);
           setShowCustomPaywall(false);
           Alert.alert("Success", "Thank you! You are now Premium.");
         }
       } else {
-        Alert.alert("Store Error", "No products available in the current offering.");
+        Alert.alert(
+          "Store Error",
+          "No products available in the current offering.",
+        );
       }
     } catch (e: any) {
       if (!e.userCancelled) {
-        Alert.alert("Purchase Failed", e.message || "Could not complete purchase.");
+        Alert.alert(
+          "Purchase Failed",
+          e.message || "Could not complete purchase.",
+        );
       }
     } finally {
       setIsPurchasing(false);
@@ -203,9 +258,18 @@ export default function App() {
     try {
       const rcKey = getRevenueCatApiKey();
       if (!rcKey || rcKey === "goog_REPLACE_WITH_REAL_API_KEY") {
-        Alert.alert("Store Not Ready", "RevenueCat API Key not set. Unlocking for testing.", [
-          { text: "OK", onPress: () => { setPremium(true); } }
-        ]);
+        Alert.alert(
+          "Store Not Ready",
+          "RevenueCat API Key not set. Unlocking for testing.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                setPremium(true);
+              },
+            },
+          ],
+        );
         return;
       }
 
@@ -218,11 +282,16 @@ export default function App() {
         setPremium(true);
         Alert.alert("Success", "Purchases successfully restored.");
       } else if (paywallResult === RevenueCatUI.PAYWALL_RESULT.ERROR) {
-        console.log("⚠️ [RevenueCat] Native paywall returned ERROR, falling back to in-app paywall");
+        console.log(
+          "⚠️ [RevenueCat] Native paywall returned ERROR, falling back to in-app paywall",
+        );
         setShowCustomPaywall(true);
       }
     } catch (e: any) {
-      console.log("⚠️ [RevenueCat] Error presenting native paywall, falling back:", e);
+      console.log(
+        "⚠️ [RevenueCat] Error presenting native paywall, falling back:",
+        e,
+      );
       setShowCustomPaywall(true);
     }
   };
@@ -237,8 +306,9 @@ export default function App() {
 
       const customerInfo = await Purchases.restorePurchases();
       if (
-        typeof customerInfo.entitlements.active['suduko_king_unlimited'] !== "undefined" ||
-        typeof customerInfo.entitlements.active['Premium'] !== "undefined"
+        typeof customerInfo.entitlements.active["suduko_king_unlimited"] !==
+          "undefined" ||
+        typeof customerInfo.entitlements.active["Premium"] !== "undefined"
       ) {
         setPremium(true);
         Alert.alert("Success", "Purchases successfully restored.");
@@ -261,10 +331,11 @@ export default function App() {
   }, [isGameWon, isGameOver]);
 
   useEffect(() => {
-    if (screen === 'playing') {
-      const isBoardEmpty = !board || board.length !== 81 || board.every((c) => c.value === null);
+    if (screen === "playing") {
+      const isBoardEmpty =
+        !board || board.length !== 81 || board.every((c) => c.value === null);
       if (isBoardEmpty) {
-        startNewGame(difficulty || 'Medium');
+        startNewGame(difficulty || "Medium");
       }
     }
   }, [screen, board, difficulty, startNewGame]);
@@ -278,9 +349,11 @@ export default function App() {
       const curDaily = useGameStore.getState().currentDailyChallenge;
       const curDiff = useGameStore.getState().difficulty;
 
-      console.log(`🔥 [Firebase Analytics] Logging Event: game_won (Time: ${currentTimer}s)`);
-      logEvent(analytics, 'game_won', { time_taken: currentTimer });
-      
+      console.log(
+        `🔥 [Firebase Analytics] Logging Event: game_won (Time: ${currentTimer}s)`,
+      );
+      logEvent(analytics, "game_won", { time_taken: currentTimer });
+
       recordGameWon(curDiff, currentTimer);
 
       if (curDaily) {
@@ -289,8 +362,10 @@ export default function App() {
     } else if (isGameOver && !recordedLossRef.current) {
       recordedLossRef.current = true;
       const currentTimer = useGameStore.getState().timer;
-      console.log(`🔥 [Firebase Analytics] Logging Event: game_lost (Time: ${currentTimer}s)`);
-      logEvent(analytics, 'game_lost', { time_taken: currentTimer });
+      console.log(
+        `🔥 [Firebase Analytics] Logging Event: game_lost (Time: ${currentTimer}s)`,
+      );
+      logEvent(analytics, "game_lost", { time_taken: currentTimer });
     }
   }, [isGameWon, isGameOver, completeDailyChallenge, recordGameWon]);
 
@@ -299,8 +374,10 @@ export default function App() {
   }
 
   const formatWinTime = (sec: number) => {
-    const m = Math.floor(sec / 60).toString().padStart(2, '0');
-    const s = (sec % 60).toString().padStart(2, '0');
+    const m = Math.floor(sec / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (sec % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
 
@@ -311,7 +388,25 @@ export default function App() {
         onPress={(payload) => handleNotificationAction(payload)}
         onDismiss={() => setForegroundNotification(null)}
       />
-      {screen === 'home' ? (
+      {!hasSeenWelcome ? (
+        <WelcomeScreen
+          onGetStarted={() => {
+            completeWelcome();
+          }}
+          onQuickPlay={() => {
+            completeOnboarding();
+          }}
+        />
+      ) : !hasCompletedOnboarding ? (
+        <OnboardingScreen
+          onBack={() => {
+            resetWelcome();
+          }}
+          onFinish={(chosenDifficulty) => {
+            completeOnboarding(chosenDifficulty);
+          }}
+        />
+      ) : screen === "home" ? (
         <HomeScreen
           setScreen={setScreen}
           startNewGame={startNewGame}
@@ -322,15 +417,18 @@ export default function App() {
           onRestorePurchases={restorePurchases}
         />
       ) : (
-        <View style={{ flex: 1, backgroundColor: '#1E3A8A' }}>
+        <View style={{ flex: 1, backgroundColor: "#1E3A8A" }}>
           <LinearGradient
-            colors={['#1E3A8A', '#2563EB', '#3B82F6']}
+            colors={["#1E3A8A", "#2563EB", "#3B82F6"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-          <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <TopBar showRewardedAd={showRewardedAd} onOpenPaywall={buyPremium} />
+          <View style={{ flex: 1, backgroundColor: "transparent" }}>
+            <TopBar
+              showRewardedAd={showRewardedAd}
+              onOpenPaywall={buyPremium}
+            />
 
             {/* ── White Sheet Container: Board, Keypad & Banner Ad ── */}
             <View style={styles.playingWhiteSheet}>
@@ -346,11 +444,11 @@ export default function App() {
                     requestOptions={{ requestNonPersonalizedAdsOnly: true }}
                     onAdLoaded={() => {
                       setBannerLoaded(true);
-                      console.log('🔥 [BannerAd] Loaded successfully');
+                      console.log("🔥 [BannerAd] Loaded successfully");
                     }}
                     onAdFailedToLoad={(error) => {
                       setBannerLoaded(false);
-                      console.log('⚠️ [BannerAd] Failed to load:', error);
+                      console.log("⚠️ [BannerAd] Failed to load:", error);
                     }}
                   />
                   {!bannerLoaded && (
@@ -367,52 +465,83 @@ export default function App() {
 
           {/* ── Win / Game Over Modal ── */}
           {(isGameOver || isGameWon) && (
-            <View style={{
-              position: 'absolute', inset: 0, top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.6)',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 50,
-            }}>
-              <View style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: 28,
-                padding: 32,
-                alignItems: 'center',
-                width: '82%',
-                shadowColor: '#000',
-                shadowOpacity: 0.2,
-                shadowRadius: 24,
-                shadowOffset: { width: 0, height: 10 },
-                elevation: 12,
-              }}>
+            <View
+              style={{
+                position: "absolute",
+                inset: 0,
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.6)",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 50,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 28,
+                  padding: 32,
+                  alignItems: "center",
+                  width: "82%",
+                  shadowColor: "#000",
+                  shadowOpacity: 0.2,
+                  shadowRadius: 24,
+                  shadowOffset: { width: 0, height: 10 },
+                  elevation: 12,
+                }}
+              >
                 {/* Emoji circle */}
-                <View style={{
-                  width: 80, height: 80, borderRadius: 999,
-                  backgroundColor: isGameWon ? (currentDailyChallenge ? '#FEF3C7' : '#DCFCE7') : '#FEE2E2',
-                  alignItems: 'center', justifyContent: 'center',
-                  marginBottom: 16,
-                }}>
+                <View
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 999,
+                    backgroundColor: isGameWon
+                      ? currentDailyChallenge
+                        ? "#FEF3C7"
+                        : "#DCFCE7"
+                      : "#FEE2E2",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 16,
+                  }}
+                >
                   <Text style={{ fontSize: 40 }}>
-                    {isGameWon ? (currentDailyChallenge ? '👑' : '🏆') : '💀'}
+                    {isGameWon ? (currentDailyChallenge ? "👑" : "🏆") : "💀"}
                   </Text>
                 </View>
 
-                <Text style={{
-                  fontSize: 24, fontWeight: '800', color: '#1C1F2E', marginBottom: 6, textAlign: 'center',
-                }}>
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontWeight: "800",
+                    color: "#1C1F2E",
+                    marginBottom: 6,
+                    textAlign: "center",
+                  }}
+                >
                   {isGameWon
-                    ? (currentDailyChallenge ? 'Daily Challenge Solved!' : 'You Win!')
-                    : 'Game Over'}
+                    ? currentDailyChallenge
+                      ? "Daily Challenge Solved!"
+                      : "You Win!"
+                    : "Game Over"}
                 </Text>
-                <Text style={{
-                  fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 28,
-                }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#6B7280",
+                    textAlign: "center",
+                    marginBottom: 28,
+                  }}
+                >
                   {isGameWon
-                    ? (currentDailyChallenge
-                        ? `You solved ${currentDailyChallenge} in ${formatWinTime(useGameStore.getState().timer)}! Crown earned! 🎉`
-                        : 'Excellent job solving this puzzle! 🎉')
-                    : 'You made 3 mistakes. Better luck next time!'}
+                    ? currentDailyChallenge
+                      ? `You solved ${currentDailyChallenge} in ${formatWinTime(useGameStore.getState().timer)}! Crown earned! 🎉`
+                      : "Excellent job solving this puzzle! 🎉"
+                    : "You made 3 mistakes. Better luck next time!"}
                 </Text>
 
                 {/* Second Chance (only on game over) */}
@@ -420,16 +549,22 @@ export default function App() {
                   <TouchableOpacity
                     onPress={() => showRewardedAd(() => secondChance())}
                     style={{
-                      backgroundColor: '#3B82F6',
+                      backgroundColor: "#3B82F6",
                       borderRadius: 999,
                       paddingVertical: 14,
-                      width: '100%',
-                      alignItems: 'center',
+                      width: "100%",
+                      alignItems: "center",
                       marginBottom: 10,
                     }}
                   >
-                    <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 16 }}>
-                      Second Chance {isPremium ? '' : '📺'}
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontWeight: "800",
+                        fontSize: 16,
+                      }}
+                    >
+                      Second Chance {isPremium ? "" : "📺"}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -438,21 +573,26 @@ export default function App() {
                 <TouchableOpacity
                   onPress={handleBackToHome}
                   style={{
-                    backgroundColor: '#F3F4F6',
+                    backgroundColor: "#F3F4F6",
                     borderRadius: 999,
                     paddingVertical: 14,
-                    width: '100%',
-                    alignItems: 'center',
+                    width: "100%",
+                    alignItems: "center",
                   }}
                 >
-                  <Text style={{ color: '#1C1F2E', fontWeight: '700', fontSize: 16 }}>
+                  <Text
+                    style={{
+                      color: "#1C1F2E",
+                      fontWeight: "700",
+                      fontSize: 16,
+                    }}
+                  >
                     Back to Home
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
           )}
-
         </View>
       )}
 
@@ -463,7 +603,7 @@ export default function App() {
         onRestore={restorePurchases}
         isLoading={isPurchasing}
       />
-      <StatusBar style={screen === 'playing' ? 'light' : 'dark'} />
+      <StatusBar style={screen === "playing" ? "light" : "dark"} />
     </SafeAreaProvider>
   );
 }
@@ -471,23 +611,23 @@ export default function App() {
 const styles = StyleSheet.create({
   playingWhiteSheet: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingTop: 16,
     paddingHorizontal: 16,
     paddingBottom: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: -4 },
     elevation: 8,
   },
   bannerAdSlot: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 20,
     minHeight: 52,
   },
@@ -495,18 +635,17 @@ const styles = StyleSheet.create({
     width: 320,
     height: 50,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: "#F8FAFC",
     borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#CBD5E1",
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
   },
   bannerPlaceholderText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#94A3B8',
+    fontWeight: "600",
+    color: "#94A3B8",
     letterSpacing: 0.3,
   },
 });
-

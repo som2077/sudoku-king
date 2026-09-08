@@ -1,5 +1,5 @@
 import React from "react";
-import { Text } from '../ui/Text';
+import { Text } from "../ui/Text";
 import { Pressable, StyleSheet, View } from "react-native";
 
 export type FilterTab = "Daily" | "Weekly" | "Monthly" | "90 Days";
@@ -16,10 +16,7 @@ interface FilterTabsProps {
   onChange: (tab: FilterTab) => void;
 }
 
-export function FilterTabs({
-  value,
-  onChange,
-}: FilterTabsProps) {
+export function FilterTabs({ value, onChange }: FilterTabsProps) {
   return (
     <View style={styles.container}>
       {TABS.map((tab) => (

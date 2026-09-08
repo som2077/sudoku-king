@@ -120,7 +120,7 @@ export function DashboardPager({ solved, totalSolved }: DashboardPagerProps) {
         </View>
 
         {/* Page 2 — Difficulty Breakdown Chart (Donut / Radar / Curve) */}
-        <View style={{ width: cardWidth , marginBottom: 5}}>
+        <View style={{ width: cardWidth, marginBottom: 5 }}>
           <DifficultyBreakdownChart />
         </View>
       </ScrollView>

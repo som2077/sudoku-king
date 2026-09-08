@@ -20,7 +20,6 @@ import { DailyChallengesScreen } from "./DailyChallengesScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { AwardsScreen } from "./AwardsScreen";
 import { StatusBar as NativeStatusBar } from "react-native";
-
 import { Difficulty } from "../utils/sudokuLogic";
 import { useTranslation } from "../i18n";
 

@@ -14,8 +14,12 @@ export default function Board() {
   const board = useGameStore((s) => s.board);
   const selectedCell = useGameStore((s) => s.selectedCell);
   const selectCell = useGameStore((s) => s.selectCell);
-  const highlightAreas = useGameStore((s) => s.settings?.highlightAreas ?? true);
-  const highlightSameNumbers = useGameStore((s) => s.settings?.highlightSameNumbers ?? true);
+  const highlightAreas = useGameStore(
+    (s) => s.settings?.highlightAreas ?? true,
+  );
+  const highlightSameNumbers = useGameStore(
+    (s) => s.settings?.highlightSameNumbers ?? true,
+  );
 
   if (!board || board.length !== 81) {
     return null;

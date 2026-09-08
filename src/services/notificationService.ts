@@ -1,6 +1,7 @@
 import {
   getMessaging,
   requestPermission,
+  hasPermission,
   getToken,
   onMessage,
   onNotificationOpenedApp,
@@ -44,19 +45,40 @@ class NotificationService {
         }
       }
 
-      const messagingInstance = getMessaging();
-      const authStatus = await requestPermission(messagingInstance);
-      const enabled =
-        authStatus === AuthorizationStatus.AUTHORIZED ||
-        authStatus === AuthorizationStatus.PROVISIONAL;
+      // Also request via expo-notifications for local reminders
+      try {
+        const Notifications = require('expo-notifications');
+        if (Notifications?.requestPermissionsAsync) {
+          await Notifications.requestPermissionsAsync({
+            ios: {
+              allowAlert: true,
+              allowBadge: true,
+              allowSound: true,
+            },
+          });
+        }
+      } catch {
+        // ignore if expo-notifications not loaded in current environment
+      }
 
-      console.log(
-        "🔔 [FCM] Authorization status:",
-        authStatus,
-        "Enabled:",
-        enabled,
-      );
-      return enabled;
+      try {
+        const messagingInstance = getMessaging();
+        const authStatus = await requestPermission(messagingInstance);
+        const enabled =
+          authStatus === AuthorizationStatus.AUTHORIZED ||
+          authStatus === AuthorizationStatus.PROVISIONAL;
+
+        console.log(
+          "🔔 [FCM] Authorization status:",
+          authStatus,
+          "Enabled:",
+          enabled,
+        );
+        return enabled;
+      } catch (fcmErr) {
+        console.log("ℹ️ [FCM] Running in fallback mode without FCM:", fcmErr);
+        return true;
+      }
     } catch (error) {
       console.warn(
         "⚠️ [FCM] Failed to request notification permission:",
@@ -121,7 +143,29 @@ class NotificationService {
   }
 
   /**
+   * Check if notification permission has already been granted without prompting the user.
+   */
+  async checkPermission(): Promise<boolean> {
+    try {
+      if (Platform.OS === "android" && Platform.Version >= 33) {
+        return await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+        );
+      }
+      const messagingInstance = getMessaging();
+      const authStatus = await hasPermission(messagingInstance);
+      return (
+        authStatus === AuthorizationStatus.AUTHORIZED ||
+        authStatus === AuthorizationStatus.PROVISIONAL
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Initialize all notification listeners for foreground, background tap, and initial quit launch.
+   * NOTE: This DOES NOT show any permission popups on app launch.
    */
   async initialize(
     onNotificationAction?: NotificationActionHandler,
@@ -137,18 +181,13 @@ class NotificationService {
       this.foregroundHandler = onForegroundNotification;
     }
 
-    // 1. Request permission
-    const hasPermission = await this.requestUserPermission();
-    if (!hasPermission) {
-      console.log("ℹ️ [FCM] Notifications not permitted by user");
-      return;
+    // Check if permission is ALREADY granted silently (NO dialog popup!)
+    const alreadyPermitted = await this.checkPermission();
+    if (alreadyPermitted) {
+      await this.getDeviceToken();
+      await this.subscribeToTopics();
     }
-
     const messagingInstance = getMessaging();
-
-    // 2. Fetch Token & Subscribe to Topics
-    await this.getDeviceToken();
-    await this.subscribeToTopics();
 
     // 3. Token refresh listener
     onTokenRefresh(messagingInstance, (newToken: string) => {

@@ -81,7 +81,7 @@ interface AwardsScreenProps {
 export function AwardsScreen({ onBack }: AwardsScreenProps) {
   const { t } = useTranslation();
   const { streak = 0, dailyChallengesProgress, settings } = useGameStore();
-  const language = settings?.language || 'en';
+  const language = settings?.language || "en";
   const currentStreak = streak || 0;
 
   useEffect(() => {
@@ -185,7 +185,7 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
           >
             <ChevronLeft size={22} color="#1C1F2E" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('awards.title')}</Text>
+          <Text style={styles.headerTitle}>{t("awards.title")}</Text>
         </View>
 
         <View style={styles.streakPill}>

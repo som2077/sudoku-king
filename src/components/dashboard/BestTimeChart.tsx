@@ -40,7 +40,10 @@ function Bar({
   onPress: () => void;
 }) {
   const BAR_MAX_HEIGHT = 150;
-  const height = maxValue > 0 && value > 0 ? Math.max(12, (value / maxValue) * BAR_MAX_HEIGHT) : 4;
+  const height =
+    maxValue > 0 && value > 0
+      ? Math.max(12, (value / maxValue) * BAR_MAX_HEIGHT)
+      : 4;
 
   return (
     <TouchableOpacity
@@ -80,7 +83,11 @@ function Bar({
             width: 35,
             height,
             borderRadius: 6,
-            backgroundColor: isSelected ? "#1C1F2E" : value > 0 ? "#E5E7EB" : "#F3F4F6",
+            backgroundColor: isSelected
+              ? "#1C1F2E"
+              : value > 0
+                ? "#E5E7EB"
+                : "#F3F4F6",
           }}
         />
       </View>
@@ -105,7 +112,10 @@ interface BestTimeChartProps {
   data?: Record<ChartTab, number[]>;
 }
 
-export function BestTimeChart({ bestTime, data: propData }: BestTimeChartProps) {
+export function BestTimeChart({
+  bestTime,
+  data: propData,
+}: BestTimeChartProps) {
   const [activeTab, setActiveTab] = useState<ChartTab>("Day");
   const [selectedDay, setSelectedDay] = useState(TODAY_INDEX);
 

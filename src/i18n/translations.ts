@@ -91,6 +91,44 @@ export interface Translations {
   'settings.terms': string;
   'settings.privacy': string;
   'settings.searchLanguage': string;
+  'onboarding.skip'?: string;
+  'onboarding.continue'?: string;
+  'onboarding.start'?: string;
+  'onboarding.s1Title'?: string;
+  'onboarding.s1Subtitle'?: string;
+  'onboarding.s1Choose'?: string;
+  'onboarding.levelBeginner'?: string;
+  'onboarding.levelBeginnerDesc'?: string;
+  'onboarding.levelCasual'?: string;
+  'onboarding.levelCasualDesc'?: string;
+  'onboarding.levelMaster'?: string;
+  'onboarding.levelMasterDesc'?: string;
+  'onboarding.s2Title'?: string;
+  'onboarding.s2Subtitle'?: string;
+  'onboarding.s2ReminderTitle'?: string;
+  'onboarding.s2ReminderMorning'?: string;
+  'onboarding.s2ReminderEvening'?: string;
+  'onboarding.s2NotifyEnable'?: string;
+  'onboarding.s3Title'?: string;
+  'onboarding.s3Subtitle'?: string;
+  'onboarding.toolHints'?: string;
+  'onboarding.toolHintsDesc'?: string;
+  'onboarding.toolNotes'?: string;
+  'onboarding.toolNotesDesc'?: string;
+  'onboarding.toolShield'?: string;
+  'onboarding.toolShieldDesc'?: string;
+  'settings.replayOnboarding'?: string;
+  'settings.replayOnboardingDesc'?: string;
+  'welcome.title'?: string;
+  'welcome.subtitle'?: string;
+  'welcome.feat1Title'?: string;
+  'welcome.feat1Desc'?: string;
+  'welcome.feat2Title'?: string;
+  'welcome.feat2Desc'?: string;
+  'welcome.feat3Title'?: string;
+  'welcome.feat3Desc'?: string;
+  'welcome.getStarted'?: string;
+  'welcome.quickPlay'?: string;
 }
 
 export type TranslationKey = keyof Translations;
@@ -190,6 +228,44 @@ export const TRANSLATIONS: Record<string, Partial<Translations>> = {
     'settings.terms': 'Terms of Service',
     'settings.privacy': 'Privacy Policy',
     'settings.searchLanguage': 'Search language...',
+    'onboarding.skip': 'Skip',
+    'onboarding.continue': 'Continue',
+    'onboarding.start': 'Start Playing',
+    'onboarding.s1Title': 'Sharpen Your Mind Daily',
+    'onboarding.s1Subtitle': '10,000+ hand-crafted logic puzzles designed to train focus, logic & memory.',
+    'onboarding.s1Choose': 'Choose your starting level:',
+    'onboarding.levelBeginner': 'Beginner',
+    'onboarding.levelBeginnerDesc': 'New to Sudoku, learning the rules',
+    'onboarding.levelCasual': 'Casual',
+    'onboarding.levelCasualDesc': 'Know the basics, looking for fun',
+    'onboarding.levelMaster': 'Master',
+    'onboarding.levelMasterDesc': 'Experienced solver, bring the challenge',
+    'onboarding.s2Title': 'Build Your Daily Streak',
+    'onboarding.s2Subtitle': 'Solve the 5-minute Daily Challenge each day to earn royal crowns and keep your streak burning.',
+    'onboarding.s2ReminderTitle': 'Daily Challenge Reminder',
+    'onboarding.s2ReminderMorning': '☀️ Morning (9:00 AM)',
+    'onboarding.s2ReminderEvening': '🌙 Evening (8:00 PM)',
+    'onboarding.s2NotifyEnable': 'Enable Reminder Alert',
+    'onboarding.s3Title': 'Play Smarter, Win Faster',
+    'onboarding.s3Subtitle': 'World-class assistive tools crafted to make every puzzle enjoyable and rewarding.',
+    'onboarding.toolHints': 'Smart Hints',
+    'onboarding.toolHintsDesc': 'Learn step-by-step logic breakdown when you get stuck',
+    'onboarding.toolNotes': 'Pencil Notes',
+    'onboarding.toolNotesDesc': 'Keep track of candidate numbers in every cell automatically',
+    'onboarding.toolShield': 'Error Shield',
+    'onboarding.toolShieldDesc': 'Real-time mistake detection to protect your game and score',
+    'settings.replayOnboarding': 'Replay Onboarding Guide',
+    'settings.replayOnboardingDesc': 'Review intro tutorial and game features',
+    'welcome.title': 'Welcome to Sudoku King',
+    'welcome.subtitle': 'Master the classic logic puzzle. Train your brain, sharpen memory, and build your daily winning streak.',
+    'welcome.feat1Title': '10,000+ Classic Puzzles',
+    'welcome.feat1Desc': 'Clean handcrafted logic grids with one unique solution',
+    'welcome.feat2Title': 'Daily Challenges & Streaks',
+    'welcome.feat2Desc': 'Win royal trophies and keep your mind active every day',
+    'welcome.feat3Title': '100% Offline Ready',
+    'welcome.feat3Desc': 'Play anywhere without internet, timers, or interruptions',
+    'welcome.getStarted': 'Get Started',
+    'welcome.quickPlay': 'I already know how to play',
   },
 
   // ── 2. Simplified Chinese (zh-CN) ──

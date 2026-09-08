@@ -30,6 +30,7 @@ import {
   Globe,
   Check,
   Search,
+  Sparkles,
 } from "lucide-react-native";
 import { useGameStore, GameSettings } from "../store/useGameStore";
 import { useTranslation, SUPPORTED_LANGUAGES, LanguageMeta } from "../i18n";
@@ -49,6 +50,8 @@ export function SettingsScreen({ onOpenPaywall, onRestorePurchases }: SettingsSc
   const settings = useGameStore((state) => state.settings);
   const updateSetting = useGameStore((state) => state.updateSetting);
   const resetAllStats = useGameStore((state) => state.resetAllStats);
+  const resetOnboarding = useGameStore((state) => state.resetOnboarding);
+  const resetWelcome = useGameStore((state) => state.resetWelcome);
 
   const { t, language, supportedLanguages } = useTranslation();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
@@ -366,6 +369,35 @@ export function SettingsScreen({ onOpenPaywall, onRestorePurchases }: SettingsSc
             <View style={styles.rowTextCol}>
               <Text style={styles.rowTitle}>{t('settings.sudokuRules')}</Text>
               <Text style={styles.rowSubtitle}>{t('settings.sudokuRulesDesc')}</Text>
+            </View>
+            <ChevronRight size={18} color="#D1D5DB" />
+          </TouchableOpacity>
+
+          <View style={styles.separator} />
+
+          <TouchableOpacity
+            style={styles.clickableRow}
+            onPress={() => {
+              Alert.alert(
+                t('settings.replayOnboarding', 'Replay Onboarding Guide'),
+                'Would you like to view the introduction walkthrough again?',
+                [
+                  { text: t('game.cancel', 'Cancel'), style: 'cancel' },
+                  {
+                    text: 'Replay',
+                    onPress: () => resetWelcome(),
+                  },
+                ]
+              );
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.iconBox, { backgroundColor: "#FEF3C7" }]}>
+              <Sparkles size={20} color="#D97706" />
+            </View>
+            <View style={styles.rowTextCol}>
+              <Text style={styles.rowTitle}>{t('settings.replayOnboarding', 'Replay Onboarding Guide')}</Text>
+              <Text style={styles.rowSubtitle}>{t('settings.replayOnboardingDesc', 'Review intro tutorial and game features')}</Text>
             </View>
             <ChevronRight size={18} color="#D1D5DB" />
           </TouchableOpacity>
