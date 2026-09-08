@@ -54,12 +54,12 @@ export function Navbar() {
           >
             Statistics
           </button>
-          <button
-            onClick={() => useSudokuStore.getState().openModal("how-to-play")}
-            className="px-3 py-1.5 rounded-full hover:text-slate-950 hover:bg-slate-100/70 transition-all cursor-pointer apple-press-subtle"
+          <Link
+            href="/rules"
+            className="px-3 py-1.5 rounded-full hover:text-slate-950 hover:bg-slate-100/70 transition-all font-medium apple-press-subtle"
           >
             Rules & Guide
-          </button>
+          </Link>
           <a
             href="#features"
             className="px-3 py-1.5 rounded-full hover:text-slate-950 hover:bg-slate-100/70 transition-all apple-press-subtle"

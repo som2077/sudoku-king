@@ -13,19 +13,23 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import {
-  Bell,
-  GraduationCap,
-  BookOpen,
-  Mail,
-  FileText,
-  ShieldCheck,
   X,
   Crown,
+  Mail,
 } from "lucide-react-native";
+import {
+  FilledBell,
+  FilledGraduationCap,
+  FilledBookOpen,
+  FilledMail,
+  FilledFileText,
+  FilledShield,
+} from "../components/ui/FilledIcons";
 import { useGameStore } from "../store/useGameStore";
 import { useTranslation } from "../i18n";
 import { localNotificationScheduler } from "../services/localNotificationScheduler";
 import { AppGradientBackground } from "../components/AppGradientBackground";
+import { APP_LINKS } from "../constants/links";
 
 interface SettingsScreenProps {
   onOpenPaywall?: () => void;
@@ -62,13 +66,28 @@ export function SettingsScreen({
 
   const handleSupportEmail = async () => {
     try {
-      const email = "mailto:support@sudokuking.app?subject=Sudoku King Support";
+      const email = APP_LINKS.SUPPORT_EMAIL;
       const supported = await Linking.canOpenURL(email);
       if (supported) {
         await Linking.openURL(email);
       }
     } catch (err) {
       console.warn("⚠️ [Settings] Failed to open email client:", err);
+    }
+  };
+
+  const handleOpenRules = async () => {
+    try {
+      const url = APP_LINKS.RULES_URL;
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        await Linking.openURL(APP_LINKS.REFERENCE_RULES_URL);
+      }
+    } catch (err) {
+      console.warn("⚠️ [Settings] Failed to open rules URL:", err);
+      await Linking.openURL(APP_LINKS.REFERENCE_RULES_URL).catch(() => {});
     }
   };
 
@@ -135,7 +154,7 @@ export function SettingsScreen({
         <View style={styles.card}>
           <View style={styles.row}>
             <View style={styles.rowLeft}>
-              <Bell size={20} color="#111827" strokeWidth={2.2} />
+              <FilledBell size={20} color="#111827" />
               <Text style={styles.rowLabel}>
                 {t("settings.notifications", "Notification")}
               </Text>
@@ -166,7 +185,7 @@ export function SettingsScreen({
             accessibilityLabel={t("settings.howToPlay", "How to Play")}
           >
             <View style={styles.rowLeft}>
-              <GraduationCap size={20} color="#111827" strokeWidth={2.2} />
+              <FilledGraduationCap size={20} color="#111827" />
               <Text style={styles.rowLabel}>
                 {t("settings.howToPlay", "How to Play")}
               </Text>
@@ -178,13 +197,13 @@ export function SettingsScreen({
           {/* Rules */}
           <TouchableOpacity
             style={styles.row}
-            onPress={() => setActiveModal("rules")}
+            onPress={handleOpenRules}
             activeOpacity={0.65}
             accessibilityRole="button"
             accessibilityLabel={t("settings.sudokuRules", "Rules")}
           >
             <View style={styles.rowLeft}>
-              <BookOpen size={20} color="#111827" strokeWidth={2.2} />
+              <FilledBookOpen size={20} color="#111827" />
               <Text style={styles.rowLabel}>
                 {t("settings.sudokuRules", "Rules")}
               </Text>
@@ -206,7 +225,7 @@ export function SettingsScreen({
             accessibilityLabel={t("settings.feedbackSupport", "Support & Help")}
           >
             <View style={styles.rowLeft}>
-              <Mail size={20} color="#111827" strokeWidth={2.2} />
+              <FilledMail size={20} color="#111827" />
               <Text style={styles.rowLabel}>
                 {t("settings.feedbackSupport", "Support & Help")}
               </Text>
@@ -224,7 +243,7 @@ export function SettingsScreen({
             accessibilityLabel={t("settings.terms", "Terms and Conditions")}
           >
             <View style={styles.rowLeft}>
-              <FileText size={20} color="#111827" strokeWidth={2.2} />
+              <FilledFileText size={20} color="#111827" />
               <Text style={styles.rowLabel}>
                 {t("settings.terms", "Terms and Conditions")}
               </Text>
@@ -242,7 +261,7 @@ export function SettingsScreen({
             accessibilityLabel={t("settings.privacy", "Privacy Policy")}
           >
             <View style={styles.rowLeft}>
-              <ShieldCheck size={20} color="#111827" strokeWidth={2.2} />
+              <FilledShield size={20} color="#111827" />
               <Text style={styles.rowLabel}>
                 {t("settings.privacy", "Privacy Policy")}
               </Text>

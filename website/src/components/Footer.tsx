@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Crown } from "lucide-react";
 
 export function Footer() {
@@ -15,6 +16,9 @@ export function Footer() {
         </div>
 
         <div className="flex items-center gap-6 text-xs font-medium text-slate-500">
+          <Link href="/rules" className="hover:text-slate-950 transition-colors apple-press-subtle font-semibold text-slate-700">
+            Rules & Guides
+          </Link>
           <a href="#game" className="hover:text-slate-950 transition-colors apple-press-subtle">
             Play Game
           </a>
