@@ -1,6 +1,6 @@
-import { TouchableOpacity, View } from "react-native";
+import React, { memo } from "react";
+import { TouchableOpacity, View, StyleSheet } from "react-native";
 import { Text } from "../ui/Text";
-import { memo } from "react";
 
 interface CellProps {
   index: number;
@@ -25,57 +25,50 @@ const Cell = ({
   isSameValue,
   onPress,
 }: CellProps) => {
-  // ── Background Color Palette (Exact Match to Reference Screenshot) ──────────
+  // ── Background Color Palette ──────────────────────────────────────────────
   let bg = "#FFFFFF";
   if (isSelected) {
-    bg = "#5D69F9"; // Solid royal/indigo blue
+    bg = "#2563EB"; // Brand royal blue for active selected cell
   } else if (isError) {
     bg = "#FEE2E2"; // Soft error red
-  } else if (isSameValue || isHighlighted) {
-    bg = "#EBEEFD"; // Soft lavender-blue tint for crosshair and matching numbers
+  } else if (isSameValue && value !== null) {
+    bg = "#DBEAFE"; // Distinct soft blue highlight for matching numbers across the board
+  } else if (isHighlighted) {
+    bg = "#F0F4FF"; // Subtle lavender-blue guidance tint for row/col/block crosshair
   }
 
   // ── Text Color ──────────────────────────────────────────────────────────────
-  let textColor = "#2563EB"; // Vibrant brand blue for user entries
+  let textColor = "#2563EB"; // Vibrant brand blue for user-entered numbers
   if (isSelected) {
     textColor = "#FFFFFF"; // Pure white text when cell is selected
   } else if (isError) {
-    textColor = "#EF4444";
+    textColor = "#DC2626"; // Clear crimson red for errors
   } else if (isLocked) {
-    textColor = "#1F2224"; // Rich dark slate/charcoal for fixed clues
+    textColor = "#0F172A"; // Deep bold dark slate for initial given clues
+  } else if (isSameValue) {
+    textColor = "#1D4ED8"; // Deep saturated blue for matching numbers
   }
 
-  // ── Notes Rendering ─────────────────────────────────────────────────────────
+  // ── Notes (Pencil marks) Rendering ──────────────────────────────────────────
   const renderNotes = () => {
     if (notes === 0) return null;
     return (
-      <View
-        style={{
-          flex: 1,
-          width: "100%",
-          height: "100%",
-          flexDirection: "row",
-          flexWrap: "wrap",
-          padding: 2,
-        }}
-      >
+      <View style={styles.notesGrid}>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
           const active = !!(notes & (1 << num));
           return (
             <Text
               key={num}
-              style={{
-                width: "33.33%",
-                textAlign: "center",
-                fontSize: 9,
-                fontWeight: "700",
-                color: active
-                  ? isSelected
-                    ? "#FFFFFF"
-                    : "#5D69F9"
-                  : "transparent",
-                lineHeight: 12,
-              }}
+              style={[
+                styles.noteText,
+                {
+                  color: active
+                    ? isSelected
+                      ? "#FFFFFF"
+                      : "#475569"
+                    : "transparent",
+                },
+              ]}
             >
               {num}
             </Text>
@@ -87,24 +80,19 @@ const Cell = ({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.7}
+      activeOpacity={0.65}
       onPress={() => onPress(index)}
-      style={{
-        flex: 1,
-        width: "100%",
-        height: "100%",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: bg,
-      }}
+      style={[styles.cell, { backgroundColor: bg }]}
     >
       {value ? (
         <Text
-          style={{
-            fontSize: 23,
-            fontWeight: "600",
-            color: textColor,
-          }}
+          style={[
+            styles.valueText,
+            {
+              color: textColor,
+              fontWeight: isLocked ? "700" : "600",
+            },
+          ]}
         >
           {value}
         </Text>
@@ -114,5 +102,39 @@ const Cell = ({
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  cell: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  valueText: {
+    fontSize: 25,
+    textAlign: "center",
+    includeFontPadding: false,
+    textAlignVertical: "center",
+  },
+  notesGrid: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    padding: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noteText: {
+    width: "33.33%",
+    textAlign: "center",
+    fontSize: 9.5,
+    fontWeight: "700",
+    includeFontPadding: false,
+    lineHeight: 12,
+  },
+});
 
 export default memo(Cell);

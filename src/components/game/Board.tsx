@@ -1,16 +1,14 @@
-import React from "react";
-import { View, Dimensions, StyleSheet } from "react-native";
+import React, { useMemo } from "react";
+import { View, useWindowDimensions, StyleSheet } from "react-native";
 import Cell from "./Cell";
 import { useGameStore } from "../../store/useGameStore";
 import { getRow, getCol, getBlock } from "../../utils/sudokuLogic";
 
-const screenWidth = Dimensions.get("window").width;
-const boardSize = Math.min(screenWidth - 32, 420);
-
-const COLOR_BORDER = "#5C6AF0"; // Modern vibrant periwinkle/indigo border
-const COLOR_THIN = "#00000030"; // Subtle lavender-gray inner divider
+const COLOR_BORDER = "#1E293B"; // Crisp premium dark slate for 3x3 block borders & outer frame
+const COLOR_THIN = "#E2E8F0"; // Clean, elegant divider between individual cells
 
 export default function Board() {
+  const { width: screenWidth } = useWindowDimensions();
   const board = useGameStore((s) => s.board);
   const selectedCell = useGameStore((s) => s.selectedCell);
   const selectCell = useGameStore((s) => s.selectCell);
@@ -20,6 +18,15 @@ export default function Board() {
   const highlightSameNumbers = useGameStore(
     (s) => s.settings?.highlightSameNumbers ?? true,
   );
+
+  // Pixel-perfect cell and board calculation to guarantee 100% square cells with no sub-pixel jitter
+  const { cellSize, boardSize } = useMemo(() => {
+    const availableWidth = Math.min(screenWidth - 32, 420);
+    // Outer border (2px each side = 4px) + 6 thin dividers (1px each = 6px) + 2 thick dividers (2px each = 4px) = 14px
+    const cell = Math.floor((availableWidth - 14) / 9);
+    const total = cell * 9 + 14;
+    return { cellSize: cell, boardSize: total };
+  }, [screenWidth]);
 
   if (!board || board.length !== 81) {
     return null;
@@ -32,14 +39,19 @@ export default function Board() {
 
   return (
     <View style={styles.boardWrapper}>
-      <View style={styles.boardContainer}>
+      <View
+        style={[
+          styles.boardContainer,
+          { width: boardSize, height: boardSize },
+        ]}
+      >
         {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((row) => {
           const isThickHorizontal = row === 2 || row === 5;
           const isNotLastRow = row < 8;
 
           return (
             <React.Fragment key={`row-group-${row}`}>
-              <View style={styles.row}>
+              <View style={[styles.row, { height: cellSize }]}>
                 {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((col) => {
                   const i = row * 9 + col;
                   const cell = board[i];
@@ -71,7 +83,12 @@ export default function Board() {
 
                   return (
                     <React.Fragment key={`cell-group-${i}`}>
-                      <View style={styles.cellContainer}>
+                      <View
+                        style={[
+                          styles.cellContainer,
+                          { width: cellSize, height: cellSize },
+                        ]}
+                      >
                         <Cell
                           index={i}
                           value={cell.value}
@@ -118,30 +135,24 @@ export default function Board() {
 
 const styles = StyleSheet.create({
   boardWrapper: {
+    width: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
   boardContainer: {
-    width: boardSize,
-    height: boardSize,
-    borderRadius: 20,
-    borderWidth: 1.5,
+    borderRadius: 8,
+    borderWidth: 2,
     borderColor: COLOR_BORDER,
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
-    shadowColor: "#1E3A8A",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
   },
   row: {
-    flex: 1,
     flexDirection: "row",
+    width: "100%",
   },
   cellContainer: {
-    flex: 1,
-    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   verticalDivider: {
     height: "100%",
