@@ -116,6 +116,38 @@ async function run() {
     console.log('  ✔ Test 6: Returns null when board is completely solved');
   }
 
+  // ----------------------------------------------------
+  // Test 7: Block-specific Hidden Single
+  // ----------------------------------------------------
+  {
+    // In block 0 (top-left 3x3), clear multiple cells
+    const current = [...sampleSolution];
+    current[0] = null; // (0,0) = 5
+    current[1] = null; // (0,1) = 3
+    current[2] = null; // (0,2) = 4
+    current[9] = null; // (1,0) = 6
+    current[10] = null; // (1,1) = 7
+
+    const hint = getSmartHint(current, sampleSolution);
+    assert(hint !== null, 'Hint should find deduction for block cells');
+    assert([0, 1, 2, 9, 10].includes(hint.cellIndex), 'Hint cell must be one of cleared cells');
+    console.log(`  ✔ Test 7: Block single deduction successfully produced hint for cell ${hint.cellIndex}`);
+  }
+
+  // ----------------------------------------------------
+  // Test 8: Fallback reveal when no simple singles exist
+  // ----------------------------------------------------
+  {
+    // Blank board with just a few clues
+    const current = Array(81).fill(null);
+    const hint = getSmartHint(current, sampleSolution, 40); // center cell
+    assert(hint !== null, 'Hint should produce fallback reveal');
+    assert.strictEqual(hint.cellIndex, 40, 'Should reveal for requested cell 40');
+    assert.strictEqual(hint.value, sampleSolution[40], 'Should reveal correct solution digit');
+    assert.strictEqual(hint.type, 'reveal', 'Hint type should be reveal');
+    console.log('  ✔ Test 8: Fallback reveal cleanly handles wide-open board');
+  }
+
   console.log('\n🎉 ALL SMART HINT ENGINE TESTS PASSED!');
 }
 
