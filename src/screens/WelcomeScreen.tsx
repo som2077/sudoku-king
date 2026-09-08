@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   View,
   TouchableOpacity,
@@ -8,38 +8,39 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-} from 'react-native';
-import { Text } from '../components/Text';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+} from "react-native";
+import { Text } from "../components/Text";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   Crown,
   Sparkles,
   ArrowRight,
-  Play,
   Globe,
   Check,
   X,
   Search,
   Scan,
-} from 'lucide-react-native';
-import { useTranslation, SUPPORTED_LANGUAGES, LanguageMeta } from '../i18n';
-import { useGameStore } from '../store/useGameStore';
+} from "lucide-react-native";
+import { useTranslation, SUPPORTED_LANGUAGES, LanguageMeta } from "../i18n";
+import { useGameStore } from "../store/useGameStore";
 
 interface WelcomeScreenProps {
   onGetStarted: () => void;
-  onQuickPlay: () => void;
+  onQuickPlay?: () => void;
 }
 
-export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScreenProps) {
+export default function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
   const { t, language, supportedLanguages } = useTranslation();
   const updateSetting = useGameStore((s) => s.updateSetting);
   const { height: SCREEN_HEIGHT } = useWindowDimensions();
 
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const [languageSearch, setLanguageSearch] = useState('');
-  const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | null>(null);
+  const [languageSearch, setLanguageSearch] = useState("");
+  const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(
+    null,
+  );
 
   const currentLangMeta = useMemo(() => {
     return (
@@ -56,24 +57,31 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
         l.name.toLowerCase().includes(q) ||
         l.nativeName.toLowerCase().includes(q) ||
         l.region.toLowerCase().includes(q) ||
-        l.code.toLowerCase().includes(q)
+        l.code.toLowerCase().includes(q),
     );
   }, [languageSearch, supportedLanguages]);
 
   const handleSelectLanguage = (code: string) => {
-    updateSetting('language', code);
+    updateSetting("language", code);
     setLanguageModalVisible(false);
-    setLanguageSearch('');
+    setLanguageSearch("");
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-      {/* ── Top Bar: Brand Pill & Language Selector ── */}
+    <View style={styles.root}>
+      <LinearGradient
+        colors={["#DDDCEA", "#FFFFFF99"]}
+        locations={[0, 0.2]}
+        style={StyleSheet.absoluteFill}
+      />
+      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      {/* ── Top Bar: Logo & Language Selector ── */}
       <View style={styles.topBar}>
-        <View style={styles.brandBadge}>
-          <Crown size={15} color="#D97706" />
-          <Text style={styles.brandBadgeText}>SUDOKU KING</Text>
-        </View>
+        <Image
+          source={require("../../assets/sudukoLogo.svg")}
+          style={{ width: 140, height: 40 }}
+          contentFit="contain"
+        />
 
         <TouchableOpacity
           onPress={() => setLanguageModalVisible(true)}
@@ -82,7 +90,9 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
         >
           <Globe size={15} color="#4B5563" />
           <Text style={styles.langPickerFlag}>{currentLangMeta.flag}</Text>
-          <Text style={styles.langPickerText}>{currentLangMeta.nativeName}</Text>
+          <Text style={styles.langPickerText}>
+            {currentLangMeta.nativeName}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -91,7 +101,7 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
         {/* Mock Device Frame Visual (Inspiration 1 Style) */}
         <View style={[styles.deviceFrame, { maxHeight: SCREEN_HEIGHT * 0.42 }]}>
           <LinearGradient
-            colors={['#1E293B', '#0F172A']}
+            colors={["#1E293B", "#0F172A"]}
             style={styles.mockScreenBackground}
           >
             {/* Top Mock Header */}
@@ -100,7 +110,7 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
                 <Crown size={16} color="#F59E0B" />
               </View>
               <Image
-                source={require('../../assets/sudukoLogo.svg')}
+                source={require("../../assets/sudukoLogo.svg")}
                 style={styles.mockLogo}
                 contentFit="contain"
               />
@@ -156,37 +166,25 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
 
           {/* Soft Bottom Fade Overlay */}
           <LinearGradient
-            colors={['transparent', 'rgba(255,255,255,0.7)', '#FFFFFF']}
+            colors={["transparent", "rgba(255,255,255,0.7)", "#FFFFFF"]}
             style={styles.fadeOverlay}
           />
         </View>
 
         {/* ── Punchy Headline & Subheading ── */}
         <Text style={styles.headline}>
-          {t('welcome.title', 'Play Classic Sudoku,\nSharpen Your Mind')}
+          {t("welcome.title", "Play Classic Sudoku,\nSharpen Your Mind")}
         </Text>
         <Text style={styles.subheadline}>
           {t(
-            'welcome.subtitle',
-            '10,000+ hand-crafted logic puzzles to train focus, memory & daily cognitive fitness.'
+            "welcome.subtitle",
+            "10,000+ hand-crafted logic puzzles to train focus, memory & daily cognitive fitness.",
           )}
         </Text>
       </View>
 
       {/* ── Bottom Action CTAs (Inspiration 1 Style) ── */}
       <View style={styles.bottomSection}>
-        {/* Quick Play (Secondary Outline / Soft Pill) */}
-        <TouchableOpacity
-          onPress={onQuickPlay}
-          style={styles.googleStyleButton}
-          activeOpacity={0.7}
-        >
-          <Play size={18} color="#2563EB" fill="#2563EB" style={{ marginRight: 8 }} />
-          <Text style={styles.googleStyleButtonText}>
-            {t('welcome.quickPlay', 'Quick Play (Instant Game)')}
-          </Text>
-        </TouchableOpacity>
-
         {/* Get Started (Primary High-Contrast Pill) */}
         <TouchableOpacity
           onPress={onGetStarted}
@@ -194,19 +192,22 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
           activeOpacity={0.8}
         >
           <Text style={styles.darkPrimaryButtonText}>
-            {t('welcome.getStarted', 'Get Started (Personalize)')}
+            {t("welcome.getStarted", "Get Started (Personalize)")}
           </Text>
           <ArrowRight size={18} color="#FFFFFF" style={{ marginLeft: 6 }} />
         </TouchableOpacity>
 
         {/* Terms & Privacy Notice */}
         <Text style={styles.legalNotice}>
-          By continuing, you accept our{' '}
-          <Text style={styles.legalLink} onPress={() => setLegalModal('terms')}>
+          By continuing, you accept our{" "}
+          <Text style={styles.legalLink} onPress={() => setLegalModal("terms")}>
             Terms of Service
-          </Text>{' '}
-          and acknowledge our{' '}
-          <Text style={styles.legalLink} onPress={() => setLegalModal('privacy')}>
+          </Text>{" "}
+          and acknowledge our{" "}
+          <Text
+            style={styles.legalLink}
+            onPress={() => setLegalModal("privacy")}
+          >
             Privacy Policy
           </Text>
           .
@@ -227,10 +228,10 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
           />
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Globe size={20} color="#2563EB" />
                 <Text style={styles.modalHeaderTitle}>
-                  {t('settings.language', 'Choose Language')}
+                  {t("settings.language", "Choose Language")}
                 </Text>
               </View>
               <TouchableOpacity
@@ -246,21 +247,24 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
               <Search size={18} color="#9CA3AF" />
               <TextInput
                 style={styles.searchInput}
-                placeholder={t('settings.searchLanguage', 'Search language...')}
+                placeholder={t("settings.searchLanguage", "Search language...")}
                 placeholderTextColor="#9CA3AF"
                 value={languageSearch}
                 onChangeText={setLanguageSearch}
                 autoCorrect={false}
               />
               {languageSearch.length > 0 && (
-                <TouchableOpacity onPress={() => setLanguageSearch('')}>
+                <TouchableOpacity onPress={() => setLanguageSearch("")}>
                   <X size={16} color="#9CA3AF" />
                 </TouchableOpacity>
               )}
             </View>
 
             {/* Language List */}
-            <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={{ maxHeight: 380 }}
+              showsVerticalScrollIndicator={false}
+            >
               {filteredLanguages.map((l: LanguageMeta) => {
                 const isSelected = l.code === language;
                 return (
@@ -287,7 +291,9 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
                         {l.name} • {l.region}
                       </Text>
                     </View>
-                    {isSelected && <Check size={20} color="#2563EB" strokeWidth={2.5} />}
+                    {isSelected && (
+                      <Check size={20} color="#2563EB" strokeWidth={2.5} />
+                    )}
                   </TouchableOpacity>
                 );
               })}
@@ -304,27 +310,37 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
         onRequestClose={() => setLegalModal(null)}
       >
         <View style={styles.modalOverlay}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setLegalModal(null)} />
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setLegalModal(null)}
+          />
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalHeaderTitle}>
-                {legalModal === 'terms' ? 'Terms of Service' : 'Privacy Policy'}
+                {legalModal === "terms" ? "Terms of Service" : "Privacy Policy"}
               </Text>
-              <TouchableOpacity onPress={() => setLegalModal(null)} style={styles.modalCloseBtn}>
+              <TouchableOpacity
+                onPress={() => setLegalModal(null)}
+                style={styles.modalCloseBtn}
+              >
                 <X size={20} color="#6B7280" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
-              <Text style={{ fontSize: 13, color: '#4B5563', lineHeight: 20 }}>
-                {legalModal === 'terms'
-                  ? 'Welcome to Sudoku King. By using our app, you agree to play fairly and enjoy brain-training puzzles. All puzzles, challenges, and graphics are protected intellectual property. Our app works 100% offline and stores your game progress locally on your device.'
-                  : 'Sudoku King respects your personal privacy. We do not sell your personal data. We use local device storage (MMKV) to save your solved puzzles, streaks, and settings. Standard crash analytics and non-personalized advertising services adhere to Google Play policies.'}
+            <ScrollView
+              style={{ maxHeight: 360 }}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={{ fontSize: 13, color: "#4B5563", lineHeight: 20 }}>
+                {legalModal === "terms"
+                  ? "Welcome to Sudoku King. By using our app, you agree to play fairly and enjoy brain-training puzzles. All puzzles, challenges, and graphics are protected intellectual property. Our app works 100% offline and stores your game progress locally on your device."
+                  : "Sudoku King respects your personal privacy. We do not sell your personal data. We use local device storage (MMKV) to save your solved puzzles, streaks, and settings. Standard crash analytics and non-personalized advertising services adhere to Google Play policies."}
               </Text>
             </ScrollView>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -332,38 +348,27 @@ export default function WelcomeScreen({ onGetStarted, onQuickPlay }: WelcomeScre
 // Stylesheet (Clean Modern Aesthetic Inspired by Screenshot 1)
 // ────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'space-between',
+    backgroundColor: "transparent",
+    justifyContent: "space-between",
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 6,
   },
-  brandBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 999,
-    gap: 6,
-  },
-  brandBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#B45309',
-    letterSpacing: 0.6,
-  },
   langPickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -374,109 +379,109 @@ const styles = StyleSheet.create({
   },
   langPickerText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#374151',
+    fontWeight: "700",
+    color: "#374151",
   },
   centerContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 24,
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   deviceFrame: {
-    width: '84%',
+    width: "84%",
     aspectRatio: 0.95,
     borderRadius: 36,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
-    overflow: 'hidden',
-    shadowColor: '#000',
+    borderColor: "#E5E7EB",
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
     elevation: 8,
-    backgroundColor: '#0F172A',
+    backgroundColor: "#0F172A",
     marginBottom: 22,
   },
   mockScreenBackground: {
     flex: 1,
     padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   mockHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
     marginBottom: 12,
   },
   mockCircleButton: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   mockLogo: {
     width: 100,
     height: 24,
   },
   gridPreviewCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 8,
     width: 150,
     height: 120,
-    justifyContent: 'space-around',
-    shadowColor: '#000',
+    justifyContent: "space-around",
+    shadowColor: "#000",
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 6,
   },
   gridRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
   gridCell: {
     width: 28,
     height: 28,
     borderRadius: 6,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
   },
   cellFilled: {
-    backgroundColor: '#2563EB',
+    backgroundColor: "#2563EB",
   },
   cellTextFilled: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   cellHighlight: {
-    backgroundColor: '#FEF08A',
+    backgroundColor: "#FEF08A",
   },
   cellTextHighlight: {
-    color: '#854D0E',
+    color: "#854D0E",
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   cellEmpty: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: "#E5E7EB",
     opacity: 0.4,
   },
   cellText: {
-    color: '#1F2937',
+    color: "#1F2937",
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cornerBracket: {
-    position: 'absolute',
+    position: "absolute",
     width: 24,
     height: 24,
-    borderColor: '#38BDF8',
+    borderColor: "#38BDF8",
   },
   cornerTopLeft: {
     top: 24,
@@ -507,7 +512,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 6,
   },
   fadeOverlay: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
@@ -515,16 +520,16 @@ const styles = StyleSheet.create({
   },
   headline: {
     fontSize: 27,
-    fontWeight: '800',
-    color: '#111827',
-    textAlign: 'center',
+    fontWeight: "800",
+    color: "#111827",
+    textAlign: "center",
     lineHeight: 34,
     marginBottom: 8,
   },
   subheadline: {
     fontSize: 13,
-    color: '#6B7280',
-    textAlign: 'center',
+    color: "#6B7280",
+    textAlign: "center",
     lineHeight: 19,
     paddingHorizontal: 12,
   },
@@ -532,33 +537,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 20,
     paddingTop: 10,
-    width: '100%',
-    alignItems: 'center',
-  },
-  googleStyleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 18,
-    paddingVertical: 15,
-    width: '100%',
-    marginBottom: 10,
-  },
-  googleStyleButtonText: {
-    color: '#1F2937',
-    fontSize: 15,
-    fontWeight: '700',
+    width: "100%",
+    alignItems: "center",
   },
   darkPrimaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#111827',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#111827",
     borderRadius: 18,
     paddingVertical: 16,
-    width: '100%',
-    shadowColor: '#000',
+    width: "100%",
+    shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -566,32 +556,32 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   darkPrimaryButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   legalNotice: {
     fontSize: 11,
-    color: '#9CA3AF',
-    textAlign: 'center',
+    color: "#9CA3AF",
+    textAlign: "center",
     lineHeight: 16,
     paddingHorizontal: 16,
   },
   legalLink: {
-    color: '#4B5563',
-    textDecorationLine: 'underline',
-    fontWeight: '600',
+    color: "#4B5563",
+    textDecorationLine: "underline",
+    fontWeight: "600",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
   },
   modalBackdrop: {
     flex: 1,
   },
   modalCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
@@ -599,29 +589,29 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 14,
   },
   modalHeaderTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#111827',
+    fontWeight: "800",
+    color: "#111827",
     marginLeft: 8,
   },
   modalCloseBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
   },
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -630,36 +620,36 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    fontFamily: 'BricolageGrotesque_400Regular',
-    color: '#111827',
+    fontFamily: "BricolageGrotesque_400Regular",
+    color: "#111827",
     marginLeft: 8,
     padding: 0,
   },
   langOptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 14,
     marginBottom: 4,
   },
   langOptionRowSelected: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: "#EFF6FF",
   },
   langOptionFlag: {
     fontSize: 22,
   },
   langOptionNative: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#1F2937',
+    fontWeight: "700",
+    color: "#1F2937",
   },
   langOptionTextSelected: {
-    color: '#2563EB',
+    color: "#2563EB",
   },
   langOptionSub: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
     marginTop: 1,
   },
 });

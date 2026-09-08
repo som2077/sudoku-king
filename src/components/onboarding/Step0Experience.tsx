@@ -21,9 +21,10 @@ export function Step0Experience({
         settings.
       </Text>
 
-      <View style={styles.circlesContainer}>
+      {/* Vertical Circles (Ek ke neechay ek, matching Screenshot 2 "Choose your Gender" style) */}
+      <View style={styles.circlesVerticalContainer}>
         {/* Option 1: Beginner */}
-        <View style={styles.circleCol}>
+        <View style={styles.circleItem}>
           <TouchableOpacity
             onPress={() => onSelectExperience("Easy")}
             style={[
@@ -32,8 +33,11 @@ export function Step0Experience({
               experience === "Easy" && styles.circleBubbleSelected,
             ]}
             activeOpacity={0.8}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: experience === "Easy" }}
+            accessibilityLabel="Beginner, learning rules"
           >
-            <Sparkles size={38} color="#FFFFFF" />
+            <Sparkles size={36} color="#FFFFFF" />
             {experience === "Easy" && (
               <View style={styles.circleCheckBadge}>
                 <Check size={14} color="#FFFFFF" strokeWidth={3} />
@@ -45,7 +49,7 @@ export function Step0Experience({
         </View>
 
         {/* Option 2: Casual */}
-        <View style={styles.circleCol}>
+        <View style={styles.circleItem}>
           <TouchableOpacity
             onPress={() => onSelectExperience("Medium")}
             style={[
@@ -54,8 +58,11 @@ export function Step0Experience({
               experience === "Medium" && styles.circleBubbleSelected,
             ]}
             activeOpacity={0.8}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: experience === "Medium" }}
+            accessibilityLabel="Casual, play for fun"
           >
-            <Zap size={38} color="#365314" />
+            <Zap size={36} color="#365314" />
             {experience === "Medium" && (
               <View
                 style={[
@@ -72,7 +79,7 @@ export function Step0Experience({
         </View>
 
         {/* Option 3: Expert */}
-        <View style={styles.circleCol}>
+        <View style={styles.circleItem}>
           <TouchableOpacity
             onPress={() => onSelectExperience("Hard")}
             style={[
@@ -81,8 +88,11 @@ export function Step0Experience({
               experience === "Hard" && styles.circleBubbleSelected,
             ]}
             activeOpacity={0.8}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: experience === "Hard" }}
+            accessibilityLabel="Expert, complex logic"
           >
-            <Crown size={38} color="#713F12" />
+            <Crown size={36} color="#713F12" />
             {experience === "Hard" && (
               <View
                 style={[
@@ -105,6 +115,7 @@ export function Step0Experience({
 const styles = StyleSheet.create({
   stepContainer: {
     width: "100%",
+    backgroundColor: "transparent",
   },
   stepTitle: {
     fontSize: 26,
@@ -117,51 +128,50 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#6B7280",
     lineHeight: 19,
-    marginBottom: 28,
+    marginBottom: 20,
   },
-  circlesContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginTop: 20,
-  },
-  circleCol: {
+  circlesVerticalContainer: {
+    flexDirection: "column",
     alignItems: "center",
+    gap: 20,
+    paddingVertical: 8,
+  },
+  circleItem: {
+    alignItems: "center",
+    width: "100%",
   },
   circleBubble: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 116,
+    height: 116,
+    borderRadius: 68,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
     position: "relative",
+    borderWidth: 4,
+    borderColor: "transparent",
   },
   circleBubbleSelected: {
-    borderWidth: 4,
     borderColor: "#2563EB",
   },
   circleCheckBadge: {
     position: "absolute",
     top: 0,
     right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: "#2563EB",
     alignItems: "center",
     justifyContent: "center",
   },
   circleLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "700",
     color: "#111827",
-    marginTop: 12,
+    marginTop: 8,
   },
   circleSubLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: "#6B7280",
     marginTop: 2,
   },

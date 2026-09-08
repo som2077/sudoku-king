@@ -2,6 +2,7 @@ export interface Translations {
   'tabs.home': string;
   'tabs.daily': string;
   'tabs.settings': string;
+  'tabs.me'?: string;
   'nav.back': string;
   'diff.easy': string;
   'diff.medium': string;
@@ -119,6 +120,16 @@ export interface Translations {
   'onboarding.toolShieldDesc'?: string;
   'settings.replayOnboarding'?: string;
   'settings.replayOnboardingDesc'?: string;
+  'settings.awards'?: string;
+  'settings.statistics'?: string;
+  'settings.achievements'?: string;
+  'settings.settings'?: string;
+  'settings.rules'?: string;
+  'settings.help'?: string;
+  'settings.aboutGame'?: string;
+  'settings.privacyRights'?: string;
+  'settings.privacyPreferences'?: string;
+  'settings.selectLanguage'?: string;
   'welcome.title'?: string;
   'welcome.subtitle'?: string;
   'welcome.feat1Title'?: string;
@@ -139,6 +150,7 @@ export const TRANSLATIONS: Record<string, Partial<Translations>> = {
     'tabs.home': 'Home',
     'tabs.daily': 'Daily',
     'tabs.settings': 'Settings',
+    'tabs.me': 'Me',
     'nav.back': 'Back',
     'diff.easy': 'Easy',
     'diff.medium': 'Medium',
@@ -192,7 +204,7 @@ export const TRANSLATIONS: Record<string, Partial<Translations>> = {
     'settings.subtitle': 'Preferences & Game Rules',
     'settings.gameplayPref': 'Gameplay Preferences',
     'settings.preferences': 'Preferences',
-    'settings.notifications': 'Notifications',
+    'settings.notifications': 'Notification',
     'settings.notificationsDesc': 'Daily challenge reminders & brain tips',
     'settings.sound': 'Sound Effects',
     'settings.soundDesc': 'Audio feedback on cell actions',
@@ -217,15 +229,15 @@ export const TRANSLATIONS: Record<string, Partial<Translations>> = {
     'settings.resetConfirmMessage': 'Are you sure you want to reset all your played games, solved puzzles, streaks, and best times? This action cannot be undone.',
     'settings.resetCompleteTitle': 'Reset Complete',
     'settings.resetCompleteMessage': 'All game statistics have been cleared.',
-    'settings.rulesAndGuides': 'Rules & Guides',
+    'settings.rulesAndGuides': 'Guides & Rules',
     'settings.howToPlay': 'How to Play',
     'settings.howToPlayDesc': 'Beginner walkthrough & strategies',
-    'settings.sudokuRules': 'Sudoku Rules',
+    'settings.sudokuRules': 'Rules',
     'settings.sudokuRulesDesc': 'The 3 core logical constraints',
-    'settings.aboutAndLegal': 'About & Legal',
-    'settings.feedbackSupport': 'Feedback & Support',
+    'settings.aboutAndLegal': 'Support & Legal',
+    'settings.feedbackSupport': 'Help & Support',
     'settings.feedbackSupportDesc': 'Contact our developer team',
-    'settings.terms': 'Terms of Service',
+    'settings.terms': 'Terms and Conditions',
     'settings.privacy': 'Privacy Policy',
     'settings.searchLanguage': 'Search language...',
     'onboarding.skip': 'Skip',

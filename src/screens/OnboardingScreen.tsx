@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { Play } from "lucide-react-native";
 import { Text } from "../components/Text";
 import { Difficulty } from "../utils/sudokuLogic";
@@ -98,99 +99,119 @@ export default function OnboardingScreen({
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      {/* ── Top Header: Back Arrow & Thin Progress Track ── */}
-      <OnboardingHeader onBack={handleBack} progressPercent={progressPercent} />
+    <View style={styles.root}>
+      <LinearGradient
+        colors={["#DDDCEA", "#FFFFFF99"]}
+        locations={[0, 0.2]}
+        style={StyleSheet.absoluteFill}
+      />
+      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+        {/* ── Top Header: Back Arrow & Thin Progress Track ── */}
+        <OnboardingHeader onBack={handleBack} progressPercent={progressPercent} />
 
-      {/* ── Dynamic Step Content Component ── */}
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-      >
-        {step === 0 && (
-          <Step0Experience
-            experience={experience}
-            onSelectExperience={setExperience}
-          />
-        )}
-
-        {step === 1 && (
-          <Step1DailyGoal
-            dailyMinutes={dailyMinutes}
-            onSelectMinutes={setDailyMinutes}
-          />
-        )}
-
-        {step === 2 && <Step2PrimaryGoal goal={goal} onSelectGoal={setGoal} />}
-
-        {step === 3 && (
-          <Step3Reminder
-            reminderSlot={reminderSlot}
-            onSelectSlot={handleSelectReminder}
-          />
-        )}
-
-        {step === 4 && (
-          <Step4ProfileSummary
-            experience={experience}
-            dailyMinutes={dailyMinutes}
-            reminderSlot={reminderSlot}
-          />
-        )}
-      </ScrollView>
-
-      {/* ── Fixed Bottom Button: "Continue" / "Start Playing" ── */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          onPress={handleNext}
-          style={[
-            styles.continueButton,
-            step === 4 && styles.continueButtonFinish,
-          ]}
-          activeOpacity={0.8}
+        {/* ── Dynamic Step Content Component ── */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
         >
-          <Text style={styles.continueButtonText}>
-            {step === 4 ? "Start Playing" : "Continue"}
-          </Text>
-          {step === 4 && (
-            <Play
-              size={16}
-              color="#FFFFFF"
-              fill="#FFFFFF"
-              style={{ marginLeft: 8 }}
+          {step === 0 && (
+            <Step0Experience
+              experience={experience}
+              onSelectExperience={setExperience}
             />
           )}
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+
+          {step === 1 && (
+            <Step1DailyGoal
+              dailyMinutes={dailyMinutes}
+              onSelectMinutes={setDailyMinutes}
+            />
+          )}
+
+          {step === 2 && <Step2PrimaryGoal goal={goal} onSelectGoal={setGoal} />}
+
+          {step === 3 && (
+            <Step3Reminder
+              reminderSlot={reminderSlot}
+              onSelectSlot={handleSelectReminder}
+            />
+          )}
+
+          {step === 4 && (
+            <Step4ProfileSummary
+              experience={experience}
+              dailyMinutes={dailyMinutes}
+              reminderSlot={reminderSlot}
+            />
+          )}
+        </ScrollView>
+
+        {/* ── Fixed Bottom Button: "Continue" / "Start Playing" ── */}
+        <View style={styles.bottomBar}>
+          <TouchableOpacity
+            onPress={handleNext}
+            style={[
+              styles.continueButton,
+              step === 4 && styles.continueButtonFinish,
+            ]}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={step === 4 ? "Start Playing" : "Continue"}
+          >
+            <Text style={styles.continueButtonText}>
+              {step === 4 ? "Start Playing" : "Continue"}
+            </Text>
+            {step === 4 && (
+              <Play
+                size={16}
+                color="#FFFFFF"
+                fill="#FFFFFF"
+                style={{ marginLeft: 8 }}
+              />
+            )}
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "transparent",
     justifyContent: "space-between",
   },
+  scrollView: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
   scrollContent: {
+    flexGrow: 1,
+    backgroundColor: "transparent",
     paddingHorizontal: 24,
     paddingTop: 10,
     paddingBottom: 24,
   },
   bottomBar: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 25,
     paddingVertical: 14,
     borderTopWidth: 1,
     borderTopColor: "#F3F4F6",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "transparent",
   },
   continueButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#111827",
-    borderRadius: 16,
+    borderRadius: 40,
     height: 54,
     width: "100%",
     shadowColor: "#000",

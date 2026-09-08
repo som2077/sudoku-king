@@ -71,6 +71,7 @@ export function Step4ProfileSummary({
 const styles = StyleSheet.create({
   stepContainer: {
     width: "100%",
+    backgroundColor: "transparent",
   },
   stepTitle: {
     fontSize: 26,
@@ -86,12 +87,16 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   summaryCard: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: "#E5E7EB",
     padding: 20,
     marginBottom: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   summaryHeader: {
     alignItems: "center",

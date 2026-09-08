@@ -18,8 +18,10 @@ export function OnboardingHeader({
         style={styles.backButton}
         activeOpacity={0.7}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
       >
-        <ArrowLeft size={22} color="#111827" />
+        <ArrowLeft size={20} color="#111827" />
       </TouchableOpacity>
 
       {/* Progress Track */}
@@ -27,7 +29,7 @@ export function OnboardingHeader({
         <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
       </View>
 
-      <View style={{ width: 36 }} />
+      <View style={{ width: 40 }} />
     </View>
   );
 }
@@ -39,20 +41,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 14,
+    backgroundColor: "transparent",
   },
   backButton: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
   },
   progressTrack: {
     flex: 1,
-    height: 4,
-    backgroundColor: "#E5E7EB",
+    height: 5,
+    backgroundColor: "#FFFFFF",
     borderRadius: 2,
-    marginHorizontal: 12,
+    // marginHorizontal: 1,
+    marginLeft: 10,
+    // marginRight: 10,
+    // alignSelf: "center",
+    // justifyContent: "center",
     overflow: "hidden",
   },
   progressFill: {

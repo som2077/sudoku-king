@@ -37,6 +37,9 @@ export function Step1DailyGoal({
                   isActive && styles.selectorSegmentActive,
                 ]}
                 activeOpacity={0.7}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: isActive }}
+                accessibilityLabel={`${val} minutes per day`}
               >
                 <Text
                   style={[
@@ -67,6 +70,7 @@ export function Step1DailyGoal({
 const styles = StyleSheet.create({
   stepContainer: {
     width: "100%",
+    backgroundColor: "transparent",
   },
   stepTitle: {
     fontSize: 26,
@@ -83,12 +87,12 @@ const styles = StyleSheet.create({
   },
   numberPickerContainer: {
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: "40%",
   },
   numberBigRow: {
     flexDirection: "row",
     alignItems: "baseline",
-    marginBottom: 12,
+    // marginBottom: 1,
   },
   numberBig: {
     fontSize: 64,
@@ -100,7 +104,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#6B7280",
-    marginLeft: 10,
+    marginLeft: 3,
   },
   trianglePointer: {
     width: 0,
@@ -135,10 +139,6 @@ const styles = StyleSheet.create({
   },
   selectorSegmentActive: {
     backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   selectorSegmentText: {
     fontSize: 18,

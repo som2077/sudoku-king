@@ -66,6 +66,9 @@ export function Step2PrimaryGoal({
               onPress={() => onSelectGoal(item.id)}
               style={[styles.goalCard, isSelected && styles.goalCardSelected]}
               activeOpacity={0.75}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isSelected }}
+              accessibilityLabel={`${item.title}, ${item.desc}`}
             >
               <View style={[styles.goalIconWrap, { backgroundColor: item.bg }]}>
                 {item.icon}
@@ -95,6 +98,7 @@ export function Step2PrimaryGoal({
 const styles = StyleSheet.create({
   stepContainer: {
     width: "100%",
+    backgroundColor: "transparent",
   },
   stepTitle: {
     fontSize: 26,
@@ -122,7 +126,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   goalCardSelected: {
-    borderColor: "#2563EB",
+    borderColor: "#000000",
     backgroundColor: "#F8FAFC",
   },
   goalIconWrap: {
@@ -154,7 +158,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   goalRadioSelected: {
-    borderColor: "#2563EB",
-    backgroundColor: "#2563EB",
+    borderColor: "#000000",
+    backgroundColor: "#000000",
   },
 });

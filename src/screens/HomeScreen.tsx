@@ -5,9 +5,10 @@ import {
   TouchableOpacity,
   ScrollView,
   useWindowDimensions,
+  StyleSheet,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Home, Calendar, Settings, Play, Crown } from "lucide-react-native";
+import { Home, Calendar, Settings, Play } from "lucide-react-native";
 import { Image } from "expo-image";
 import { StreakFlame } from "../components/StreakFlame";
 import { useGameStore } from "../store/useGameStore";
@@ -19,6 +20,9 @@ import { DifficultyBottomSheet } from "../components/DifficultyBottomSheet";
 import { DailyChallengesScreen } from "./DailyChallengesScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { AwardsScreen } from "./AwardsScreen";
+
+const MemoizedDailyChallengesScreen = React.memo(DailyChallengesScreen);
+const MemoizedSettingsScreen = React.memo(SettingsScreen);
 import { StatusBar as NativeStatusBar } from "react-native";
 import { Difficulty } from "../utils/sudokuLogic";
 import { useTranslation } from "../i18n";
@@ -34,11 +38,15 @@ type HomeScreenProps = {
 };
 
 type Tab = "home" | "daily" | "settings";
+const TABS: Tab[] = ["home", "daily", "settings"];
 
 // ────────────────────────────────────────────────────────────────────────────
-// Bottom Navigation (shared across tabs)
+// Bottom Navigation (shared across tabs - Pill Active Style matching Reference)
 // ────────────────────────────────────────────────────────────────────────────
-function BottomNav({
+const ACTIVE_BLUE = "#0969DA";
+const INACTIVE_GRAY = "#656D76";
+
+const BottomNav = React.memo(function BottomNav({
   activeTab,
   setActiveTab,
 }: {
@@ -47,92 +55,154 @@ function BottomNav({
 }) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const active = "#1C1F2E";
-  const inactive = "#8E8E93";
+
+  const isHome = activeTab === "home";
+  const isDaily = activeTab === "daily";
+  const isSettings = activeTab === "settings";
 
   return (
     <View
-      style={{
-        position: "absolute",
-        bottom: 0,
-        width: "100%",
-        backgroundColor: "#FFFFFF",
-        flexDirection: "row",
-        justifyContent: "space-around",
-        paddingTop: 8,
-        paddingBottom: Math.max(insets.bottom, 10),
-        borderTopWidth: 1,
-        borderTopColor: "#EBEBEB",
-      }}
+      style={[
+        navStyles.container,
+        { paddingBottom: Math.max(insets.bottom, 10) },
+      ]}
     >
+      {/* 1. Home Tab */}
       <TouchableOpacity
         onPress={() => setActiveTab("home")}
-        style={{ alignItems: "center", flex: 1 }}
+        style={navStyles.tabItem}
         activeOpacity={0.7}
+        delayPressIn={0}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: isHome }}
+        accessibilityLabel={t("tabs.home")}
       >
-        <Home
-          size={24}
-          color={activeTab === "home" ? active : inactive}
-          strokeWidth={activeTab === "home" ? 2.2 : 1.8}
-        />
+        <View style={[navStyles.pill, isHome && navStyles.pillActive]}>
+          <Home
+            size={21}
+            color={isHome ? ACTIVE_BLUE : INACTIVE_GRAY}
+            fill={isHome ? ACTIVE_BLUE : "transparent"}
+            strokeWidth={isHome ? 0 : 2}
+          />
+        </View>
         <Text
-          style={{
-            fontSize: 11,
-            fontWeight: activeTab === "home" ? "700" : "500",
-            color: activeTab === "home" ? active : inactive,
-            marginTop: 4,
-          }}
+          style={[
+            navStyles.tabText,
+            isHome ? navStyles.tabTextActive : navStyles.tabTextInactive,
+          ]}
         >
-          {t('tabs.home')}
+          {t("tabs.home")}
         </Text>
       </TouchableOpacity>
 
+      {/* 2. Daily Challenges Tab */}
       <TouchableOpacity
         onPress={() => setActiveTab("daily")}
-        style={{ alignItems: "center", flex: 1 }}
+        style={navStyles.tabItem}
         activeOpacity={0.7}
+        delayPressIn={0}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: isDaily }}
+        accessibilityLabel={t("tabs.daily")}
       >
-        <Calendar
-          size={24}
-          color={activeTab === "daily" ? active : inactive}
-          strokeWidth={activeTab === "daily" ? 2.2 : 1.8}
-        />
+        <View style={[navStyles.pill, isDaily && navStyles.pillActive]}>
+          <Calendar
+            size={20}
+            color={isDaily ? ACTIVE_BLUE : INACTIVE_GRAY}
+            strokeWidth={isDaily ? 2.4 : 1.8}
+          />
+        </View>
         <Text
-          style={{
-            fontSize: 11,
-            fontWeight: activeTab === "daily" ? "700" : "500",
-            color: activeTab === "daily" ? active : inactive,
-            marginTop: 4,
-          }}
+          style={[
+            navStyles.tabText,
+            isDaily ? navStyles.tabTextActive : navStyles.tabTextInactive,
+          ]}
         >
-          {t('tabs.daily')}
+          {t("tabs.daily")}
         </Text>
       </TouchableOpacity>
 
+      {/* 3. Settings Tab */}
       <TouchableOpacity
         onPress={() => setActiveTab("settings")}
-        style={{ alignItems: "center", flex: 1 }}
+        style={navStyles.tabItem}
         activeOpacity={0.7}
+        delayPressIn={0}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: isSettings }}
+        accessibilityLabel={t("tabs.settings", "Settings")}
       >
-        <Settings
-          size={24}
-          color={activeTab === "settings" ? active : inactive}
-          strokeWidth={activeTab === "settings" ? 2.2 : 1.8}
-        />
+        <View style={[navStyles.pill, isSettings && navStyles.pillActive]}>
+          <Settings
+            size={20}
+            color={isSettings ? ACTIVE_BLUE : INACTIVE_GRAY}
+            strokeWidth={isSettings ? 2.4 : 1.8}
+          />
+        </View>
         <Text
-          style={{
-            fontSize: 11,
-            fontWeight: activeTab === "settings" ? "700" : "500",
-            color: activeTab === "settings" ? active : inactive,
-            marginTop: 4,
-          }}
+          style={[
+            navStyles.tabText,
+            isSettings ? navStyles.tabTextActive : navStyles.tabTextInactive,
+          ]}
         >
-          {t('tabs.settings')}
+          {t("tabs.settings", "Settings")}
         </Text>
       </TouchableOpacity>
     </View>
   );
-}
+});
+
+const navStyles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#E1E4E8",
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  tabItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    paddingVertical: 2,
+  },
+  pill: {
+    width: 62,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
+    overflow: "hidden",
+  },
+  pillActive: {
+    backgroundColor: "#DDF4FF",
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  tabText: {
+    fontSize: 11,
+    marginTop: 3,
+    letterSpacing: 0.1,
+  },
+  tabTextActive: {
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  tabTextInactive: {
+    fontWeight: "500",
+    color: "#656D76",
+  },
+});
 
 // ────────────────────────────────────────────────────────────────────────────
 // Main HomeScreen
@@ -153,7 +223,6 @@ export default function HomeScreen({
   const { t } = useTranslation();
   const scrollRef = React.useRef<ScrollView>(null);
   const { width: SCREEN_WIDTH } = useWindowDimensions();
-  const TABS: Tab[] = ["home", "daily", "settings"];
 
   const {
     totalSolved,
@@ -239,22 +308,87 @@ export default function HomeScreen({
     } else {
       NativeStatusBar.setBarStyle("dark-content");
     }
-    NativeStatusBar.setBackgroundColor("transparent", true);
-    NativeStatusBar.setTranslucent(true);
   }, [activeTab]);
 
-  const handleTabPress = (tab: Tab) => {
-    setActiveTab(tab);
-    const index = TABS.indexOf(tab);
-    scrollRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: true });
-  };
+  const activeTabRef = React.useRef(activeTab);
+  React.useLayoutEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+  const dragStartIdx = React.useRef(TABS.indexOf(activeTab));
 
-  const handleScroll = (e: any) => {
-    const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    if (TABS[index] && TABS[index] !== activeTab) {
-      setActiveTab(TABS[index]);
-    }
-  };
+  const handleOpenAwards = React.useCallback(() => setShowAwards(true), []);
+  const handleDifficultySelect = React.useCallback(
+    (diff: Difficulty) => {
+      setShowDifficultySheet(false);
+      startNewGame(diff);
+      setScreen("playing");
+    },
+    [startNewGame, setScreen],
+  );
+
+  const handleTabPress = React.useCallback(
+    (tab: Tab) => {
+      const index = TABS.indexOf(tab);
+      dragStartIdx.current = index;
+      activeTabRef.current = tab;
+      setActiveTab(tab);
+      scrollRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: false });
+    },
+    [SCREEN_WIDTH],
+  );
+
+  const handleScrollBeginDrag = React.useCallback(
+    (e: any) => {
+      const x = e.nativeEvent.contentOffset.x;
+      dragStartIdx.current = Math.max(
+        0,
+        Math.min(Math.round(x / SCREEN_WIDTH), TABS.length - 1),
+      );
+    },
+    [SCREEN_WIDTH],
+  );
+
+  const handleScroll = React.useCallback(
+    (e: any) => {
+      const x = e.nativeEvent.contentOffset.x;
+      const startIdx = dragStartIdx.current;
+      const rawIdx = x / SCREEN_WIDTH;
+
+      // Stable eager trigger based on drag gesture origin (eliminates jitter and oscillation)
+      let targetIdx = startIdx;
+      if (rawIdx > startIdx + 0.2) {
+        targetIdx = Math.min(Math.floor(rawIdx + 0.8), TABS.length - 1);
+      } else if (rawIdx < startIdx - 0.2) {
+        targetIdx = Math.max(Math.ceil(rawIdx - 0.8), 0);
+      } else {
+        targetIdx = startIdx;
+      }
+
+      const targetTab = TABS[targetIdx];
+      if (targetTab && targetTab !== activeTabRef.current) {
+        activeTabRef.current = targetTab;
+        setActiveTab(targetTab);
+      }
+    },
+    [SCREEN_WIDTH],
+  );
+
+  const handleScrollEnd = React.useCallback(
+    (e: any) => {
+      const x = e.nativeEvent.contentOffset.x;
+      const finalIdx = Math.max(
+        0,
+        Math.min(Math.round(x / SCREEN_WIDTH), TABS.length - 1),
+      );
+      dragStartIdx.current = finalIdx;
+      const targetTab = TABS[finalIdx];
+      if (targetTab && targetTab !== activeTabRef.current) {
+        activeTabRef.current = targetTab;
+        setActiveTab(targetTab);
+      }
+    },
+    [SCREEN_WIDTH],
+  );
 
   return (
     <AppGradientBackground>
@@ -265,8 +399,11 @@ export default function HomeScreen({
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          onScrollBeginDrag={handleScrollBeginDrag}
           onScroll={handleScroll}
           scrollEventThrottle={16}
+          onScrollEndDrag={handleScrollEnd}
+          onMomentumScrollEnd={handleScrollEnd}
           decelerationRate="fast"
           scrollEnabled={!showAwards}
           style={{ flex: 1 }}
@@ -280,13 +417,10 @@ export default function HomeScreen({
               justifyContent: "center",
             }}
           >
-            {showAwards ? (
-              <AwardsScreen onBack={() => setShowAwards(false)} />
-            ) : (
-              <ScrollView
-                style={{ flex: 1, paddingHorizontal: 13 }}
-                showsVerticalScrollIndicator={false}
-              >
+            <ScrollView
+              style={{ flex: 1, paddingHorizontal: 13 }}
+              showsVerticalScrollIndicator={false}
+            >
                 {/* ── Header ── */}
                 <View
                   style={{
@@ -304,34 +438,6 @@ export default function HomeScreen({
                     contentFit="contain"
                   />
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <TouchableOpacity
-                      onPress={onOpenPaywall}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        backgroundColor: isPremium ? "#FEF3C7" : "#FFFFFF",
-                        borderWidth: 1,
-                        borderColor: isPremium ? "#FDE68A" : "#E5E7EB",
-                        borderRadius: 999,
-                        paddingHorizontal: 12,
-                        paddingVertical: 5,
-                        marginRight: 8,
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Crown size={18} color={isPremium ? "#D97706" : "#EAB308"} />
-                      <Text
-                        style={{
-                          color: isPremium ? "#B45309" : "#374151",
-                          fontWeight: "bold",
-                          marginLeft: 5,
-                          fontSize: 13,
-                        }}
-                      >
-                        {isPremium ? "PRO" : "VIP"}
-                      </Text>
-                    </TouchableOpacity>
-
                     <TouchableOpacity
                       onPress={() => setShowAwards(true)}
                       style={{
@@ -512,12 +618,11 @@ export default function HomeScreen({
 
                 <View style={{ height: 100 }} />
               </ScrollView>
-            )}
           </View>
 
           {/* ── 2. DAILY CHALLENGES TAB ── */}
           <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
-            <DailyChallengesScreen />
+            <MemoizedDailyChallengesScreen />
           </View>
 
           {/* ── 3. SETTINGS TAB ── */}
@@ -527,9 +632,10 @@ export default function HomeScreen({
               flex: 1,
             }}
           >
-            <SettingsScreen
+            <MemoizedSettingsScreen
               onOpenPaywall={onOpenPaywall}
               onRestorePurchases={onRestorePurchases}
+              onOpenAwards={handleOpenAwards}
             />
           </View>
         </ScrollView>
@@ -539,14 +645,26 @@ export default function HomeScreen({
           <BottomNav activeTab={activeTab} setActiveTab={handleTabPress} />
         )}
 
+        {/* Full-Screen Awards Overlay */}
+        {showAwards && (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: "#EFF3F8",
+                paddingTop: insets.top,
+                zIndex: 999,
+              },
+            ]}
+          >
+            <AwardsScreen onBack={() => setShowAwards(false)} />
+          </View>
+        )}
+
         <DifficultyBottomSheet
           visible={showDifficultySheet}
           onClose={() => setShowDifficultySheet(false)}
-          onSelect={(diff) => {
-            setShowDifficultySheet(false);
-            startNewGame(diff);
-            setScreen("playing");
-          }}
+          onSelect={handleDifficultySelect}
         />
       </View>
     </AppGradientBackground>

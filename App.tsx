@@ -382,30 +382,31 @@ export default function App() {
   };
 
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <InAppNotificationBanner
         notification={foregroundNotification}
         onPress={(payload) => handleNotificationAction(payload)}
         onDismiss={() => setForegroundNotification(null)}
       />
       {!hasSeenWelcome ? (
-        <WelcomeScreen
-          onGetStarted={() => {
-            completeWelcome();
-          }}
-          onQuickPlay={() => {
-            completeOnboarding();
-          }}
-        />
+        <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+          <WelcomeScreen
+            onGetStarted={() => {
+              completeWelcome();
+            }}
+          />
+        </View>
       ) : !hasCompletedOnboarding ? (
-        <OnboardingScreen
-          onBack={() => {
-            resetWelcome();
-          }}
-          onFinish={(chosenDifficulty) => {
-            completeOnboarding(chosenDifficulty);
-          }}
-        />
+        <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+          <OnboardingScreen
+            onBack={() => {
+              resetWelcome();
+            }}
+            onFinish={(chosenDifficulty) => {
+              completeOnboarding(chosenDifficulty);
+            }}
+          />
+        </View>
       ) : screen === "home" ? (
         <HomeScreen
           setScreen={setScreen}

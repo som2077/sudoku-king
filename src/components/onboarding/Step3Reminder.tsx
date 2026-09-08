@@ -70,6 +70,9 @@ export function Step3Reminder({
                 isSelected && styles.channelRowSelected,
               ]}
               activeOpacity={0.7}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isSelected }}
+              accessibilityLabel={`${slot.label}, ${slot.sub}`}
             >
               <View
                 style={[styles.channelIconBox, { backgroundColor: slot.bg }]}
@@ -108,6 +111,7 @@ export function Step3Reminder({
 const styles = StyleSheet.create({
   stepContainer: {
     width: "100%",
+    backgroundColor: "transparent",
   },
   stepTitle: {
     fontSize: 26,
