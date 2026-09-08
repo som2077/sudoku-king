@@ -1,4 +1,5 @@
 import { Difficulty } from "./sudokuEngine";
+import { trackEvent } from "./analytics";
 
 export interface DifficultyStats {
   gamesStarted: number;
@@ -69,6 +70,7 @@ export const recordGameStarted = (difficulty: Difficulty): PlayerStats => {
   diff.gamesStarted += 1;
   stats.byDifficulty[difficulty] = diff;
   saveStats(stats);
+  trackEvent("game_started", { difficulty });
   return stats;
 };
 
@@ -95,6 +97,11 @@ export const recordGameWon = (
   }
 
   saveStats(stats);
+  trackEvent("game_won", {
+    difficulty,
+    timeSeconds: Math.round(timeSeconds),
+    isDaily: Boolean(isDailyDate),
+  });
   return stats;
 };
 
@@ -104,5 +111,6 @@ export const recordGameLost = (difficulty: Difficulty): PlayerStats => {
   diff.currentStreak = 0;
   stats.byDifficulty[difficulty] = diff;
   saveStats(stats);
+  trackEvent("game_lost", { difficulty });
   return stats;
 };

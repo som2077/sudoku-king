@@ -18,6 +18,7 @@ import {
   sudokuTechniques,
   type SudokuTechnique,
 } from "@/data/sudokuRulesData";
+import { trackEvent } from "@/lib/analytics";
 
 type DifficultyFilter = "All" | "Beginner" | "Intermediate" | "Advanced";
 
@@ -152,7 +153,10 @@ export function RulesTechniqueList() {
             return (
               <button
                 key={tab}
-                onClick={() => setActiveFilter(tab)}
+                onClick={() => {
+                  setActiveFilter(tab);
+                  trackEvent("rules_filter_changed", { difficulty: tab });
+                }}
                 className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
                   isActive
                     ? "bg-slate-950 text-white shadow-xs"
@@ -206,6 +210,13 @@ function TechniqueCard({ technique }: { technique: SudokuTechnique }) {
   return (
     <Link
       href={`/rules/${technique.slug}`}
+      onClick={() => {
+        trackEvent("technique_card_clicked", {
+          slug: technique.slug,
+          difficulty: technique.difficulty,
+          title: technique.title,
+        });
+      }}
       className="group flex flex-col rounded-3xl border border-slate-200/80 bg-white overflow-hidden shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200"
     >
       {/* Thumbnail preview */}

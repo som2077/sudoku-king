@@ -6,6 +6,7 @@ import ShinyText from "@/components/ShinyText";
 import DecryptedText from "@/components/DecryptedText";
 import SpotlightCard from "@/components/SpotlightCard";
 import CountUp from "@/components/CountUp";
+import { trackEvent } from "@/lib/analytics";
 
 export function Hero() {
   return (
@@ -53,6 +54,7 @@ export function Hero() {
           <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
             <a
               href="#game"
+              onClick={() => trackEvent("hero_launch_game")}
               className={buttonVariants({
                 size: "lg",
                 className:
@@ -65,6 +67,7 @@ export function Hero() {
 
             <a
               href="#leaderboard"
+              onClick={() => trackEvent("hero_leaderboard_clicked")}
               className={buttonVariants({
                 variant: "outline",
                 size: "lg",
