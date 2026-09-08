@@ -40,9 +40,13 @@ export function RulesTechniqueList() {
   const difficultyCounts = useMemo(() => {
     return {
       All: sudokuTechniques.length,
-      Beginner: sudokuTechniques.filter((t) => t.difficulty === "Beginner").length,
-      Intermediate: sudokuTechniques.filter((t) => t.difficulty === "Intermediate").length,
-      Advanced: sudokuTechniques.filter((t) => t.difficulty === "Advanced").length,
+      Beginner: sudokuTechniques.filter((t) => t.difficulty === "Beginner")
+        .length,
+      Intermediate: sudokuTechniques.filter(
+        (t) => t.difficulty === "Intermediate",
+      ).length,
+      Advanced: sudokuTechniques.filter((t) => t.difficulty === "Advanced")
+        .length,
     };
   }, []);
 
@@ -94,7 +98,10 @@ export function RulesTechniqueList() {
                 The Golden Principle
               </h3>
               <p className="text-indigo-900/80 text-xs sm:text-sm mt-1 leading-relaxed">
-                Sudoku is entirely a game of deduction and logic. There is never any need to guess. Every single cell can be solved by eliminating candidates and applying the techniques below step-by-step.
+                Sudoku is entirely a game of deduction and logic. There is never
+                any need to guess. Every single cell can be solved by
+                eliminating candidates and applying the techniques below
+                step-by-step.
               </p>
             </div>
           </div>
@@ -113,7 +120,8 @@ export function RulesTechniqueList() {
               Master Every Strategy
             </h2>
             <p className="text-slate-500 text-sm sm:text-base mt-1">
-              Explore step-by-step guides, high-resolution board illustrations, and video walkthroughs.
+              Explore step-by-step guides, high-resolution board illustrations,
+              and video walkthroughs.
             </p>
           </div>
 
@@ -132,7 +140,14 @@ export function RulesTechniqueList() {
 
         {/* Filter Pills */}
         <div className="flex flex-wrap items-center gap-2 mt-6">
-          {(["All", "Beginner", "Intermediate", "Advanced"] as DifficultyFilter[]).map((tab) => {
+          {(
+            [
+              "All",
+              "Beginner",
+              "Intermediate",
+              "Advanced",
+            ] as DifficultyFilter[]
+          ).map((tab) => {
             const isActive = activeFilter === tab;
             return (
               <button
@@ -185,8 +200,8 @@ function TechniqueCard({ technique }: { technique: SudokuTechnique }) {
     technique.difficulty === "Beginner"
       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
       : technique.difficulty === "Intermediate"
-      ? "bg-amber-50 text-amber-700 border-amber-200"
-      : "bg-indigo-50 text-indigo-700 border-indigo-200";
+        ? "bg-amber-50 text-amber-700 border-amber-200"
+        : "bg-indigo-50 text-indigo-700 border-indigo-200";
 
   return (
     <Link
@@ -228,7 +243,8 @@ function TechniqueCard({ technique }: { technique: SudokuTechnique }) {
             </span>
             {technique.images.length > 0 && (
               <span className="text-[11px] text-slate-400 font-medium">
-                {technique.images.length} {technique.images.length === 1 ? "diagram" : "diagrams"}
+                {technique.images.length}{" "}
+                {technique.images.length === 1 ? "diagram" : "diagrams"}
               </span>
             )}
           </div>

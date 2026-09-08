@@ -3,9 +3,14 @@
  */
 export const APP_LINKS = {
   /**
-   * Official Sudoku King website rules route (Next.js /rules)
+   * Official Sudoku King website rules route
    */
-  RULES_URL: "https://sudoku-king.vercel.app/rules",
+  RULES_URL: "https://sudokuking.imperialtech.me/rules",
+
+  /**
+   * Official Sudoku King website homepage
+   */
+  WEBSITE_HOME: "https://sudokuking.imperialtech.me",
 
   /**
    * Reference rules URL
