@@ -45,13 +45,13 @@ export function IconBubble({
 
 // ─── Progress Ring matching screenshot ───────────────────────────────────────
 export function ProgressRingFlame({
-  size = 72,
+  size = 85,
   progress = 0,
 }: {
   size?: number;
   progress?: number;
 }) {
-  const strokeWidth = 9;
+  const strokeWidth = 8;
   const center = size / 2;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -133,7 +133,7 @@ export function HeroCard({
     <View
       style={{
         ...CARD_SHADOW,
-        padding: 20,
+        padding: 16,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -144,7 +144,7 @@ export function HeroCard({
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 3 }}>
           <Text
             style={{
-              fontSize: 38,
+              fontSize: 40,
               fontWeight: "bold",
               color: "#1C1F2E",
               lineHeight: 44,
@@ -225,7 +225,7 @@ export function StatsCards({ solved, totalSolved }: StatsCardsProps) {
       <HeroCard
         value={solved}
         total={totalSolved}
-        label={t('home.solvedToday')}
+        label={t("home.solvedToday")}
         progress={progress}
       />
     </View>

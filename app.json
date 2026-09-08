@@ -34,20 +34,20 @@
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-6128782678213076~4242585573"
+          "androidAppId": "ca-app-pub-6128782678213076~4242585573",
+          "iosAppId": "ca-app-pub-3940256099942544~1458275565"
         }
       ],
       [
         "expo-build-properties",
         {
           "android": {
-            "kotlinVersion": "2.1.20"
+            "kotlinVersion": "2.1.20",
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
           }
         }
       ]
     ]
-  },
-  "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-6128782678213076~4242585573"
   }
 }
