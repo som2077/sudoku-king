@@ -65,7 +65,7 @@ const Cell = ({
                   color: active
                     ? isSelected
                       ? "#FFFFFF"
-                      : "#475569"
+                      : "#1D4ED8"
                     : "transparent",
                 },
               ]}
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     height: "100%",
     flexDirection: "row",
     flexWrap: "wrap",
-    padding: 1,
+    padding: 5,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -5,7 +5,7 @@ import { useGameStore } from "../../store/useGameStore";
 import { getRow, getCol, getBlock } from "../../utils/sudokuLogic";
 
 const COLOR_BORDER = "#000000"; // Crisp premium dark border for 3x3 block borders & outer frame
-const COLOR_THIN = "#E2E8F0"; // Clean, elegant divider between individual cells
+const COLOR_THIN = "#00000030"; // Clean, elegant divider between individual cells
 
 export default function Board() {
   const { width: screenWidth } = useWindowDimensions();
@@ -21,7 +21,7 @@ export default function Board() {
 
   // Pixel-perfect cell, block and board calculation to guarantee 100% square cells with no sub-pixel jitter
   const { cellSize, blockSize, boardSize } = useMemo(() => {
-    const availableWidth = Math.min(screenWidth - 12, 500);
+    const availableWidth = Math.min(screenWidth - 1, 500);
     // Outer border (2px each side = 4px) + 6 thin dividers (1px each = 6px) + 2 thick dividers (2px each = 4px) = 14px
     const cell = Math.floor((availableWidth - 14) / 9);
     const block = cell * 3 + 2; // 3 cells + 2 thin (1px) dividers
@@ -146,13 +146,16 @@ const styles = StyleSheet.create({
   blockRow: {
     flexDirection: "row",
     width: "100%",
+    // padding: 1,
   },
   blockContainer: {
+    // padding: 1,
     flexDirection: "column",
   },
   subRow: {
     flexDirection: "row",
     width: "100%",
+    // padding: 1,
   },
   cellContainer: {
     alignItems: "center",

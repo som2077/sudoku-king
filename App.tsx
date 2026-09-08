@@ -612,7 +612,7 @@ export default function App() {
 const styles = StyleSheet.create({
   playingWhiteSheet: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FFFfff",
     padding: 4,
     alignItems: "center",
     shadowColor: "#000",
@@ -625,8 +625,8 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 50,
-    minHeight: 52,
+    // marginTop: 50,
+    minHeight: 220,
   },
   bannerPlaceholder: {
     width: 320,
