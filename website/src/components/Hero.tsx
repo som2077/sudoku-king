@@ -2,6 +2,10 @@
 
 import { Crown, Sparkles, ShieldCheck, Flame, Star, ArrowRight, Cpu, Globe2, Zap } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import ShinyText from "@/components/ShinyText";
+import DecryptedText from "@/components/DecryptedText";
+import SpotlightCard from "@/components/SpotlightCard";
+import CountUp from "@/components/CountUp";
 
 export function Hero() {
   return (
@@ -9,14 +13,27 @@ export function Hero() {
       <div className="container mx-auto max-w-7xl px-4 sm:px-8">
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto space-y-6">
           {/* Apple Style Capsule Pill */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white/80 backdrop-blur-md px-4 py-1.5 text-xs font-medium text-slate-700 shadow-[0_1px_4px_rgba(0,0,0,0.03)] apple-press-subtle">
+          <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white/80 backdrop-blur-md px-4 py-1.5 text-xs font-medium text-slate-700 shadow-[0_1px_4px_rgba(0,0,0,0.03)] apple-press-subtle cursor-default">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className="text-slate-950 font-bold tracking-tight">SUDOKU PROTOCOL</span>
+            <ShinyText
+              text="SUDOKU PROTOCOL"
+              className="font-bold tracking-tight"
+              color="#0f172a"
+              shineColor="#3b82f6"
+              speed={2.5}
+            />
             <span className="text-slate-300">•</span>
-            <span className="text-slate-500 font-mono text-[11px]">DETERMINISTIC LOGIC ENGINE</span>
+            <DecryptedText
+              text="DETERMINISTIC LOGIC ENGINE"
+              className="text-slate-600 font-mono text-[11px]"
+              encryptedClassName="text-blue-500/70 font-mono text-[11px]"
+              speed={40}
+              maxIterations={12}
+              animateOn="hover"
+            />
           </div>
 
           {/* Main Headline - Optical Sizing & Tracking */}
@@ -87,30 +104,64 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Stats Grid - Apple Glass Cards */}
+        {/* Stats Grid - React Bits Spotlight Cards with CountUp */}
         <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
           {[
-            { label: "Deterministic Boards", value: "10,000+", icon: Crown },
-            { label: "Difficulty Tiers", value: "6 Tiers", icon: Zap },
-            { label: "Daily Global Streak", value: "365 Days", icon: Flame },
-            { label: "Engine Latency", value: "< 1ms", icon: Cpu },
+            {
+              label: "Deterministic Boards",
+              renderValue: () => (
+                <>
+                  <CountUp from={0} to={10000} separator="," duration={1.8} />+
+                </>
+              ),
+              icon: Crown,
+            },
+            {
+              label: "Difficulty Tiers",
+              renderValue: () => (
+                <>
+                  <CountUp from={1} to={6} duration={1.2} /> Tiers
+                </>
+              ),
+              icon: Zap,
+            },
+            {
+              label: "Daily Global Streak",
+              renderValue: () => (
+                <>
+                  <CountUp from={0} to={365} duration={1.5} /> Days
+                </>
+              ),
+              icon: Flame,
+            },
+            {
+              label: "Engine Latency",
+              renderValue: () => (
+                <>
+                  <span className="text-slate-400 font-normal">&lt; </span>
+                  <CountUp from={12} to={1} duration={1.2} />ms
+                </>
+              ),
+              icon: Cpu,
+            },
           ].map((stat, i) => {
             const Icon = stat.icon;
             return (
-              <div
+              <SpotlightCard
                 key={i}
-                className="apple-glass-card rounded-3xl p-5 text-center transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group apple-press-subtle"
+                spotlightColor="rgba(59, 130, 246, 0.12)"
+                className="apple-glass-card rounded-3xl p-5 text-center transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group apple-press-subtle border-black/[0.06]"
               >
                 <div className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 mb-2.5 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
                   <Icon className="h-4 w-4" />
                 </div>
                 <div className="text-2xl sm:text-3xl font-extrabold text-slate-950 font-mono tracking-tight tabular-nums">
-                  {stat.value}
+                  {stat.renderValue()}
                 </div>
                 <div className="text-xs text-slate-500 mt-1 font-medium tracking-tight">
                   {stat.label}
                 </div>
-              </div>
+              </SpotlightCard>
             );
           })}
         </div>
@@ -118,3 +169,4 @@ export function Hero() {
     </section>
   );
 }
+

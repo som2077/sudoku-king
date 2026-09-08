@@ -1,27 +1,46 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { Calendar, Flame, Trophy, Award, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { useSudokuStore } from "@/store/useSudokuStore";
+import SpotlightCard from "@/components/SpotlightCard";
+import ShinyText from "@/components/ShinyText";
+
+const emptySubscribe = () => () => {};
 
 export function DailyChallengeBanner() {
-  const today = new Date().toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const today = useSyncExternalStore(
+    emptySubscribe,
+    () =>
+      new Date().toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+    () => "Today's Challenge"
+  );
 
   return (
     <section id="daily" className="py-16 md:py-20 border-t border-slate-200 bg-white/50">
       <div className="container mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="relative overflow-hidden rounded-3xl border border-black/[0.06] bg-white/80 backdrop-blur-xl p-8 md:p-12 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)]">
+        <SpotlightCard
+          spotlightColor="rgba(245, 158, 11, 0.08)"
+          className="relative overflow-hidden rounded-3xl border border-black/[0.06] bg-white/90 backdrop-blur-xl p-8 md:p-12 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)]"
+        >
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
             <div className="md:col-span-8 space-y-4">
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 gap-1 text-xs font-mono font-bold rounded-full">
-                  <Flame className="h-3.5 w-3.5 text-blue-600 fill-blue-600" />
-                  DAILY CONSENSUS
+                <Badge variant="outline" className="border-amber-200 bg-amber-50/80 text-amber-800 gap-1.5 text-xs font-mono font-bold rounded-full px-3 py-1">
+                  <Flame className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                  <ShinyText
+                    text="DAILY CONSENSUS"
+                    color="#92400e"
+                    shineColor="#f59e0b"
+                    speed={2.8}
+                    className="font-mono font-bold text-xs"
+                  />
                 </Badge>
                 <span suppressHydrationWarning className="text-xs font-mono font-medium text-slate-500 flex items-center gap-1">
                   <Calendar className="h-3.5 w-3.5 text-slate-400" />
@@ -63,8 +82,9 @@ export function DailyChallengeBanner() {
               </button>
             </div>
           </div>
-        </div>
+        </SpotlightCard>
       </div>
     </section>
   );
 }
+
