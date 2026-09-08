@@ -247,3 +247,305 @@ export const generatePuzzle = (
 
   return { puzzle, solution };
 };
+
+export type HintType = 'error' | 'naked_single' | 'hidden_single' | 'reveal';
+
+export interface SmartHint {
+  type: HintType;
+  cellIndex: number;
+  value: number;
+  row: number;
+  col: number;
+  block: number;
+  title: string;
+  explanation: string;
+  relatedIndices?: number[];
+}
+
+// Get all peer cell indices for a given cell (same row, col, and block)
+export const getPeerIndices = (index: number): number[] => {
+  const row = getRow(index);
+  const col = getCol(index);
+  const block = getBlock(index);
+  const peers = new Set<number>();
+
+  for (let i = 0; i < 81; i++) {
+    if (i !== index && (getRow(i) === row || getCol(i) === col || getBlock(i) === block)) {
+      peers.add(i);
+    }
+  }
+
+  return Array.from(peers);
+};
+
+// Calculate legal candidates (1-9) for a cell given the current board
+export const getCandidates = (
+  board: (number | null)[],
+  index: number
+): number[] => {
+  if (board[index] !== null && board[index] !== 0) {
+    return [];
+  }
+
+  const row = getRow(index);
+  const col = getCol(index);
+  const block = getBlock(index);
+  const usedNumbers = new Set<number>();
+
+  for (let i = 0; i < 81; i++) {
+    const val = board[i];
+    if (val !== null && val !== 0 && i !== index) {
+      if (getRow(i) === row || getCol(i) === col || getBlock(i) === block) {
+        usedNumbers.add(val);
+      }
+    }
+  }
+
+  const candidates: number[] = [];
+  for (let num = 1; num <= 9; num++) {
+    if (!usedNumbers.has(num)) {
+      candidates.push(num);
+    }
+  }
+
+  return candidates;
+};
+
+// Smart Hint Engine: Analyzes board to find mistakes, naked singles, hidden singles, or next logical reveal
+export const getSmartHint = (
+  currentBoard: (number | null)[],
+  solution: Board,
+  selectedCellIndex?: number | null
+): SmartHint | null => {
+  // Step 1: Detect user errors (highest priority)
+  for (let i = 0; i < 81; i++) {
+    const val = currentBoard[i];
+    if (val !== null && val !== 0 && val !== solution[i]) {
+      const row = getRow(i);
+      const col = getCol(i);
+      const block = getBlock(i);
+      return {
+        type: 'error',
+        cellIndex: i,
+        value: val,
+        row,
+        col,
+        block,
+        title: 'Incorrect Cell',
+        explanation: `The number ${val} at Row ${row + 1}, Col ${col + 1} is incorrect. Remove or change it to proceed.`,
+        relatedIndices: getPeerIndices(i).filter((p) => currentBoard[p] === val),
+      };
+    }
+  }
+
+  // Find all empty cells
+  const emptyIndices: number[] = [];
+  for (let i = 0; i < 81; i++) {
+    if (currentBoard[i] === null || currentBoard[i] === 0) {
+      emptyIndices.push(i);
+    }
+  }
+
+  // If no empty cells and no errors, puzzle is completely solved!
+  if (emptyIndices.length === 0) {
+    return null;
+  }
+
+  // Step 2: If the player has selected an empty cell, check if it has a Naked Single
+  if (
+    selectedCellIndex !== null &&
+    selectedCellIndex !== undefined &&
+    selectedCellIndex >= 0 &&
+    selectedCellIndex < 81 &&
+    (currentBoard[selectedCellIndex] === null || currentBoard[selectedCellIndex] === 0)
+  ) {
+    const candidates = getCandidates(currentBoard, selectedCellIndex);
+    if (candidates.length === 1) {
+      const val = candidates[0];
+      const row = getRow(selectedCellIndex);
+      const col = getCol(selectedCellIndex);
+      const block = getBlock(selectedCellIndex);
+      const peers = getPeerIndices(selectedCellIndex).filter((p) => {
+        const pv = currentBoard[p];
+        return pv !== null && pv !== 0;
+      });
+
+      return {
+        type: 'naked_single',
+        cellIndex: selectedCellIndex,
+        value: val,
+        row,
+        col,
+        block,
+        title: 'Naked Single',
+        explanation: `Row ${row + 1}, Col ${col + 1} can only be ${val} because all other numbers (1-9) are eliminated by its row, column, or block.`,
+        relatedIndices: peers,
+      };
+    }
+  }
+
+  // Step 3: Search for Naked Singles across the entire board
+  for (const idx of emptyIndices) {
+    const candidates = getCandidates(currentBoard, idx);
+    if (candidates.length === 1) {
+      const val = candidates[0];
+      const row = getRow(idx);
+      const col = getCol(idx);
+      const block = getBlock(idx);
+      const peers = getPeerIndices(idx).filter((p) => {
+        const pv = currentBoard[p];
+        return pv !== null && pv !== 0;
+      });
+
+      return {
+        type: 'naked_single',
+        cellIndex: idx,
+        value: val,
+        row,
+        col,
+        block,
+        title: 'Naked Single',
+        explanation: `Row ${row + 1}, Col ${col + 1} can only be ${val} because all other numbers (1-9) are eliminated by its row, column, or block.`,
+        relatedIndices: peers,
+      };
+    }
+  }
+
+  // Step 4: Search for Hidden Singles (Row, Column, Block)
+  // Check Rows
+  for (let r = 0; r < 9; r++) {
+    const rowCells = [];
+    for (let c = 0; c < 9; c++) {
+      rowCells.push(r * 9 + c);
+    }
+    for (let num = 1; num <= 9; num++) {
+      // If number already in row, skip
+      if (rowCells.some((idx) => currentBoard[idx] === num)) continue;
+      const possibleCells = rowCells.filter(
+        (idx) => (currentBoard[idx] === null || currentBoard[idx] === 0) && getCandidates(currentBoard, idx).includes(num)
+      );
+      if (possibleCells.length === 1) {
+        const target = possibleCells[0];
+        const row = getRow(target);
+        const col = getCol(target);
+        const block = getBlock(target);
+        return {
+          type: 'hidden_single',
+          cellIndex: target,
+          value: num,
+          row,
+          col,
+          block,
+          title: 'Hidden Single (Row)',
+          explanation: `In Row ${row + 1}, number ${num} can only fit at Col ${col + 1}.`,
+          relatedIndices: rowCells.filter((i) => i !== target),
+        };
+      }
+    }
+  }
+
+  // Check Columns
+  for (let c = 0; c < 9; c++) {
+    const colCells = [];
+    for (let r = 0; r < 9; r++) {
+      colCells.push(r * 9 + c);
+    }
+    for (let num = 1; num <= 9; num++) {
+      if (colCells.some((idx) => currentBoard[idx] === num)) continue;
+      const possibleCells = colCells.filter(
+        (idx) => (currentBoard[idx] === null || currentBoard[idx] === 0) && getCandidates(currentBoard, idx).includes(num)
+      );
+      if (possibleCells.length === 1) {
+        const target = possibleCells[0];
+        const row = getRow(target);
+        const col = getCol(target);
+        const block = getBlock(target);
+        return {
+          type: 'hidden_single',
+          cellIndex: target,
+          value: num,
+          row,
+          col,
+          block,
+          title: 'Hidden Single (Column)',
+          explanation: `In Column ${col + 1}, number ${num} can only fit at Row ${row + 1}.`,
+          relatedIndices: colCells.filter((i) => i !== target),
+        };
+      }
+    }
+  }
+
+  // Check 3x3 Blocks
+  for (let b = 0; b < 9; b++) {
+    const blockCells = [];
+    const startRow = Math.floor(b / 3) * 3;
+    const startCol = (b % 3) * 3;
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        blockCells.push((startRow + r) * 9 + (startCol + c));
+      }
+    }
+    for (let num = 1; num <= 9; num++) {
+      if (blockCells.some((idx) => currentBoard[idx] === num)) continue;
+      const possibleCells = blockCells.filter(
+        (idx) => (currentBoard[idx] === null || currentBoard[idx] === 0) && getCandidates(currentBoard, idx).includes(num)
+      );
+      if (possibleCells.length === 1) {
+        const target = possibleCells[0];
+        const row = getRow(target);
+        const col = getCol(target);
+        const block = getBlock(target);
+        return {
+          type: 'hidden_single',
+          cellIndex: target,
+          value: num,
+          row,
+          col,
+          block,
+          title: 'Hidden Single (Block)',
+          explanation: `In 3x3 Block ${b + 1}, number ${num} can only fit at Row ${row + 1}, Col ${col + 1}.`,
+          relatedIndices: blockCells.filter((i) => i !== target),
+        };
+      }
+    }
+  }
+
+  // Step 5: Fallback logical reveal
+  // If player selected an empty cell, reveal for that cell
+  let fallbackIndex = selectedCellIndex;
+  if (
+    fallbackIndex === null ||
+    fallbackIndex === undefined ||
+    fallbackIndex < 0 ||
+    fallbackIndex >= 81 ||
+    (currentBoard[fallbackIndex] !== null && currentBoard[fallbackIndex] !== 0)
+  ) {
+    // Choose the empty cell with minimum candidate count (MRV)
+    let minCandidates = 10;
+    fallbackIndex = emptyIndices[0];
+    for (const idx of emptyIndices) {
+      const cands = getCandidates(currentBoard, idx);
+      if (cands.length > 0 && cands.length < minCandidates) {
+        minCandidates = cands.length;
+        fallbackIndex = idx;
+      }
+    }
+  }
+
+  const row = getRow(fallbackIndex);
+  const col = getCol(fallbackIndex);
+  const block = getBlock(fallbackIndex);
+  const val = solution[fallbackIndex];
+
+  return {
+    type: 'reveal',
+    cellIndex: fallbackIndex,
+    value: val,
+    row,
+    col,
+    block,
+    title: 'Smart Reveal',
+    explanation: `Placing ${val} at Row ${row + 1}, Col ${col + 1} advances the puzzle.`,
+    relatedIndices: getPeerIndices(fallbackIndex),
+  };
+};
