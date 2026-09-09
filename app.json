@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "sudokuKing",
-    "slug": "sudokuKing",
+    "slug": "sudoku-king",
     "version": "3.56.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -48,6 +48,12 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9a2f5abe-326d-4c16-b8d3-a985ebe7df6c"
+      }
+    },
+    "owner": "som2077"
   }
 }
