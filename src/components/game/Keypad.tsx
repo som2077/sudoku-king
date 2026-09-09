@@ -93,17 +93,17 @@ const styles = StyleSheet.create({
     gap: GAP,
   },
   numBtn: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#2563EB40",
+    borderColor: "#00000010",
     alignItems: "center",
     justifyContent: "center",
-    // shadowColor: "#2563EB",
-    // shadowOpacity: 0.06,
-    // shadowRadius: 6,
-    // shadowOffset: { width: 0, height: 2 },
-    // elevation: 2,
+    shadowColor: "#00000030",
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   numBtnDone: {
     opacity: 0.25,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   numText: {
     fontSize: 26,
     fontWeight: "700",
-    color: "#2563EB",
+    // color: "#2563EB",
   },
   numTextDone: {
     color: "#94A3B8",

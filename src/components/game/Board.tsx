@@ -142,6 +142,11 @@ const styles = StyleSheet.create({
     borderColor: COLOR_BORDER,
     backgroundColor: "#FFFFFF",
     overflow: "hidden",
+    // shadowColor: "#1E3A8A",
+    // shadowOpacity: 0.18,
+    // shadowRadius: 12,
+    // shadowOffset: { width: 0, height: 4 },
+    // elevation: 8,
   },
   blockRow: {
     flexDirection: "row",

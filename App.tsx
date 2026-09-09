@@ -83,9 +83,7 @@ function BottomBannerAd({
       />
       {!bannerLoaded && (
         <View style={styles.bannerPlaceholder}>
-          <Text style={styles.bannerPlaceholderText}>
-            Banner Ad (320×50)
-          </Text>
+          <Text style={styles.bannerPlaceholderText}>Banner Ad (320×50)</Text>
         </View>
       )}
     </View>
@@ -465,7 +463,7 @@ export default function App() {
           onRestorePurchases={restorePurchases}
         />
       ) : (
-        <View style={{ flex: 1, backgroundColor: "#F8FAFC" }}>
+        <View style={{ flex: 1, backgroundColor: "#F5F7F9" }}>
           {/* ── Top Blue Section with Bottom-Left & Bottom-Right Rounded Corners ── */}
           <View style={styles.topBlueSection}>
             <LinearGradient
@@ -646,15 +644,17 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     overflow: "hidden",
-    shadowColor: "#1E3A8A",
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    // shadowColor: "#1E3A8A",
+    // shadowOpacity: 0.18,
+    // shadowRadius: 12,
+    // shadowOffset: { width: 0, height: 4 },
+    // elevation: 8,
   },
   playingWhiteSheet: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F5F7F9",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     alignItems: "center",
     justifyContent: "space-between",
     paddingTop: 10,
