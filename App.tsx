@@ -7,7 +7,11 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useEffect, useState, useRef } from "react";
 import { StatusBar as NativeStatusBar } from "react-native";
 import { getAnalytics, logEvent } from "@react-native-firebase/analytics";
@@ -44,6 +48,49 @@ import {
   type NotificationPayload,
 } from "./src/services/notificationService";
 import { localNotificationScheduler } from "./src/services/localNotificationScheduler";
+
+function BottomBannerAd({
+  isPremium,
+  bannerLoaded,
+  setBannerLoaded,
+}: {
+  isPremium: boolean;
+  bannerLoaded: boolean;
+  setBannerLoaded: (loaded: boolean) => void;
+}) {
+  const insets = useSafeAreaInsets();
+  if (isPremium) return null;
+
+  return (
+    <View
+      style={[
+        styles.bannerAdSlot,
+        { paddingBottom: Math.max(insets.bottom, 6) },
+      ]}
+    >
+      <BannerAd
+        unitId={BANNER_AD_UNIT_ID}
+        size={BannerAdSize.BANNER}
+        requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+        onAdLoaded={() => {
+          setBannerLoaded(true);
+          console.log("🔥 [BannerAd] Loaded successfully");
+        }}
+        onAdFailedToLoad={(error) => {
+          setBannerLoaded(false);
+          console.log("⚠️ [BannerAd] Failed to load:", error);
+        }}
+      />
+      {!bannerLoaded && (
+        <View style={styles.bannerPlaceholder}>
+          <Text style={styles.bannerPlaceholderText}>
+            Banner Ad (320×50)
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 export default function App() {
   const {
@@ -431,36 +478,19 @@ export default function App() {
               onOpenPaywall={buyPremium}
             />
 
-            {/* ── White Sheet Container: Board, Keypad & Banner Ad ── */}
+            {/* ── White Sheet Container: Board, Keypad & Bottom Banner Ad ── */}
             <View style={styles.playingWhiteSheet}>
-              <Board />
-              <Keypad showRewardedAd={showRewardedAd} />
+              <View style={styles.gameContentContainer}>
+                <Board />
+                <Keypad showRewardedAd={showRewardedAd} />
+              </View>
 
-              {/* ── Banner Ad Slot Below Keypad ── */}
-              {!isPremium && (
-                <View style={styles.bannerAdSlot}>
-                  <BannerAd
-                    unitId={BANNER_AD_UNIT_ID}
-                    size={BannerAdSize.BANNER}
-                    requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-                    onAdLoaded={() => {
-                      setBannerLoaded(true);
-                      console.log("🔥 [BannerAd] Loaded successfully");
-                    }}
-                    onAdFailedToLoad={(error) => {
-                      setBannerLoaded(false);
-                      console.log("⚠️ [BannerAd] Failed to load:", error);
-                    }}
-                  />
-                  {!bannerLoaded && (
-                    <View style={styles.bannerPlaceholder}>
-                      <Text style={styles.bannerPlaceholderText}>
-                        Banner Ad (320×50)
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              )}
+              {/* ── Banner Ad Anchored to Bottom of Screen ── */}
+              <BottomBannerAd
+                isPremium={isPremium}
+                bannerLoaded={bannerLoaded}
+                setBannerLoaded={setBannerLoaded}
+              />
             </View>
           </View>
 
@@ -612,21 +642,26 @@ export default function App() {
 const styles = StyleSheet.create({
   playingWhiteSheet: {
     flex: 1,
-    backgroundColor: "#FFFfff",
-    padding: 4,
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 6,
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: -4 },
     elevation: 8,
   },
+  gameContentContainer: {
+    width: "100%",
+    alignItems: "center",
+  },
   bannerAdSlot: {
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    // marginTop: 50,
-    minHeight: 220,
+    minHeight: 52,
+    backgroundColor: "#FFFFFF",
   },
   bannerPlaceholder: {
     width: 320,
