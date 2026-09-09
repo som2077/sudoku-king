@@ -532,6 +532,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
     letterSpacing: 0.2,
+    fontVariant: ["tabular-nums"],
   },
   timerText: {
     fontSize: 16,
@@ -540,6 +541,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     minWidth: 48,
     textAlign: "right",
+    fontVariant: ["tabular-nums"],
   },
 
   // ── Row 3: Tools ────────────────────────────────────────────────────────────
