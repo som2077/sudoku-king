@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Text } from "../components/Text";
 import {
   View,
@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Pressable,
   Switch,
+  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,6 +18,9 @@ import {
   Crown,
   Mail,
   ExternalLink,
+  ChevronRight,
+  Search,
+  Check,
 } from "lucide-react-native";
 import {
   FilledBell,
@@ -25,11 +29,14 @@ import {
   FilledMail,
   FilledFileText,
   FilledShield,
+  FilledGlobe,
 } from "../components/ui/FilledIcons";
 import { useGameStore } from "../store/useGameStore";
-import { useTranslation } from "../i18n";
+import { useTranslation, LanguageMeta } from "../i18n";
+import { haptics } from "../utils/haptics";
 import { localNotificationScheduler } from "../services/localNotificationScheduler";
 import { AppGradientBackground } from "../components/AppGradientBackground";
+import { AppBottomSheet } from "../components/ui/AppBottomSheet";
 import { APP_LINKS } from "../constants/links";
 
 interface SettingsScreenProps {
@@ -49,8 +56,36 @@ export function SettingsScreen({
     (state) => state.settings?.notificationsEnabled ?? true
   );
   const updateSetting = useGameStore((state) => state.updateSetting);
-  const { t } = useTranslation();
+  const { t, language, supportedLanguages } = useTranslation();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [languageSheetVisible, setLanguageSheetVisible] = useState(false);
+  const [languageSearch, setLanguageSearch] = useState("");
+
+  const currentLangMeta = useMemo(() => {
+    return (
+      supportedLanguages.find((l) => l.code === language) ||
+      supportedLanguages[0]
+    );
+  }, [language, supportedLanguages]);
+
+  const filteredLanguages = useMemo(() => {
+    const q = languageSearch.trim().toLowerCase();
+    if (!q) return supportedLanguages;
+    return supportedLanguages.filter(
+      (l) =>
+        l.name.toLowerCase().includes(q) ||
+        l.nativeName.toLowerCase().includes(q) ||
+        l.region.toLowerCase().includes(q) ||
+        l.code.toLowerCase().includes(q)
+    );
+  }, [languageSearch, supportedLanguages]);
+
+  const handleSelectLanguage = (code: string) => {
+    haptics.selection();
+    updateSetting("language", code);
+    setLanguageSheetVisible(false);
+    setLanguageSearch("");
+  };
 
   const handleToggleNotifications = async (val: boolean) => {
     updateSetting("notificationsEnabled", val);
@@ -200,6 +235,30 @@ export function SettingsScreen({
               accessibilityLabel="Toggle notifications"
             />
           </View>
+
+          <View style={styles.rowDivider} />
+
+          {/* Language Selection */}
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => setLanguageSheetVisible(true)}
+            activeOpacity={0.65}
+            accessibilityRole="button"
+            accessibilityLabel={t("settings.language", "Language")}
+          >
+            <View style={styles.rowLeft}>
+              <FilledGlobe size={20} color="#111827" />
+              <Text style={styles.rowLabel}>
+                {t("settings.language", "Language")}
+              </Text>
+            </View>
+            <View style={styles.rowRight}>
+              <Text style={styles.langValueText}>
+                {currentLangMeta.flag} {currentLangMeta.nativeName}
+              </Text>
+              <ChevronRight size={18} color="#9CA3AF" />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* ── 3. Guides & Rules Section ── */}
@@ -303,32 +362,85 @@ export function SettingsScreen({
           </TouchableOpacity>
         </View>
 
-        {/* ── 5. Version Footer ── */}
-        <Text style={styles.versionText}>VERSION 1.0.0</Text>
+        {/* ── 5. App Version & Info Card ── */}
+        <TouchableOpacity
+          style={styles.versionCard}
+          activeOpacity={0.85}
+          onPress={() => Linking.openURL(APP_LINKS.WEBSITE_HOME).catch(() => {})}
+          accessibilityRole="button"
+          accessibilityLabel="Sudoku King Version Information"
+        >
+          {/* Mini Sudoku Grid App Icon */}
+          <View style={styles.versionIconContainer}>
+            {/* Row 1: 1, 2, 3 */}
+            <View style={styles.miniGridRow}>
+              <View style={styles.miniGridCell}>
+                <Text style={styles.miniGridNumDark}>1</Text>
+              </View>
+              <View style={styles.miniGridVLine} />
+              <View style={styles.miniGridCell}>
+                <Text style={styles.miniGridNumBlue}>2</Text>
+              </View>
+              <View style={styles.miniGridVLine} />
+              <View style={styles.miniGridCell}>
+                <Text style={styles.miniGridNumDark}>3</Text>
+              </View>
+            </View>
+
+            <View style={styles.miniGridHLine} />
+
+            {/* Row 2: 6, empty, 4 */}
+            <View style={styles.miniGridRow}>
+              <View style={styles.miniGridCell}>
+                <Text style={styles.miniGridNumBlue}>6</Text>
+              </View>
+              <View style={styles.miniGridVLine} />
+              <View style={styles.miniGridCell} />
+              <View style={styles.miniGridVLine} />
+              <View style={styles.miniGridCell}>
+                <Text style={styles.miniGridNumDark}>4</Text>
+              </View>
+            </View>
+
+            <View style={styles.miniGridHLine} />
+
+            {/* Row 3: 7, 8, 9 */}
+            <View style={styles.miniGridRow}>
+              <View style={styles.miniGridCell}>
+                <Text style={styles.miniGridNumBlue}>7</Text>
+              </View>
+              <View style={styles.miniGridVLine} />
+              <View style={styles.miniGridCell}>
+                <Text style={styles.miniGridNumDark}>8</Text>
+              </View>
+              <View style={styles.miniGridVLine} />
+              <View style={styles.miniGridCell}>
+                <Text style={styles.miniGridNumBlue}>9</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Details Column */}
+          <View style={styles.versionInfoCol}>
+            <Text style={styles.versionAppTitle}>Sudoku King - Puzzle Game</Text>
+            <Text style={styles.versionNumberText}>Version 1.0.0</Text>
+            <Text style={styles.versionCopyrightText}>© 2026 Sudoku King Ltd.</Text>
+            <Text style={styles.versionCopyrightText}>All rights reserved.</Text>
+          </View>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* ──────────────────────────────────────────────────────────────────────── */}
-      {/* Info & Content Modals                                                    */}
+      {/* Info & Content Bottom Sheet                                              */}
       {/* ──────────────────────────────────────────────────────────────────────── */}
-      <Modal
+      <AppBottomSheet
         visible={activeModal !== null}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setActiveModal(null)}
+        onClose={() => setActiveModal(null)}
+        maxHeight="88%"
+        sheetStyle={{ paddingHorizontal: 0 }}
       >
-        <View style={styles.modalOverlay}>
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={() => setActiveModal(null)}
-          />
-          <View
-            style={[
-              styles.modalSheet,
-              { paddingBottom: Math.max(insets.bottom, 20) },
-            ]}
-          >
-            {/* Modal Header */}
-            <View style={styles.modalHeader}>
+        {/* Modal Header */}
+        <View style={styles.modalHeader}>
               <Text style={styles.modalHeaderTitle}>
                 {activeModal === "how_to_play" && t("settings.howToPlay", "How to Play")}
                 {activeModal === "rules" && t("settings.sudokuRules", "Sudoku Rules")}
@@ -548,10 +660,93 @@ export function SettingsScreen({
             >
               <Text style={styles.modalDoneBtnText}>Done</Text>
             </TouchableOpacity>
-          </View>
+          </AppBottomSheet>
+
+          {/* ── Language Bottom Sheet ── */}
+          <AppBottomSheet
+            visible={languageSheetVisible}
+            onClose={() => {
+              setLanguageSheetVisible(false);
+              setLanguageSearch("");
+            }}
+            maxHeight="75%"
+            sheetStyle={{ paddingHorizontal: 20 }}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalHeaderTitle}>
+                {t("settings.language", "Language")}
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setLanguageSheetVisible(false);
+                  setLanguageSearch("");
+                }}
+                style={styles.modalCloseBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close language selector"
+              >
+                <X size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Search Input */}
+            <View style={styles.searchBar}>
+              <Search size={18} color="#9CA3AF" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={t("settings.searchLanguage", "Search language...")}
+                placeholderTextColor="#9CA3AF"
+                value={languageSearch}
+                onChangeText={setLanguageSearch}
+                autoCorrect={false}
+              />
+              {languageSearch.length > 0 && (
+                <TouchableOpacity onPress={() => setLanguageSearch("")}>
+                  <X size={16} color="#9CA3AF" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Language Options List */}
+            <ScrollView
+              style={{ maxHeight: 380 }}
+              showsVerticalScrollIndicator={false}
+            >
+              {filteredLanguages.map((l: LanguageMeta) => {
+                const isSelected = l.code === language;
+                return (
+                  <TouchableOpacity
+                    key={l.code}
+                    onPress={() => handleSelectLanguage(l.code)}
+                    style={[
+                      styles.langOptionRow,
+                      isSelected && styles.langOptionRowSelected,
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.langOptionFlag}>{l.flag}</Text>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text
+                        style={[
+                          styles.langOptionNative,
+                          isSelected && styles.langOptionTextSelected,
+                        ]}
+                      >
+                        {l.nativeName}
+                      </Text>
+                      <Text style={styles.langOptionSub}>
+                        {l.name} • {l.region}
+                      </Text>
+                    </View>
+                    {isSelected && (
+                      <Check size={20} color="#2563EB" strokeWidth={2.5} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </AppBottomSheet>
         </View>
-      </Modal>
-    </View>
     </AppGradientBackground>
   );
 }
@@ -696,15 +891,87 @@ const styles = StyleSheet.create({
     marginLeft: 50,
   },
 
-  /* ── Version Footer ── */
-  versionText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#9CA3AF",
-    letterSpacing: 1.2,
-    textAlign: "center",
-    marginTop: 26,
+  /* ── Version Info Card ── */
+  versionCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#EEF0F3",
+    padding: 16,
+    marginTop: 20,
     marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+    gap: 14,
+  },
+  versionIconContainer: {
+    width: 54,
+    height: 54,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+    justifyContent: "space-evenly",
+    padding: 2,
+  },
+  miniGridRow: {
+    flexDirection: "row",
+    flex: 1,
+    alignItems: "center",
+  },
+  miniGridCell: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  miniGridVLine: {
+    width: 1,
+    height: "100%",
+    backgroundColor: "#E5E7EB",
+  },
+  miniGridHLine: {
+    height: 1,
+    width: "100%",
+    backgroundColor: "#E5E7EB",
+  },
+  miniGridNumDark: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  miniGridNumBlue: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#2563EB",
+  },
+  versionInfoCol: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  versionAppTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111827",
+    letterSpacing: -0.2,
+    marginBottom: 2,
+  },
+  versionNumberText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: 3,
+  },
+  versionCopyrightText: {
+    fontSize: 11,
+    fontWeight: "400",
+    color: "#9CA3AF",
+    lineHeight: 15,
   },
 
   /* ── Modals ── */
@@ -871,5 +1138,59 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#475569",
     lineHeight: 20,
+  },
+  rowRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  langValueText: {
+    fontSize: 14,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "BricolageGrotesque_400Regular",
+    color: "#111827",
+    marginLeft: 8,
+    padding: 0,
+  },
+  langOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    marginBottom: 4,
+  },
+  langOptionRowSelected: {
+    backgroundColor: "#EFF6FF",
+  },
+  langOptionFlag: {
+    fontSize: 22,
+  },
+  langOptionNative: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  langOptionTextSelected: {
+    color: "#2563EB",
+  },
+  langOptionSub: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 1,
   },
 });

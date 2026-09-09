@@ -1,5 +1,5 @@
 import React from "react";
-import Svg, { Path, Rect } from "react-native-svg";
+import Svg, { Path, Rect, Circle } from "react-native-svg";
 
 interface IconProps {
   size?: number;
@@ -126,3 +126,22 @@ export function FilledShield({ size = 20, color = "#111827" }: IconProps) {
     </Svg>
   );
 }
+
+/**
+ * Solid filled Globe icon (Language selection)
+ */
+export function FilledGlobe({ size = 20, color = "#111827" }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="10" fill={color} />
+      <Path
+        d="M2 12H22M12 2C14.5 5.5 16 8.5 16 12C16 15.5 14.5 18.5 12 22C9.5 18.5 8 15.5 8 12C8 8.5 9.5 5.5 12 2Z"
+        stroke="#FFFFFF"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+

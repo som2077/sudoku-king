@@ -4,6 +4,8 @@ import { View, TouchableOpacity } from "react-native";
 import { Trophy, Zap, TrendingUp } from "lucide-react-native";
 import { useGameStore, getDailyChallengeItem } from "../../store/useGameStore";
 import { useTranslation } from "../../i18n";
+import { Difficulty } from "../../utils/sudokuLogic";
+import { DifficultyBottomSheet } from "../game/DifficultyBottomSheet";
 
 type TimeTab = "Day" | "Week" | "Month";
 type MetricFilter = "Both" | "WinRate" | "BestTime";
@@ -41,6 +43,8 @@ export function PerformanceChart() {
   const { t } = useTranslation();
   const [activeTimeTab, setActiveTimeTab] = useState<TimeTab>("Day");
   const [metricFilter, setMetricFilter] = useState<MetricFilter>("Both");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | "All">("All");
+  const [showDifficultySheet, setShowDifficultySheet] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number>(() => {
     const day = new Date().getDay();
     return day === 0 ? 6 : day - 1;
@@ -48,6 +52,7 @@ export function PerformanceChart() {
 
   const dailyHistory = useGameStore((s) => s.dailyHistory) || {};
   const dailyChallengesProgress = useGameStore((s) => s.dailyChallengesProgress) || {};
+  const difficultyStats = useGameStore((s) => s.difficultyStats) || {};
   const todaySolved = useGameStore((s) => s.todaySolved) || 0;
   const bestTimeSec = useGameStore((s) => s.bestTimeSec) || 0;
 
@@ -60,6 +65,19 @@ export function PerformanceChart() {
     };
 
     const getDayStat = (dateStr: string, isTodayDate: boolean) => {
+      if (selectedDifficulty !== "All") {
+        const dStat = difficultyStats[selectedDifficulty];
+        const played = dStat?.played || 0;
+        const solved = dStat?.solved || 0;
+        const best = dStat?.bestSec || 0;
+        return {
+          played,
+          solved,
+          bestSec: best,
+          hasPlayed: played > 0 || solved > 0,
+        };
+      }
+
       let stat = dailyHistory[dateStr];
       const challengeItem = getDailyChallengeItem(dailyChallengesProgress, dateStr);
 
@@ -204,7 +222,7 @@ export function PerformanceChart() {
       });
     }
     return months;
-  }, [activeTimeTab, dailyHistory, dailyChallengesProgress, todaySolved, bestTimeSec]);
+  }, [activeTimeTab, dailyHistory, dailyChallengesProgress, todaySolved, bestTimeSec, selectedDifficulty, difficultyStats]);
 
   const playedItems = data.filter((d) => d.hasPlayed && d.bestSec > 0);
   const maxTimeSec = playedItems.length > 0 ? Math.max(...playedItems.map((d) => d.bestSec), 1) : 1;
@@ -300,8 +318,10 @@ export function PerformanceChart() {
         }}
       >
         <TouchableOpacity
-          onPress={() => setMetricFilter("Both")}
+          onPress={() => setShowDifficultySheet(true)}
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Filter performance by difficulty"
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -309,18 +329,17 @@ export function PerformanceChart() {
             paddingHorizontal: 10,
             paddingVertical: 3,
             borderRadius: 50,
-            backgroundColor:
-              metricFilter === "Both" ? "#F1F5F9" : "transparent",
+            backgroundColor: "#F1F5F9",
           }}
         >
           <Text
             style={{
               fontSize: 11,
-              fontWeight: metricFilter === "Both" ? "700" : "500",
-              color: metricFilter === "Both" ? "#1C1F2E" : "#9CA3AF",
+              fontWeight: "700",
+              color: "#1C1F2E",
             }}
           >
-            {t('home.all')}
+            {selectedDifficulty === "All" ? t('home.all') : selectedDifficulty}
           </Text>
         </TouchableOpacity>
 
@@ -647,6 +666,16 @@ export function PerformanceChart() {
           );
         })}
       </View>
+
+      <DifficultyBottomSheet
+        visible={showDifficultySheet}
+        onClose={() => setShowDifficultySheet(false)}
+        onSelect={(diff) => {
+          setSelectedDifficulty(diff);
+          setShowDifficultySheet(false);
+        }}
+        includeAll={true}
+      />
     </View>
   );
 }

@@ -29,6 +29,7 @@ import { useTranslation, SUPPORTED_LANGUAGES, LanguageMeta } from "../i18n";
 import { useGameStore } from "../store/useGameStore";
 import { haptics } from "../utils/haptics";
 import { APP_LINKS } from "../constants/links";
+import { AppBottomSheet } from "../components/ui/AppBottomSheet";
 
 interface WelcomeScreenProps {
   onGetStarted: () => void;
@@ -222,150 +223,134 @@ export default function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
         </Text>
       </View>
 
-      {/* ── Language Switcher Modal ── */}
-      <Modal
+      {/* ── Language Switcher Bottom Sheet ── */}
+      <AppBottomSheet
         visible={languageModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setLanguageModalVisible(false)}
+        onClose={() => setLanguageModalVisible(false)}
+        maxHeight="82%"
+        sheetStyle={{ paddingHorizontal: 20 }}
       >
-        <View style={styles.modalOverlay}>
-          <Pressable
-            style={styles.modalBackdrop}
+        <View style={styles.modalHeader}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Globe size={20} color="#2563EB" />
+            <Text style={styles.modalHeaderTitle}>
+              {t("settings.language", "Choose Language")}
+            </Text>
+          </View>
+          <TouchableOpacity
             onPress={() => setLanguageModalVisible(false)}
+            style={styles.modalCloseBtn}
+          >
+            <X size={20} color="#6B7280" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Input */}
+        <View style={styles.searchBar}>
+          <Search size={18} color="#9CA3AF" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t("settings.searchLanguage", "Search language...")}
+            placeholderTextColor="#9CA3AF"
+            value={languageSearch}
+            onChangeText={setLanguageSearch}
+            autoCorrect={false}
           />
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Globe size={20} color="#2563EB" />
-                <Text style={styles.modalHeaderTitle}>
-                  {t("settings.language", "Choose Language")}
-                </Text>
-              </View>
+          {languageSearch.length > 0 && (
+            <TouchableOpacity onPress={() => setLanguageSearch("")}>
+              <X size={16} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Language List */}
+        <ScrollView
+          style={{ maxHeight: 380 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredLanguages.map((l: LanguageMeta) => {
+            const isSelected = l.code === language;
+            return (
               <TouchableOpacity
-                onPress={() => setLanguageModalVisible(false)}
-                style={styles.modalCloseBtn}
+                key={l.code}
+                onPress={() => handleSelectLanguage(l.code)}
+                style={[
+                  styles.langOptionRow,
+                  isSelected && styles.langOptionRowSelected,
+                ]}
+                activeOpacity={0.7}
               >
-                <X size={20} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Search Input */}
-            <View style={styles.searchBar}>
-              <Search size={18} color="#9CA3AF" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder={t("settings.searchLanguage", "Search language...")}
-                placeholderTextColor="#9CA3AF"
-                value={languageSearch}
-                onChangeText={setLanguageSearch}
-                autoCorrect={false}
-              />
-              {languageSearch.length > 0 && (
-                <TouchableOpacity onPress={() => setLanguageSearch("")}>
-                  <X size={16} color="#9CA3AF" />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Language List */}
-            <ScrollView
-              style={{ maxHeight: 380 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {filteredLanguages.map((l: LanguageMeta) => {
-                const isSelected = l.code === language;
-                return (
-                  <TouchableOpacity
-                    key={l.code}
-                    onPress={() => handleSelectLanguage(l.code)}
+                <Text style={styles.langOptionFlag}>{l.flag}</Text>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text
                     style={[
-                      styles.langOptionRow,
-                      isSelected && styles.langOptionRowSelected,
+                      styles.langOptionNative,
+                      isSelected && styles.langOptionTextSelected,
                     ]}
-                    activeOpacity={0.7}
                   >
-                    <Text style={styles.langOptionFlag}>{l.flag}</Text>
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text
-                        style={[
-                          styles.langOptionNative,
-                          isSelected && styles.langOptionTextSelected,
-                        ]}
-                      >
-                        {l.nativeName}
-                      </Text>
-                      <Text style={styles.langOptionSub}>
-                        {l.name} • {l.region}
-                      </Text>
-                    </View>
-                    {isSelected && (
-                      <Check size={20} color="#2563EB" strokeWidth={2.5} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+                    {l.nativeName}
+                  </Text>
+                  <Text style={styles.langOptionSub}>
+                    {l.name} • {l.region}
+                  </Text>
+                </View>
+                {isSelected && (
+                  <Check size={20} color="#2563EB" strokeWidth={2.5} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </AppBottomSheet>
 
-      {/* ── Legal Policy Modal ── */}
-      <Modal
+      {/* ── Legal Policy Bottom Sheet ── */}
+      <AppBottomSheet
         visible={legalModal !== null}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setLegalModal(null)}
+        onClose={() => setLegalModal(null)}
+        maxHeight="75%"
+        sheetStyle={{ paddingHorizontal: 20 }}
       >
-        <View style={styles.modalOverlay}>
-          <Pressable
-            style={styles.modalBackdrop}
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalHeaderTitle}>
+            {legalModal === "terms" ? "Terms of Service" : "Privacy Policy"}
+          </Text>
+          <TouchableOpacity
             onPress={() => setLegalModal(null)}
-          />
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalHeaderTitle}>
-                {legalModal === "terms" ? "Terms of Service" : "Privacy Policy"}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setLegalModal(null)}
-                style={styles.modalCloseBtn}
-              >
-                <X size={20} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView
-              style={{ maxHeight: 360 }}
-              showsVerticalScrollIndicator={false}
-            >
-              <Text style={{ fontSize: 13, color: "#4B5563", lineHeight: 20 }}>
-                {legalModal === "terms"
-                  ? "Welcome to Sudoku King. By using our app, you agree to play fairly and enjoy brain-training puzzles. All puzzles, challenges, and graphics are protected intellectual property. Our app works 100% offline and stores your game progress locally on your device."
-                  : "Sudoku King respects your personal privacy. We do not sell your personal data. We use local device storage (MMKV) to save your solved puzzles, streaks, and settings. Standard crash analytics and non-personalized advertising services adhere to Google Play policies."}
-              </Text>
-
-              <TouchableOpacity
-                style={styles.openBrowserBtn}
-                onPress={() => {
-                  const url =
-                    legalModal === "terms"
-                      ? APP_LINKS.TERMS_URL
-                      : APP_LINKS.PRIVACY_URL;
-                  Linking.openURL(url).catch(() => {});
-                }}
-                activeOpacity={0.8}
-              >
-                <ExternalLink size={14} color="#1D4ED8" />
-                <Text style={styles.openBrowserBtnText}>
-                  {legalModal === "terms"
-                    ? "Read Full Terms on Website"
-                    : "Read Full Privacy Policy on Website"}
-                </Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
+            style={styles.modalCloseBtn}
+          >
+            <X size={20} color="#6B7280" />
+          </TouchableOpacity>
         </View>
-      </Modal>
+        <ScrollView
+          style={{ maxHeight: 360 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={{ fontSize: 13, color: "#4B5563", lineHeight: 20 }}>
+            {legalModal === "terms"
+              ? "Welcome to Sudoku King. By using our app, you agree to play fairly and enjoy brain-training puzzles. All puzzles, challenges, and graphics are protected intellectual property. Our app works 100% offline and stores your game progress locally on your device."
+              : "Sudoku King respects your personal privacy. We do not sell your personal data. We use local device storage (MMKV) to save your solved puzzles, streaks, and settings. Standard crash analytics and non-personalized advertising services adhere to Google Play policies."}
+          </Text>
+
+          <TouchableOpacity
+            style={styles.openBrowserBtn}
+            onPress={() => {
+              const url =
+                legalModal === "terms"
+                  ? APP_LINKS.TERMS_URL
+                  : APP_LINKS.PRIVACY_URL;
+              Linking.openURL(url).catch(() => {});
+            }}
+            activeOpacity={0.8}
+          >
+            <ExternalLink size={14} color="#1D4ED8" />
+            <Text style={styles.openBrowserBtnText}>
+              {legalModal === "terms"
+                ? "Read Full Terms on Website"
+                : "Read Full Privacy Policy on Website"}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </AppBottomSheet>
       </SafeAreaView>
     </View>
   );
