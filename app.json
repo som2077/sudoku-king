@@ -4,13 +4,12 @@
     "slug": "sudoku-king",
     "version": "3.56.1",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/android-icon-foreground.png",
     "userInterfaceStyle": "light",
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -24,10 +23,11 @@
       "@react-native-firebase/app",
       "@react-native-firebase/crashlytics",
       "@react-native-firebase/messaging",
+      "./plugins/withFirebaseNotificationManifest",
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/android/playstore-icon.png",
           "color": "#2563EB"
         }
       ],
@@ -54,6 +54,9 @@
         "projectId": "9a2f5abe-326d-4c16-b8d3-a985ebe7df6c"
       }
     },
-    "owner": "som2077"
+    "owner": "som2077",
+    "ios": {
+      "bundleIdentifier": "com.sudokuking.android"
+    }
   }
 }
