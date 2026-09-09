@@ -465,33 +465,34 @@ export default function App() {
           onRestorePurchases={restorePurchases}
         />
       ) : (
-        <View style={{ flex: 1, backgroundColor: "#1E3A8A" }}>
-          <LinearGradient
-            colors={["#1E3A8A", "#2563EB", "#3B82F6"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={{ flex: 1, backgroundColor: "transparent" }}>
+        <View style={{ flex: 1, backgroundColor: "#F8FAFC" }}>
+          {/* ── Top Blue Section with Bottom-Left & Bottom-Right Rounded Corners ── */}
+          <View style={styles.topBlueSection}>
+            <LinearGradient
+              colors={["#1E3A8A", "#2563EB", "#3B82F6"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
             <TopBar
               showRewardedAd={showRewardedAd}
               onOpenPaywall={buyPremium}
             />
+          </View>
 
-            {/* ── White Sheet Container: Board, Keypad & Bottom Banner Ad ── */}
-            <View style={styles.playingWhiteSheet}>
-              <View style={styles.gameContentContainer}>
-                <Board />
-                <Keypad showRewardedAd={showRewardedAd} />
-              </View>
-
-              {/* ── Banner Ad Anchored to Bottom of Screen ── */}
-              <BottomBannerAd
-                isPremium={isPremium}
-                bannerLoaded={bannerLoaded}
-                setBannerLoaded={setBannerLoaded}
-              />
+          {/* ── Main Playing Area: Board, Keypad & Bottom Banner Ad ── */}
+          <View style={styles.playingWhiteSheet}>
+            <View style={styles.gameContentContainer}>
+              <Board />
+              <Keypad showRewardedAd={showRewardedAd} />
             </View>
+
+            {/* ── Banner Ad Anchored to Bottom of Screen ── */}
+            <BottomBannerAd
+              isPremium={isPremium}
+              bannerLoaded={bannerLoaded}
+              setBannerLoaded={setBannerLoaded}
+            />
           </View>
 
           {/* ── Win / Game Over Modal ── */}
@@ -640,17 +641,23 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  topBlueSection: {
+    width: "100%",
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    overflow: "hidden",
+    shadowColor: "#1E3A8A",
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
   playingWhiteSheet: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FAFC",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 8,
+    paddingTop: 10,
   },
   gameContentContainer: {
     width: "100%",
@@ -661,7 +668,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: 52,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8FAFC",
   },
   bannerPlaceholder: {
     width: 320,

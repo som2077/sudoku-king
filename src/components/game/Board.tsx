@@ -21,7 +21,7 @@ export default function Board() {
 
   // Pixel-perfect cell, block and board calculation to guarantee 100% square cells with no sub-pixel jitter
   const { cellSize, blockSize, boardSize } = useMemo(() => {
-    const availableWidth = Math.min(screenWidth - 1, 500);
+    const availableWidth = Math.min(screenWidth - 8.5, 500);
     // Outer border (2px each side = 4px) + 6 thin dividers (1px each = 6px) + 2 thick dividers (2px each = 4px) = 14px
     const cell = Math.floor((availableWidth - 14) / 9);
     const block = cell * 3 + 2; // 3 cells + 2 thin (1px) dividers
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   boardContainer: {
-    borderRadius: 0,
+    borderRadius: 16,
     borderWidth: 2,
     borderColor: COLOR_BORDER,
     backgroundColor: "#FFFFFF",

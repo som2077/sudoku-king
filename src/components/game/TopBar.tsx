@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 14,
+    paddingBottom: 20,
     gap: 14,
   },
 
