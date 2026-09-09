@@ -10,6 +10,8 @@ import {
   Pressable,
   Switch,
   TextInput,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,6 +23,7 @@ import {
   ChevronRight,
   Search,
   Check,
+  RotateCcw,
 } from "lucide-react-native";
 import {
   FilledBell,
@@ -38,6 +41,7 @@ import { localNotificationScheduler } from "../services/localNotificationSchedul
 import { AppGradientBackground } from "../components/AppGradientBackground";
 import { AppBottomSheet } from "../components/ui/AppBottomSheet";
 import { APP_LINKS } from "../constants/links";
+import { purchaseService } from "../services/purchaseService";
 
 interface SettingsScreenProps {
   onOpenPaywall?: () => void;
@@ -47,7 +51,10 @@ interface SettingsScreenProps {
 
 type ModalType = "how_to_play" | "rules" | "help" | "terms" | "privacy" | null;
 
-export function SettingsScreen({ onOpenPaywall }: SettingsScreenProps) {
+export function SettingsScreen({
+  onOpenPaywall,
+  onRestorePurchases,
+}: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
   const isPremium = useGameStore((state) => state.isPremium);
   const notificationsEnabled = useGameStore(
@@ -58,6 +65,45 @@ export function SettingsScreen({ onOpenPaywall }: SettingsScreenProps) {
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [languageSheetVisible, setLanguageSheetVisible] = useState(false);
   const [languageSearch, setLanguageSearch] = useState("");
+  const [restoring, setRestoring] = useState(false);
+
+  const handleRestorePurchases = async () => {
+    if (restoring) return;
+    setRestoring(true);
+    haptics.impactLight();
+    try {
+      let restored = false;
+      if (onRestorePurchases) {
+        await onRestorePurchases();
+        restored = useGameStore.getState().isPremium;
+      } else {
+        const res = await purchaseService.restorePurchases();
+        restored = Boolean(res?.restored);
+      }
+
+      if (restored || useGameStore.getState().isPremium) {
+        haptics.success();
+        Alert.alert(
+          "👑 Purchases Restored!",
+          "Your VIP access has been successfully restored with unlimited hints, infinite chances & 100% ad-free puzzles.",
+          [{ text: "OK" }],
+        );
+      } else {
+        Alert.alert(
+          "No Active VIP Found",
+          "No active subscriptions or VIP purchases were found for this Google Play account.",
+          [{ text: "OK" }],
+        );
+      }
+    } catch (err: any) {
+      Alert.alert(
+        "Restore Failed",
+        err?.message || "Failed to restore purchases. Please check your network connection.",
+      );
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   const currentLangMeta = useMemo(() => {
     return (

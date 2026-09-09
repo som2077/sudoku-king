@@ -245,7 +245,7 @@ export default function App() {
   };
 
   const restorePurchases = async () => {
-    await purchaseService.restorePurchases();
+    return await purchaseService.restorePurchases();
   };
 
   const recordedWinRef = useRef<boolean>(false);
@@ -322,6 +322,7 @@ export default function App() {
             onGetStarted={() => {
               completeWelcome();
             }}
+            onRestorePurchases={restorePurchases}
           />
         </View>
       ) : !hasCompletedOnboarding ? (

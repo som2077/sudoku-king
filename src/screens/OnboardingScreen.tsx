@@ -112,7 +112,10 @@ export default function OnboardingScreen({
       />
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         {/* ── Top Header: Back Arrow & Thin Progress Track ── */}
-        <OnboardingHeader onBack={handleBack} progressPercent={progressPercent} />
+        <OnboardingHeader
+          onBack={handleBack}
+          progressPercent={progressPercent}
+        />
 
         {/* ── Dynamic Step Content Component ── */}
         <ScrollView

@@ -15,9 +15,6 @@ class PurchaseService {
   private isInitialized = false;
   private currentOffering: PurchasesOffering | null = null;
 
-  /**
-   * Initialize RevenueCat Purchases SDK
-   */
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
@@ -28,24 +25,21 @@ class PurchaseService {
         await Purchases.setLogLevel(LOG_LEVEL.INFO);
       }
 
-      const apiKey = getRevenueCatApiKey(Platform.OS);
-      console.log('💳 [RevenueCat] Initializing SDK for platform:', Platform.OS);
+      const apiKey = __DEV__ ? getRevenueCatTestKey() : getRevenueCatApiKey(Platform.OS);
+      console.log('💳 [RevenueCat] Initializing SDK with key type:', __DEV__ ? 'Test Store' : 'Google Play');
 
       await Purchases.configure({ apiKey });
       this.isInitialized = true;
       console.log('💳 [RevenueCat] Initialized successfully');
 
-      // Listen for customer info updates
       Purchases.addCustomerInfoUpdateListener((info) => {
         this.handleCustomerInfoUpdate(info);
       });
 
-      // Fetch initial status & offerings
       await this.checkSubscriptionStatus();
       await this.fetchOfferings();
     } catch (error: any) {
       console.log('ℹ️ [RevenueCat] Initialization note:', error?.message || error);
-      // Try fallback to test key if primary key fails on non-store build
       try {
         const fallbackKey = getRevenueCatTestKey();
         if (fallbackKey) {
@@ -61,13 +55,8 @@ class PurchaseService {
     }
   }
 
-  /**
-   * Check customer info and update game store premium status
-   */
   async checkSubscriptionStatus(): Promise<boolean> {
     const { checkTrialStatus, setPremium } = useGameStore.getState();
-
-    // Check if 3-day local trial is active first
     const trialActive = checkTrialStatus();
 
     if (!this.isInitialized) {
@@ -92,20 +81,24 @@ class PurchaseService {
     }
   }
 
-  /**
-   * Helper to verify if customer has active VIP entitlement
-   */
   private hasActiveEntitlement(customerInfo: CustomerInfo): boolean {
-    const active = customerInfo.entitlements?.active || {};
-    return (
+    const active = customerInfo?.entitlements?.active || {};
+    if (
       typeof active[ENTITLEMENT_ID] !== 'undefined' ||
       typeof active[FALLBACK_ENTITLEMENT_ID] !== 'undefined'
-    );
+    ) {
+      return true;
+    }
+    if (Object.keys(active).length > 0) {
+      return true;
+    }
+    const purchasedProducts = customerInfo?.allPurchasedProductIdentifiers || [];
+    if (purchasedProducts.length > 0) {
+      return true;
+    }
+    return false;
   }
 
-  /**
-   * Handle real-time CustomerInfo updates
-   */
   private handleCustomerInfoUpdate(customerInfo: CustomerInfo) {
     const { setPremium, checkTrialStatus } = useGameStore.getState();
     const hasEntitlement = this.hasActiveEntitlement(customerInfo);
@@ -115,9 +108,6 @@ class PurchaseService {
     setPremium(hasEntitlement || trialActive);
   }
 
-  /**
-   * Fetch current offerings from RevenueCat
-   */
   async fetchOfferings(): Promise<PurchasesOffering | null> {
     if (!this.isInitialized) {
       await this.initialize();
@@ -137,16 +127,10 @@ class PurchaseService {
     }
   }
 
-  /**
-   * Get cached current offering
-   */
   getCurrentOffering(): PurchasesOffering | null {
     return this.currentOffering;
   }
 
-  /**
-   * Purchase a specific RevenueCat package
-   */
   async purchasePackage(pkg: PurchasesPackage): Promise<{ success: boolean; userCancelled?: boolean; error?: string }> {
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
@@ -168,10 +152,10 @@ class PurchaseService {
     }
   }
 
-  /**
-   * Restore previous purchases
-   */
   async restorePurchases(): Promise<{ success: boolean; restored: boolean; error?: string }> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
     try {
       const customerInfo = await Purchases.restorePurchases();
       const isSubscribed = this.hasActiveEntitlement(customerInfo);
@@ -191,16 +175,10 @@ class PurchaseService {
     }
   }
 
-  /**
-   * Activate the 3-day free trial (no card required)
-   */
   activateFreeTrial(): void {
     useGameStore.getState().activateThreeDayTrial();
   }
 
-  /**
-   * Check if user is VIP (either from paid subscription or active 3-day trial)
-   */
   isVip(): boolean {
     const state = useGameStore.getState();
     const trialActive = state.trialEndsAt !== null && state.trialEndsAt > Date.now();

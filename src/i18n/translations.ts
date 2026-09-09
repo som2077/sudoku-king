@@ -140,6 +140,8 @@ export interface Translations {
   'welcome.feat3Desc'?: string;
   'welcome.getStarted'?: string;
   'welcome.quickPlay'?: string;
+  'welcome.restorePurchase'?: string;
+  'welcome.restoring'?: string;
 }
 
 export type TranslationKey = keyof Translations;
@@ -278,6 +280,8 @@ export const TRANSLATIONS: Record<string, Partial<Translations>> = {
     'welcome.feat3Desc': 'Play anywhere without internet, timers, or interruptions',
     'welcome.getStarted': 'Get Started',
     'welcome.quickPlay': 'I already know how to play',
+    'welcome.restorePurchase': 'Restore Purchases',
+    'welcome.restoring': 'Restoring Purchases...',
   },
 
   // ── 2. Simplified Chinese (zh-CN) ──
@@ -1334,6 +1338,9 @@ export const TRANSLATIONS: Record<string, Partial<Translations>> = {
     'settings.terms': 'सेवा की शर्तें',
     'settings.privacy': 'गोपनीयता नीति',
     'settings.searchLanguage': 'भाषा खोजें...',
+    'welcome.getStarted': 'शुरू करें',
+    'welcome.restorePurchase': 'खरीदारी पुनर्स्थापित करें (Restore)',
+    'welcome.restoring': 'जाँच की जा रही है...',
   },
 
   // ── 13. Indonesian (id) ──

@@ -66,7 +66,17 @@ async function run() {
   assert.ok(appContent.includes("showCustomPaywall"), "App.tsx must maintain showCustomPaywall state");
   assert.ok(appContent.includes("pendingOnboardingDiff"), "App.tsx must hold difficulty while presenting paywall");
   assert.ok(appContent.includes("<Paywall"), "App.tsx must render Paywall modal");
+  assert.ok(appContent.includes("onRestorePurchases={restorePurchases}"), "App.tsx must pass onRestorePurchases to WelcomeScreen");
   console.log("  ✔ App.tsx Onboarding -> Paywall offer transition verified");
+
+  // 6. WelcomeScreen Restore Purchases verification
+  const welcomePath = path.join(__dirname, "../src/screens/WelcomeScreen.tsx");
+  const welcomeContent = fs.readFileSync(welcomePath, "utf-8");
+  assert.ok(welcomeContent.includes("handleRestorePurchases"), "WelcomeScreen must implement handleRestorePurchases");
+  assert.ok(welcomeContent.includes("onRestorePurchases"), "WelcomeScreen must accept onRestorePurchases prop");
+  assert.ok(welcomeContent.includes("welcome.restorePurchase"), "WelcomeScreen must render restore purchases button with i18n key");
+  assert.ok(welcomeContent.includes("styles.restoreButton"), "WelcomeScreen must style the restore button");
+  console.log("  ✔ WelcomeScreen Restore Payment / Purchases button & handling verified");
 
   console.log("\n🎉 ALL REVENUECAT & 3-DAY TRIAL TESTS PASSED SUCCESSFULLY!");
 }
