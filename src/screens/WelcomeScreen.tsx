@@ -25,6 +25,7 @@ import {
 } from "lucide-react-native";
 import { useTranslation, SUPPORTED_LANGUAGES, LanguageMeta } from "../i18n";
 import { useGameStore } from "../store/useGameStore";
+import { haptics } from "../utils/haptics";
 
 interface WelcomeScreenProps {
   onGetStarted: () => void;
@@ -62,6 +63,7 @@ export default function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
   }, [languageSearch, supportedLanguages]);
 
   const handleSelectLanguage = (code: string) => {
+    haptics.selection();
     updateSetting("language", code);
     setLanguageModalVisible(false);
     setLanguageSearch("");
@@ -187,7 +189,10 @@ export default function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
       <View style={styles.bottomSection}>
         {/* Get Started (Primary High-Contrast Pill) */}
         <TouchableOpacity
-          onPress={onGetStarted}
+          onPress={() => {
+            haptics.impactMedium();
+            onGetStarted();
+          }}
           style={styles.darkPrimaryButton}
           activeOpacity={0.8}
         >

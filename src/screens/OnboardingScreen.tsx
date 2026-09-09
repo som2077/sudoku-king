@@ -8,6 +8,7 @@ import { Difficulty } from "../utils/sudokuLogic";
 import { notificationService } from "../services/notificationService";
 import { localNotificationScheduler } from "../services/localNotificationScheduler";
 import { useGameStore } from "../store/useGameStore";
+import { haptics } from "../utils/haptics";
 import {
   OnboardingHeader,
   Step0Experience,
@@ -46,6 +47,7 @@ export default function OnboardingScreen({
   const handleSelectReminder = async (
     slotId: "morning" | "afternoon" | "evening" | "none",
   ) => {
+    haptics.selection();
     setReminderSlot(slotId);
 
     if (slotId === "none") {
@@ -84,13 +86,16 @@ export default function OnboardingScreen({
     }
 
     if (step < totalSteps - 1) {
+      haptics.impactMedium();
       setStep((prev) => prev + 1);
     } else {
+      haptics.success();
       onFinish(experience);
     }
   };
 
   const handleBack = () => {
+    haptics.impactLight();
     if (step > 0) {
       setStep((prev) => prev - 1);
     } else if (onBack) {
@@ -119,18 +124,32 @@ export default function OnboardingScreen({
           {step === 0 && (
             <Step0Experience
               experience={experience}
-              onSelectExperience={setExperience}
+              onSelectExperience={(exp) => {
+                haptics.selection();
+                setExperience(exp);
+              }}
             />
           )}
 
           {step === 1 && (
             <Step1DailyGoal
               dailyMinutes={dailyMinutes}
-              onSelectMinutes={setDailyMinutes}
+              onSelectMinutes={(m) => {
+                haptics.selection();
+                setDailyMinutes(m);
+              }}
             />
           )}
 
-          {step === 2 && <Step2PrimaryGoal goal={goal} onSelectGoal={setGoal} />}
+          {step === 2 && (
+            <Step2PrimaryGoal
+              goal={goal}
+              onSelectGoal={(g) => {
+                haptics.selection();
+                setGoal(g);
+              }}
+            />
+          )}
 
           {step === 3 && (
             <Step3Reminder
