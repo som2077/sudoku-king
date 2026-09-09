@@ -47,13 +47,11 @@ interface SettingsScreenProps {
 
 type ModalType = "how_to_play" | "rules" | "help" | "terms" | "privacy" | null;
 
-export function SettingsScreen({
-  onOpenPaywall,
-}: SettingsScreenProps) {
+export function SettingsScreen({ onOpenPaywall }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
   const isPremium = useGameStore((state) => state.isPremium);
   const notificationsEnabled = useGameStore(
-    (state) => state.settings?.notificationsEnabled ?? true
+    (state) => state.settings?.notificationsEnabled ?? true,
   );
   const updateSetting = useGameStore((state) => state.updateSetting);
   const { t, language, supportedLanguages } = useTranslation();
@@ -76,7 +74,7 @@ export function SettingsScreen({
         l.name.toLowerCase().includes(q) ||
         l.nativeName.toLowerCase().includes(q) ||
         l.region.toLowerCase().includes(q) ||
-        l.code.toLowerCase().includes(q)
+        l.code.toLowerCase().includes(q),
     );
   }, [languageSearch, supportedLanguages]);
 
@@ -162,591 +160,653 @@ export function SettingsScreen({
       <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* ── Screen Header ── */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t("settings.title", "Settings")}</Text>
+          <Text style={styles.headerTitle}>
+            {t("settings.title", "Settings")}
+          </Text>
         </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 90 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── 1. VIP Banner (Advanced Analysis / Upgrade Now) ── */}
-        <TouchableOpacity
-          style={styles.bannerWrapper}
-          activeOpacity={0.9}
-          onPress={onOpenPaywall}
-          accessibilityRole="button"
-          accessibilityLabel="Sudoku King VIP Upgrade"
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + 90 },
+          ]}
+          showsVerticalScrollIndicator={false}
         >
-          <LinearGradient
-            colors={["#1E1E24", "#26262E", "#16161B"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.bannerGradient}
-          >
-            {/* Subtle background glow circle */}
-            <View style={styles.bannerGlowCircle} />
-
-            <View style={styles.bannerInner}>
-              <View style={styles.bannerTitleRow}>
-                {isPremium && <Crown size={20} color="#F59E0B" style={{ marginRight: 6 }} />}
-                <Text style={styles.bannerTitle}>
-                  {isPremium ? "Sudoku King VIP" : "Sudoku King VIP"}
-                </Text>
-              </View>
-
-              <Text style={styles.bannerSubtitle}>
-                {isPremium
-                  ? "Ad-free experience & unlimited hints active."
-                  : "Unlock unlimited hints and remove all ads."}
-              </Text>
-
-              <View style={styles.bannerBtn}>
-                <Text style={styles.bannerBtnText}>
-                  {isPremium ? "VIP Active 👑" : "Upgrade Now"}
-                </Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* ── 2. Preferences Section (Notification Switch) ── */}
-        <Text style={styles.sectionHeader}>
-          {t("settings.preferences", "Preferences")}
-        </Text>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <View style={styles.rowLeft}>
-              <FilledBell size={20} color="#111827" />
-              <Text style={styles.rowLabel}>
-                {t("settings.notifications", "Notification")}
-              </Text>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={handleToggleNotifications}
-              trackColor={{ false: "#E2E8F0", true: "#18181B" }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor="#E2E8F0"
-              accessibilityRole="switch"
-              accessibilityLabel="Toggle notifications"
-            />
-          </View>
-
-          <View style={styles.rowDivider} />
-
-          {/* Language Selection */}
+          {/* ── 1. VIP Banner (Advanced Analysis / Upgrade Now) ── */}
           <TouchableOpacity
-            style={styles.row}
-            onPress={() => setLanguageSheetVisible(true)}
-            activeOpacity={0.65}
+            style={styles.bannerWrapper}
+            activeOpacity={0.9}
+            onPress={onOpenPaywall}
             accessibilityRole="button"
-            accessibilityLabel={t("settings.language", "Language")}
+            accessibilityLabel="Sudoku King VIP Upgrade"
           >
-            <View style={styles.rowLeft}>
-              <FilledGlobe size={20} color="#111827" />
-              <Text style={styles.rowLabel}>
-                {t("settings.language", "Language")}
-              </Text>
-            </View>
-            <View style={styles.rowRight}>
-              <Text style={styles.langValueText}>
-                {currentLangMeta.flag} {currentLangMeta.nativeName}
-              </Text>
-              <ChevronRight size={18} color="#9CA3AF" />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── 3. Guides & Rules Section ── */}
-        <Text style={styles.sectionHeader}>
-          {t("settings.rulesAndGuides", "Guides & Rules")}
-        </Text>
-        <View style={styles.card}>
-          {/* How to Play */}
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => setActiveModal("how_to_play")}
-            activeOpacity={0.65}
-            accessibilityRole="button"
-            accessibilityLabel={t("settings.howToPlay", "How to Play")}
-          >
-            <View style={styles.rowLeft}>
-              <FilledGraduationCap size={20} color="#111827" />
-              <Text style={styles.rowLabel}>
-                {t("settings.howToPlay", "How to Play")}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.rowDivider} />
-
-          {/* Rules */}
-          <TouchableOpacity
-            style={styles.row}
-            onPress={handleOpenRules}
-            activeOpacity={0.65}
-            accessibilityRole="button"
-            accessibilityLabel={t("settings.sudokuRules", "Rules")}
-          >
-            <View style={styles.rowLeft}>
-              <FilledBookOpen size={20} color="#111827" />
-              <Text style={styles.rowLabel}>
-                {t("settings.sudokuRules", "Rules")}
-              </Text>
-            </View>
-            <ExternalLink size={16} color="#9CA3AF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* ── 4. Support & Legal Section ── */}
-        <Text style={styles.sectionHeader}>
-          {t("settings.aboutAndLegal", "Support & Legal")}
-        </Text>
-        <View style={styles.card}>
-          {/* Help */}
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => setActiveModal("help")}
-            activeOpacity={0.65}
-            accessibilityRole="button"
-            accessibilityLabel={t("settings.feedbackSupport", "Support & Help")}
-          >
-            <View style={styles.rowLeft}>
-              <FilledMail size={20} color="#111827" />
-              <Text style={styles.rowLabel}>
-                {t("settings.feedbackSupport", "Support & Help")}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.rowDivider} />
-
-          {/* Terms of Services */}
-          <TouchableOpacity
-            style={styles.row}
-            onPress={handleOpenTerms}
-            activeOpacity={0.65}
-            accessibilityRole="button"
-            accessibilityLabel={t("settings.terms", "Terms and Conditions")}
-          >
-            <View style={styles.rowLeft}>
-              <FilledFileText size={20} color="#111827" />
-              <Text style={styles.rowLabel}>
-                {t("settings.terms", "Terms and Conditions")}
-              </Text>
-            </View>
-            <ExternalLink size={16} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <View style={styles.rowDivider} />
-
-          {/* Privacy Policy */}
-          <TouchableOpacity
-            style={styles.row}
-            onPress={handleOpenPrivacy}
-            activeOpacity={0.65}
-            accessibilityRole="button"
-            accessibilityLabel={t("settings.privacy", "Privacy Policy")}
-          >
-            <View style={styles.rowLeft}>
-              <FilledShield size={20} color="#111827" />
-              <Text style={styles.rowLabel}>
-                {t("settings.privacy", "Privacy Policy")}
-              </Text>
-            </View>
-            <ExternalLink size={16} color="#9CA3AF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* ── 5. App Version & Info Card ── */}
-        <TouchableOpacity
-          style={styles.versionCard}
-          activeOpacity={0.85}
-          onPress={() => Linking.openURL(APP_LINKS.WEBSITE_HOME).catch(() => {})}
-          accessibilityRole="button"
-          accessibilityLabel="Sudoku King Version Information"
-        >
-          {/* Mini Sudoku Grid App Icon */}
-          <View style={styles.versionIconContainer}>
-            {/* Row 1: 1, 2, 3 */}
-            <View style={styles.miniGridRow}>
-              <View style={styles.miniGridCell}>
-                <Text style={styles.miniGridNumDark}>1</Text>
-              </View>
-              <View style={styles.miniGridVLine} />
-              <View style={styles.miniGridCell}>
-                <Text style={styles.miniGridNumBlue}>2</Text>
-              </View>
-              <View style={styles.miniGridVLine} />
-              <View style={styles.miniGridCell}>
-                <Text style={styles.miniGridNumDark}>3</Text>
-              </View>
-            </View>
-
-            <View style={styles.miniGridHLine} />
-
-            {/* Row 2: 6, empty, 4 */}
-            <View style={styles.miniGridRow}>
-              <View style={styles.miniGridCell}>
-                <Text style={styles.miniGridNumBlue}>6</Text>
-              </View>
-              <View style={styles.miniGridVLine} />
-              <View style={styles.miniGridCell} />
-              <View style={styles.miniGridVLine} />
-              <View style={styles.miniGridCell}>
-                <Text style={styles.miniGridNumDark}>4</Text>
-              </View>
-            </View>
-
-            <View style={styles.miniGridHLine} />
-
-            {/* Row 3: 7, 8, 9 */}
-            <View style={styles.miniGridRow}>
-              <View style={styles.miniGridCell}>
-                <Text style={styles.miniGridNumBlue}>7</Text>
-              </View>
-              <View style={styles.miniGridVLine} />
-              <View style={styles.miniGridCell}>
-                <Text style={styles.miniGridNumDark}>8</Text>
-              </View>
-              <View style={styles.miniGridVLine} />
-              <View style={styles.miniGridCell}>
-                <Text style={styles.miniGridNumBlue}>9</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Details Column */}
-          <View style={styles.versionInfoCol}>
-            <Text style={styles.versionAppTitle}>Sudoku King - Puzzle Game</Text>
-            <Text style={styles.versionNumberText}>Version 1.0.0</Text>
-            <Text style={styles.versionCopyrightText}>© 2026 Sudoku King Ltd.</Text>
-            <Text style={styles.versionCopyrightText}>All rights reserved.</Text>
-          </View>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* ──────────────────────────────────────────────────────────────────────── */}
-      {/* Info & Content Bottom Sheet                                              */}
-      {/* ──────────────────────────────────────────────────────────────────────── */}
-      <AppBottomSheet
-        visible={activeModal !== null}
-        onClose={() => setActiveModal(null)}
-        maxHeight="88%"
-        sheetStyle={{ paddingHorizontal: 0 }}
-      >
-        {/* Modal Header */}
-        <View style={styles.modalHeader}>
-              <Text style={styles.modalHeaderTitle}>
-                {activeModal === "how_to_play" && t("settings.howToPlay", "How to Play")}
-                {activeModal === "rules" && t("settings.sudokuRules", "Sudoku Rules")}
-                {activeModal === "help" && t("settings.feedbackSupport", "Help & Support")}
-                {activeModal === "terms" && t("settings.terms", "Terms and Conditions")}
-                {activeModal === "privacy" && t("settings.privacy", "Privacy Policy")}
-              </Text>
-              <TouchableOpacity
-                style={styles.modalCloseBtn}
-                onPress={() => setActiveModal(null)}
-                activeOpacity={0.7}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                accessibilityRole="button"
-                accessibilityLabel="Close"
-              >
-                <X size={20} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Modal Body */}
-            <ScrollView
-              style={styles.modalBody}
-              contentContainerStyle={{ paddingBottom: 24 }}
-              showsVerticalScrollIndicator={false}
+            <LinearGradient
+              colors={["#1E1E24", "#26262E", "#16161B"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.bannerGradient}
             >
-              {/* How to Play Content */}
-              {activeModal === "how_to_play" && (
-                <View style={styles.stepContainer}>
-                  <View style={styles.stepCard}>
-                    <View style={styles.stepBadge}>
-                      <Text style={styles.stepBadgeText}>1</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.stepTitle}>Grid Structure</Text>
-                      <Text style={styles.stepDesc}>
-                        Sudoku is played on a 9x9 grid divided into 9 smaller 3x3 boxes.
-                      </Text>
-                    </View>
-                  </View>
+              {/* Subtle background glow circle */}
+              <View style={styles.bannerGlowCircle} />
 
-                  <View style={styles.stepCard}>
-                    <View style={styles.stepBadge}>
-                      <Text style={styles.stepBadgeText}>2</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.stepTitle}>Use Numbers 1 to 9</Text>
-                      <Text style={styles.stepDesc}>
-                        Every row, column, and 3x3 box must contain each digit from 1 to 9 exactly once.
-                      </Text>
-                    </View>
-                  </View>
+              <View style={styles.bannerInner}>
+                <View style={styles.bannerTitleRow}>
+                  {isPremium && (
+                    <Crown
+                      size={20}
+                      color="#F59E0B"
+                      style={{ marginRight: 6 }}
+                    />
+                  )}
+                  <Text style={styles.bannerTitle}>
+                    {isPremium ? "Sudoku King VIP" : "Sudoku King VIP"}
+                  </Text>
+                </View>
 
-                  <View style={styles.stepCard}>
-                    <View style={styles.stepBadge}>
-                      <Text style={styles.stepBadgeText}>3</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.stepTitle}>No Duplicates</Text>
-                      <Text style={styles.stepDesc}>
-                        No number can be repeated in any single row, column, or 3x3 block.
-                      </Text>
-                    </View>
-                  </View>
+                <Text style={styles.bannerSubtitle}>
+                  {isPremium
+                    ? "Ad-free experience & unlimited hints active."
+                    : "Unlock unlimited hints and remove all ads."}
+                </Text>
 
-                  <View style={styles.stepCard}>
-                    <View style={styles.stepBadge}>
-                      <Text style={styles.stepBadgeText}>4</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.stepTitle}>Use Pencil Notes</Text>
-                      <Text style={styles.stepDesc}>
-                        Tap the Notes button to jot down potential candidates in empty cells.
-                      </Text>
-                    </View>
-                  </View>
+                <View style={styles.bannerBtn}>
+                  <Text style={styles.bannerBtnText}>
+                    {isPremium ? "VIP Active 👑" : "Upgrade Now"}
+                  </Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
 
-                  <View style={styles.stepCard}>
-                    <View style={styles.stepBadge}>
-                      <Text style={styles.stepBadgeText}>5</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.stepTitle}>Logical Elimination</Text>
-                      <Text style={styles.stepDesc}>
-                        Use pure deduction. Never guess — every valid puzzle has a unique solution.
-                      </Text>
-                    </View>
+          {/* ── 2. Preferences Section (Notification Switch) ── */}
+          {/* <Text style={styles.sectionHeader}>
+          </Text> */}
+          {t("settings.preferences", "Preferences")}
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={styles.rowLeft}>
+                <FilledBell size={20} color="#111827" />
+                <Text style={styles.rowLabel}>
+                  {t("settings.notifications", "Notification")}
+                </Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                trackColor={{ false: "#E2E8F0", true: "#18181B" }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor="#E2E8F0"
+                accessibilityRole="switch"
+                accessibilityLabel="Toggle notifications"
+              />
+            </View>
+
+            <View style={styles.rowDivider} />
+
+            {/* Language Selection */}
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => setLanguageSheetVisible(true)}
+              activeOpacity={0.65}
+              accessibilityRole="button"
+              accessibilityLabel={t("settings.language", "Language")}
+            >
+              <View style={styles.rowLeft}>
+                <FilledGlobe size={20} color="#111827" />
+                <Text style={styles.rowLabel}>
+                  {t("settings.language", "Language")}
+                </Text>
+              </View>
+              <View style={styles.rowRight}>
+                <Text style={styles.langValueText}>
+                  {currentLangMeta.flag} {currentLangMeta.nativeName}
+                </Text>
+                <ChevronRight size={18} color="#9CA3AF" />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* ── 3. Guides & Rules Section ── */}
+          {/* <Text style={styles.sectionHeader}>
+            </Text> */}
+          {t("settings.rulesAndGuides", "Guides & Rules")}
+          <View style={styles.card}>
+            {/* How to Play */}
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => setActiveModal("how_to_play")}
+              activeOpacity={0.65}
+              accessibilityRole="button"
+              accessibilityLabel={t("settings.howToPlay", "How to Play")}
+            >
+              <View style={styles.rowLeft}>
+                <FilledGraduationCap size={20} color="#111827" />
+                <Text style={styles.rowLabel}>
+                  {t("settings.howToPlay", "How to Play")}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.rowDivider} />
+
+            {/* Rules */}
+            <TouchableOpacity
+              style={styles.row}
+              onPress={handleOpenRules}
+              activeOpacity={0.65}
+              accessibilityRole="button"
+              accessibilityLabel={t("settings.sudokuRules", "Rules")}
+            >
+              <View style={styles.rowLeft}>
+                <FilledBookOpen size={20} color="#111827" />
+                <Text style={styles.rowLabel}>
+                  {t("settings.sudokuRules", "Rules")}
+                </Text>
+              </View>
+              <ExternalLink size={16} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+
+          {/* ── 4. Support & Legal Section ── */}
+          {/* <Text style={styles.sectionHeader}>
+            {t("settings.aboutAndLegal", "Support & Legal")}
+          </Text> */}
+          <View style={styles.card}>
+            {/* Help */}
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => setActiveModal("help")}
+              activeOpacity={0.65}
+              accessibilityRole="button"
+              accessibilityLabel={t(
+                "settings.feedbackSupport",
+                "Support & Help",
+              )}
+            >
+              <View style={styles.rowLeft}>
+                <FilledMail size={20} color="#111827" />
+                <Text style={styles.rowLabel}>
+                  {t("settings.feedbackSupport", "Support & Help")}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.rowDivider} />
+
+            {/* Terms of Services */}
+            <TouchableOpacity
+              style={styles.row}
+              onPress={handleOpenTerms}
+              activeOpacity={0.65}
+              accessibilityRole="button"
+              accessibilityLabel={t("settings.terms", "Terms and Conditions")}
+            >
+              <View style={styles.rowLeft}>
+                <FilledFileText size={20} color="#111827" />
+                <Text style={styles.rowLabel}>
+                  {t("settings.terms", "Terms and Conditions")}
+                </Text>
+              </View>
+              <ExternalLink size={16} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <View style={styles.rowDivider} />
+
+            {/* Privacy Policy */}
+            <TouchableOpacity
+              style={styles.row}
+              onPress={handleOpenPrivacy}
+              activeOpacity={0.65}
+              accessibilityRole="button"
+              accessibilityLabel={t("settings.privacy", "Privacy Policy")}
+            >
+              <View style={styles.rowLeft}>
+                <FilledShield size={20} color="#111827" />
+                <Text style={styles.rowLabel}>
+                  {t("settings.privacy", "Privacy Policy")}
+                </Text>
+              </View>
+              <ExternalLink size={16} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+
+          {/* ── 5. App Version & Info Card ── */}
+          <TouchableOpacity
+            style={styles.versionCard}
+            activeOpacity={0.85}
+            onPress={() =>
+              Linking.openURL(APP_LINKS.WEBSITE_HOME).catch(() => {})
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Sudoku King Version Information"
+          >
+            {/* Mini Sudoku Grid App Icon */}
+            <View style={styles.versionIconContainer}>
+              {/* Row 1: 1, 2, 3 */}
+              <View style={styles.miniGridRow}>
+                <View style={styles.miniGridCell}>
+                  <Text style={styles.miniGridNumDark}>1</Text>
+                </View>
+                <View style={styles.miniGridVLine} />
+                <View style={styles.miniGridCell}>
+                  <Text style={styles.miniGridNumBlue}>2</Text>
+                </View>
+                <View style={styles.miniGridVLine} />
+                <View style={styles.miniGridCell}>
+                  <Text style={styles.miniGridNumDark}>3</Text>
+                </View>
+              </View>
+
+              <View style={styles.miniGridHLine} />
+
+              {/* Row 2: 6, empty, 4 */}
+              <View style={styles.miniGridRow}>
+                <View style={styles.miniGridCell}>
+                  <Text style={styles.miniGridNumBlue}>6</Text>
+                </View>
+                <View style={styles.miniGridVLine} />
+                <View style={styles.miniGridCell} />
+                <View style={styles.miniGridVLine} />
+                <View style={styles.miniGridCell}>
+                  <Text style={styles.miniGridNumDark}>4</Text>
+                </View>
+              </View>
+
+              <View style={styles.miniGridHLine} />
+
+              {/* Row 3: 7, 8, 9 */}
+              <View style={styles.miniGridRow}>
+                <View style={styles.miniGridCell}>
+                  <Text style={styles.miniGridNumBlue}>7</Text>
+                </View>
+                <View style={styles.miniGridVLine} />
+                <View style={styles.miniGridCell}>
+                  <Text style={styles.miniGridNumDark}>8</Text>
+                </View>
+                <View style={styles.miniGridVLine} />
+                <View style={styles.miniGridCell}>
+                  <Text style={styles.miniGridNumBlue}>9</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Details Column */}
+            <View style={styles.versionInfoCol}>
+              <Text style={styles.versionAppTitle}>
+                Sudoku King - Puzzle Game
+              </Text>
+              <Text style={styles.versionNumberText}>Version 3.56.1</Text>
+              <Text style={styles.versionCopyrightText}>
+                © 2026 Sudoku King Ltd. All rights reserved.
+              </Text>
+              {/* <Text style={styles.versionCopyrightText}>
+                All rights reserved.
+              </Text> */}
+            </View>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* ──────────────────────────────────────────────────────────────────────── */}
+        {/* Info & Content Bottom Sheet                                              */}
+        {/* ──────────────────────────────────────────────────────────────────────── */}
+        <AppBottomSheet
+          visible={activeModal !== null}
+          onClose={() => setActiveModal(null)}
+          maxHeight="88%"
+          sheetStyle={{ paddingHorizontal: 0 }}
+        >
+          {/* Modal Header */}
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalHeaderTitle}>
+              {activeModal === "how_to_play" &&
+                t("settings.howToPlay", "How to Play")}
+              {activeModal === "rules" &&
+                t("settings.sudokuRules", "Sudoku Rules")}
+              {activeModal === "help" &&
+                t("settings.feedbackSupport", "Help & Support")}
+              {activeModal === "terms" &&
+                t("settings.terms", "Terms and Conditions")}
+              {activeModal === "privacy" &&
+                t("settings.privacy", "Privacy Policy")}
+            </Text>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setActiveModal(null)}
+              activeOpacity={0.7}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
+              <X size={20} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Modal Body */}
+          <ScrollView
+            style={styles.modalBody}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* How to Play Content */}
+            {activeModal === "how_to_play" && (
+              <View style={styles.stepContainer}>
+                <View style={styles.stepCard}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>1</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.stepTitle}>Grid Structure</Text>
+                    <Text style={styles.stepDesc}>
+                      Sudoku is played on a 9x9 grid divided into 9 smaller 3x3
+                      boxes.
+                    </Text>
                   </View>
                 </View>
-              )}
 
-              {/* Rules Content */}
-              {activeModal === "rules" && (
+                <View style={styles.stepCard}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>2</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.stepTitle}>Use Numbers 1 to 9</Text>
+                    <Text style={styles.stepDesc}>
+                      Every row, column, and 3x3 box must contain each digit
+                      from 1 to 9 exactly once.
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.stepCard}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>3</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.stepTitle}>No Duplicates</Text>
+                    <Text style={styles.stepDesc}>
+                      No number can be repeated in any single row, column, or
+                      3x3 block.
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.stepCard}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>4</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.stepTitle}>Use Pencil Notes</Text>
+                    <Text style={styles.stepDesc}>
+                      Tap the Notes button to jot down potential candidates in
+                      empty cells.
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.stepCard}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>5</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.stepTitle}>Logical Elimination</Text>
+                    <Text style={styles.stepDesc}>
+                      Use pure deduction. Never guess — every valid puzzle has a
+                      unique solution.
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Rules Content */}
+            {activeModal === "rules" && (
+              <View style={styles.rulesContainer}>
+                <View style={styles.ruleCard}>
+                  <Text style={styles.ruleCardTitle}>Row Constraint</Text>
+                  <Text style={styles.ruleCardDesc}>
+                    Each of the 9 horizontal rows must contain all numbers from
+                    1 to 9 without repetition.
+                  </Text>
+                </View>
+
+                <View style={styles.ruleCard}>
+                  <Text style={styles.ruleCardTitle}>Column Constraint</Text>
+                  <Text style={styles.ruleCardDesc}>
+                    Each of the 9 vertical columns must contain all numbers from
+                    1 to 9 without repetition.
+                  </Text>
+                </View>
+
+                <View style={styles.ruleCard}>
+                  <Text style={styles.ruleCardTitle}>3x3 Box Constraint</Text>
+                  <Text style={styles.ruleCardDesc}>
+                    Each of the nine 3x3 non-overlapping subgrids must contain
+                    numbers 1 through 9.
+                  </Text>
+                </View>
+
+                <View style={styles.ruleCard}>
+                  <Text style={styles.ruleCardTitle}>Mistakes Limit</Text>
+                  <Text style={styles.ruleCardDesc}>
+                    Placing an incorrect digit counts as a mistake. Reaching 3
+                    mistakes resets your current puzzle.
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Help Content */}
+            {activeModal === "help" && (
+              <View>
+                <View style={styles.helpHeroCard}>
+                  <Mail size={32} color="#166534" />
+                  <Text style={styles.helpHeroTitle}>Need Support?</Text>
+                  <Text style={styles.helpHeroDesc}>
+                    Have questions, feedback, or encountered a bug? Our team is
+                    always here to assist you.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.helpEmailBtn}
+                    onPress={handleSupportEmail}
+                    activeOpacity={0.8}
+                  >
+                    <Mail size={16} color="#FFFFFF" />
+                    <Text style={styles.helpEmailBtnText}>
+                      Contact Support Email
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
                 <View style={styles.rulesContainer}>
                   <View style={styles.ruleCard}>
-                    <Text style={styles.ruleCardTitle}>Row Constraint</Text>
+                    <Text style={styles.ruleCardTitle}>How do Hints work?</Text>
                     <Text style={styles.ruleCardDesc}>
-                      Each of the 9 horizontal rows must contain all numbers from 1 to 9 without repetition.
+                      Hints reveal the correct number for the selected cell. VIP
+                      subscribers receive unlimited hints.
                     </Text>
                   </View>
 
                   <View style={styles.ruleCard}>
-                    <Text style={styles.ruleCardTitle}>Column Constraint</Text>
+                    <Text style={styles.ruleCardTitle}>
+                      Can I play offline?
+                    </Text>
                     <Text style={styles.ruleCardDesc}>
-                      Each of the 9 vertical columns must contain all numbers from 1 to 9 without repetition.
-                    </Text>
-                  </View>
-
-                  <View style={styles.ruleCard}>
-                    <Text style={styles.ruleCardTitle}>3x3 Box Constraint</Text>
-                    <Text style={styles.ruleCardDesc}>
-                      Each of the nine 3x3 non-overlapping subgrids must contain numbers 1 through 9.
-                    </Text>
-                  </View>
-
-                  <View style={styles.ruleCard}>
-                    <Text style={styles.ruleCardTitle}>Mistakes Limit</Text>
-                    <Text style={styles.ruleCardDesc}>
-                      Placing an incorrect digit counts as a mistake. Reaching 3 mistakes resets your current puzzle.
+                      Yes! All classic puzzles and daily challenges can be
+                      played without an active internet connection.
                     </Text>
                   </View>
                 </View>
-              )}
+              </View>
+            )}
 
-              {/* Help Content */}
-              {activeModal === "help" && (
-                <View>
-                  <View style={styles.helpHeroCard}>
-                    <Mail size={32} color="#166534" />
-                    <Text style={styles.helpHeroTitle}>Need Support?</Text>
-                    <Text style={styles.helpHeroDesc}>
-                      Have questions, feedback, or encountered a bug? Our team is always here to assist you.
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.helpEmailBtn}
-                      onPress={handleSupportEmail}
-                      activeOpacity={0.8}
-                    >
-                      <Mail size={16} color="#FFFFFF" />
-                      <Text style={styles.helpEmailBtnText}>Contact Support Email</Text>
-                    </TouchableOpacity>
-                  </View>
+            {/* Terms of Services Content */}
+            {activeModal === "terms" && (
+              <View style={styles.legalContainer}>
+                <Text style={styles.legalHeading}>1. Acceptance of Terms</Text>
+                <Text style={styles.legalText}>
+                  By downloading or using Sudoku King, you agree to be bound by
+                  these Terms of Service. If you do not agree, please do not use
+                  the application.
+                </Text>
 
-                  <View style={styles.rulesContainer}>
-                    <View style={styles.ruleCard}>
-                      <Text style={styles.ruleCardTitle}>How do Hints work?</Text>
-                      <Text style={styles.ruleCardDesc}>
-                        Hints reveal the correct number for the selected cell. VIP subscribers receive unlimited hints.
-                      </Text>
-                    </View>
+                <Text style={styles.legalHeading}>2. License & Fair Use</Text>
+                <Text style={styles.legalText}>
+                  Sudoku King grants you a personal, non-transferable,
+                  non-exclusive license to play the game for personal
+                  entertainment purposes.
+                </Text>
 
-                    <View style={styles.ruleCard}>
-                      <Text style={styles.ruleCardTitle}>Can I play offline?</Text>
-                      <Text style={styles.ruleCardDesc}>
-                        Yes! All classic puzzles and daily challenges can be played without an active internet connection.
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              )}
+                <Text style={styles.legalHeading}>
+                  3. In-App Purchases & VIP Subscription
+                </Text>
+                <Text style={styles.legalText}>
+                  Subscriptions and in-app purchases are billed through Google
+                  Play / Apple App Store according to store policies.
+                  Subscriptions automatically renew unless cancelled at least 24
+                  hours prior to the billing period end.
+                </Text>
 
-              {/* Terms of Services Content */}
-              {activeModal === "terms" && (
-                <View style={styles.legalContainer}>
-                  <Text style={styles.legalHeading}>1. Acceptance of Terms</Text>
-                  <Text style={styles.legalText}>
-                    By downloading or using Sudoku King, you agree to be bound by these Terms of Service. If you do not agree, please do not use the application.
-                  </Text>
+                <Text style={styles.legalHeading}>4. Changes to Terms</Text>
+                <Text style={styles.legalText}>
+                  We reserve the right to modify these terms at any time.
+                  Continued use of the app signifies acceptance of updated
+                  terms.
+                </Text>
+              </View>
+            )}
 
-                  <Text style={styles.legalHeading}>2. License & Fair Use</Text>
-                  <Text style={styles.legalText}>
-                    Sudoku King grants you a personal, non-transferable, non-exclusive license to play the game for personal entertainment purposes.
-                  </Text>
+            {/* Privacy Policy Content */}
+            {activeModal === "privacy" && (
+              <View style={styles.legalContainer}>
+                <Text style={styles.legalHeading}>
+                  1. Information Collection
+                </Text>
+                <Text style={styles.legalText}>
+                  Sudoku King does not collect personal identification data such
+                  as names or phone numbers. Anonymous gameplay statistics and
+                  crash diagnostics are stored securely via Firebase Crashlytics
+                  to improve app stability.
+                </Text>
 
-                  <Text style={styles.legalHeading}>3. In-App Purchases & VIP Subscription</Text>
-                  <Text style={styles.legalText}>
-                    Subscriptions and in-app purchases are billed through Google Play / Apple App Store according to store policies. Subscriptions automatically renew unless cancelled at least 24 hours prior to the billing period end.
-                  </Text>
+                <Text style={styles.legalHeading}>
+                  2. Advertising & Analytics
+                </Text>
+                <Text style={styles.legalText}>
+                  Non-VIP players may see ads served via Google AdMob, which may
+                  use anonymized device identifiers in accordance with Google
+                  Play policies.
+                </Text>
 
-                  <Text style={styles.legalHeading}>4. Changes to Terms</Text>
-                  <Text style={styles.legalText}>
-                    We reserve the right to modify these terms at any time. Continued use of the app signifies acceptance of updated terms.
-                  </Text>
-                </View>
-              )}
+                <Text style={styles.legalHeading}>3. Data Storage</Text>
+                <Text style={styles.legalText}>
+                  Game progress, streak counters, and puzzle records are stored
+                  locally on your device using high-speed MMKV secure storage.
+                </Text>
 
-              {/* Privacy Policy Content */}
-              {activeModal === "privacy" && (
-                <View style={styles.legalContainer}>
-                  <Text style={styles.legalHeading}>1. Information Collection</Text>
-                  <Text style={styles.legalText}>
-                    Sudoku King does not collect personal identification data such as names or phone numbers. Anonymous gameplay statistics and crash diagnostics are stored securely via Firebase Crashlytics to improve app stability.
-                  </Text>
+                <Text style={styles.legalHeading}>4. Contact Us</Text>
+                <Text style={styles.legalText}>
+                  If you have privacy questions or requests, please reach out to
+                  us at privacy@sudokuking.app.
+                </Text>
+              </View>
+            )}
+          </ScrollView>
 
-                  <Text style={styles.legalHeading}>2. Advertising & Analytics</Text>
-                  <Text style={styles.legalText}>
-                    Non-VIP players may see ads served via Google AdMob, which may use anonymized device identifiers in accordance with Google Play policies.
-                  </Text>
-
-                  <Text style={styles.legalHeading}>3. Data Storage</Text>
-                  <Text style={styles.legalText}>
-                    Game progress, streak counters, and puzzle records are stored locally on your device using high-speed MMKV secure storage.
-                  </Text>
-
-                  <Text style={styles.legalHeading}>4. Contact Us</Text>
-                  <Text style={styles.legalText}>
-                    If you have privacy questions or requests, please reach out to us at privacy@sudokuking.app.
-                  </Text>
-                </View>
-              )}
-            </ScrollView>
-
-            {/* Done Button */}
-            <TouchableOpacity
-              style={styles.modalDoneBtn}
-              onPress={() => setActiveModal(null)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.modalDoneBtnText}>Done</Text>
-            </TouchableOpacity>
-          </AppBottomSheet>
-
-          {/* ── Language Bottom Sheet ── */}
-          <AppBottomSheet
-            visible={languageSheetVisible}
-            onClose={() => {
-              setLanguageSheetVisible(false);
-              setLanguageSearch("");
-            }}
-            maxHeight="75%"
-            sheetStyle={{ paddingHorizontal: 20 }}
+          {/* Done Button */}
+          <TouchableOpacity
+            style={styles.modalDoneBtn}
+            onPress={() => setActiveModal(null)}
+            activeOpacity={0.8}
           >
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalHeaderTitle}>
-                {t("settings.language", "Language")}
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setLanguageSheetVisible(false);
-                  setLanguageSearch("");
-                }}
-                style={styles.modalCloseBtn}
-                accessibilityRole="button"
-                accessibilityLabel="Close language selector"
-              >
-                <X size={20} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.modalDoneBtnText}>Done</Text>
+          </TouchableOpacity>
+        </AppBottomSheet>
 
-            {/* Search Input */}
-            <View style={styles.searchBar}>
-              <Search size={18} color="#9CA3AF" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder={t("settings.searchLanguage", "Search language...")}
-                placeholderTextColor="#9CA3AF"
-                value={languageSearch}
-                onChangeText={setLanguageSearch}
-                autoCorrect={false}
-              />
-              {languageSearch.length > 0 && (
-                <TouchableOpacity onPress={() => setLanguageSearch("")}>
-                  <X size={16} color="#9CA3AF" />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Language Options List */}
-            <ScrollView
-              style={{ maxHeight: 380 }}
-              showsVerticalScrollIndicator={false}
+        {/* ── Language Bottom Sheet ── */}
+        <AppBottomSheet
+          visible={languageSheetVisible}
+          onClose={() => {
+            setLanguageSheetVisible(false);
+            setLanguageSearch("");
+          }}
+          maxHeight="75%"
+          sheetStyle={{ paddingHorizontal: 20 }}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalHeaderTitle}>
+              {t("settings.language", "Language")}
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setLanguageSheetVisible(false);
+                setLanguageSearch("");
+              }}
+              style={styles.modalCloseBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Close language selector"
             >
-              {filteredLanguages.map((l: LanguageMeta) => {
-                const isSelected = l.code === language;
-                return (
-                  <TouchableOpacity
-                    key={l.code}
-                    onPress={() => handleSelectLanguage(l.code)}
-                    style={[
-                      styles.langOptionRow,
-                      isSelected && styles.langOptionRowSelected,
-                    ]}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.langOptionFlag}>{l.flag}</Text>
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text
-                        style={[
-                          styles.langOptionNative,
-                          isSelected && styles.langOptionTextSelected,
-                        ]}
-                      >
-                        {l.nativeName}
-                      </Text>
-                      <Text style={styles.langOptionSub}>
-                        {l.name} • {l.region}
-                      </Text>
-                    </View>
-                    {isSelected && (
-                      <Check size={20} color="#2563EB" strokeWidth={2.5} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </AppBottomSheet>
-        </View>
+              <X size={20} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Search Input */}
+          <View style={styles.searchBar}>
+            <Search size={18} color="#9CA3AF" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t("settings.searchLanguage", "Search language...")}
+              placeholderTextColor="#9CA3AF"
+              value={languageSearch}
+              onChangeText={setLanguageSearch}
+              autoCorrect={false}
+            />
+            {languageSearch.length > 0 && (
+              <TouchableOpacity onPress={() => setLanguageSearch("")}>
+                <X size={16} color="#9CA3AF" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Language Options List */}
+          <ScrollView
+            style={{ maxHeight: 380 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {filteredLanguages.map((l: LanguageMeta) => {
+              const isSelected = l.code === language;
+              return (
+                <TouchableOpacity
+                  key={l.code}
+                  onPress={() => handleSelectLanguage(l.code)}
+                  style={[
+                    styles.langOptionRow,
+                    isSelected && styles.langOptionRowSelected,
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.langOptionFlag}>{l.flag}</Text>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text
+                      style={[
+                        styles.langOptionNative,
+                        isSelected && styles.langOptionTextSelected,
+                      ]}
+                    >
+                      {l.nativeName}
+                    </Text>
+                    <Text style={styles.langOptionSub}>
+                      {l.name} • {l.region}
+                    </Text>
+                  </View>
+                  {isSelected && (
+                    <Check size={20} color="#2563EB" strokeWidth={2.5} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </AppBottomSheet>
+      </View>
     </AppGradientBackground>
   );
 }
@@ -758,13 +818,13 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 14,
+    paddingTop: 12,
     paddingBottom: 8,
     alignItems: "flex-start",
     justifyContent: "center",
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: "800",
     color: "#111827",
     letterSpacing: -0.6,
@@ -779,10 +839,10 @@ const styles = StyleSheet.create({
 
   /* ── 1. VIP Banner ── */
   bannerWrapper: {
-    borderRadius: 22,
+    borderRadius: 25,
     overflow: "hidden",
     marginTop: 4,
-    marginBottom: 6,
+    // marginBottom: 1,
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
@@ -834,10 +894,10 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginTop: 15,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: "#00000040",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
   },
   bannerBtnText: {
     color: "#18181B",
@@ -862,11 +922,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EEF0F3",
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: "#00000040",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 3,
-    elevation: 1,
+    elevation: 4,
+    marginTop: 10,
   },
   row: {
     flexDirection: "row",
@@ -900,13 +961,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EEF0F3",
     padding: 16,
-    marginTop: 20,
-    marginBottom: 10,
-    shadowColor: "#000",
+    marginTop: 10,
+    // marginBottom: 10,
+    shadowColor: "#00000040",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 3,
-    elevation: 1,
+    elevation: 4,
     gap: 14,
   },
   versionIconContainer: {

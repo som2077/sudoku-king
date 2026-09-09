@@ -27,8 +27,8 @@ import OnboardingScreen from "./src/screens/OnboardingScreen";
 import Paywall from "./src/components/ui/Paywall";
 import { useGameStore } from "./src/store/useGameStore";
 import { LinearGradient } from "expo-linear-gradient";
-
-import { getRevenueCatApiKey } from "./src/utils/secrets";
+import { Difficulty } from "./src/utils/sudokuLogic";
+import { purchaseService } from "./src/services/purchaseService";
 import {
   useFonts,
   BricolageGrotesque_400Regular,
@@ -126,7 +126,7 @@ export default function App() {
   const [foregroundNotification, setForegroundNotification] =
     useState<NotificationPayload | null>(null);
   const [showCustomPaywall, setShowCustomPaywall] = useState(false);
-  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [pendingOnboardingDiff, setPendingOnboardingDiff] = useState<Difficulty | null>(null);
 
   const handleNotificationAction = (payload: NotificationPayload) => {
     console.log("🎯 [Notification Action Handler]:", payload);
@@ -165,34 +165,9 @@ export default function App() {
     NativeStatusBar.setTranslucent(true);
 
     fetchRemoteConfig();
-
-    const rcKey = getRevenueCatApiKey();
-    if (rcKey && rcKey !== "goog_REPLACE_WITH_REAL_API_KEY") {
-      Purchases.configure({ apiKey: rcKey });
-    } else {
-      console.log(
-        "⚠️ [RevenueCat] Skipping initialization: Real API key not set yet.",
-      );
-      setPremium(false);
-    }
-
-    const checkPremiumStatus = async () => {
-      try {
-        if (rcKey && rcKey !== "goog_REPLACE_WITH_REAL_API_KEY") {
-          const customerInfo = await Purchases.getCustomerInfo();
-          if (
-            typeof customerInfo.entitlements.active["suduko_king_unlimited"] !==
-              "undefined" ||
-            typeof customerInfo.entitlements.active["Premium"] !== "undefined"
-          ) {
-            setPremium(true);
-          }
-        }
-      } catch (e) {
-        // Silently ignore if not configured properly
-      }
-    };
-    checkPremiumStatus();
+    purchaseService.initialize().catch((err) => {
+      console.warn("⚠️ [RevenueCat] Initialization error:", err);
+    });
 
     // Initialize Firebase Cloud Messaging Push Notifications
     notificationService.initialize(
@@ -265,104 +240,12 @@ export default function App() {
     }
   };
 
-  const handleCustomPurchase = async () => {
-    try {
-      setIsPurchasing(true);
-      const offerings = await Purchases.getOfferings();
-      if (offerings.current && offerings.current.availablePackages.length > 0) {
-        const pkg = offerings.current.availablePackages[0];
-        const { customerInfo } = await Purchases.purchasePackage(pkg);
-        if (
-          typeof customerInfo.entitlements.active["suduko_king_unlimited"] !==
-            "undefined" ||
-          typeof customerInfo.entitlements.active["Premium"] !== "undefined"
-        ) {
-          setPremium(true);
-          setShowCustomPaywall(false);
-          Alert.alert("Success", "Thank you! You are now Premium.");
-        }
-      } else {
-        Alert.alert(
-          "Store Error",
-          "No products available in the current offering.",
-        );
-      }
-    } catch (e: any) {
-      if (!e.userCancelled) {
-        Alert.alert(
-          "Purchase Failed",
-          e.message || "Could not complete purchase.",
-        );
-      }
-    } finally {
-      setIsPurchasing(false);
-    }
-  };
-
-  const buyPremium = async () => {
-    try {
-      const rcKey = getRevenueCatApiKey();
-      if (!rcKey || rcKey === "goog_REPLACE_WITH_REAL_API_KEY") {
-        Alert.alert(
-          "Store Not Ready",
-          "RevenueCat API Key not set. Unlocking for testing.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                setPremium(true);
-              },
-            },
-          ],
-        );
-        return;
-      }
-
-      const paywallResult = await RevenueCatUI.presentPaywall();
-
-      if (paywallResult === RevenueCatUI.PAYWALL_RESULT.PURCHASED) {
-        setPremium(true);
-        Alert.alert("Success", "Thank you! You are now Premium.");
-      } else if (paywallResult === RevenueCatUI.PAYWALL_RESULT.RESTORED) {
-        setPremium(true);
-        Alert.alert("Success", "Purchases successfully restored.");
-      } else if (paywallResult === RevenueCatUI.PAYWALL_RESULT.ERROR) {
-        console.log(
-          "⚠️ [RevenueCat] Native paywall returned ERROR, falling back to in-app paywall",
-        );
-        setShowCustomPaywall(true);
-      }
-    } catch (e: any) {
-      console.log(
-        "⚠️ [RevenueCat] Error presenting native paywall, falling back:",
-        e,
-      );
-      setShowCustomPaywall(true);
-    }
+  const buyPremium = () => {
+    setShowCustomPaywall(true);
   };
 
   const restorePurchases = async () => {
-    try {
-      const rcKey = getRevenueCatApiKey();
-      if (!rcKey || rcKey === "goog_REPLACE_WITH_REAL_API_KEY") {
-        Alert.alert("Dev Mode", "Skipping restore (No API Key).");
-        return;
-      }
-
-      const customerInfo = await Purchases.restorePurchases();
-      if (
-        typeof customerInfo.entitlements.active["suduko_king_unlimited"] !==
-          "undefined" ||
-        typeof customerInfo.entitlements.active["Premium"] !== "undefined"
-      ) {
-        setPremium(true);
-        Alert.alert("Success", "Purchases successfully restored.");
-      } else {
-        Alert.alert("Not Found", "No previous purchases found.");
-      }
-    } catch (e) {
-      Alert.alert("Error", "Failed to restore purchases.");
-    }
+    await purchaseService.restorePurchases();
   };
 
   const recordedWinRef = useRef<boolean>(false);
@@ -448,7 +331,8 @@ export default function App() {
               resetWelcome();
             }}
             onFinish={(chosenDifficulty) => {
-              completeOnboarding(chosenDifficulty);
+              setPendingOnboardingDiff(chosenDifficulty);
+              setShowCustomPaywall(true);
             }}
           />
         </View>
@@ -628,10 +512,20 @@ export default function App() {
 
       <Paywall
         visible={showCustomPaywall}
-        onClose={() => setShowCustomPaywall(false)}
-        onPurchase={handleCustomPurchase}
-        onRestore={restorePurchases}
-        isLoading={isPurchasing}
+        onClose={() => {
+          setShowCustomPaywall(false);
+          if (!hasCompletedOnboarding) {
+            completeOnboarding(pendingOnboardingDiff || "Easy");
+            setPendingOnboardingDiff(null);
+          }
+        }}
+        onSuccess={() => {
+          setShowCustomPaywall(false);
+          if (!hasCompletedOnboarding) {
+            completeOnboarding(pendingOnboardingDiff || "Easy");
+            setPendingOnboardingDiff(null);
+          }
+        }}
       />
       <StatusBar style={screen === "playing" ? "light" : "dark"} />
     </SafeAreaProvider>

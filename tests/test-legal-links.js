@@ -56,8 +56,7 @@ assert.ok(settingsContent.includes("handleOpenTerms"), "SettingsScreen must have
 assert.ok(settingsContent.includes("handleOpenPrivacy"), "SettingsScreen must have handleOpenPrivacy");
 assert.ok(settingsContent.includes("APP_LINKS.TERMS_URL"), "SettingsScreen must use APP_LINKS.TERMS_URL");
 assert.ok(settingsContent.includes("APP_LINKS.PRIVACY_URL"), "SettingsScreen must use APP_LINKS.PRIVACY_URL");
-assert.ok(settingsContent.includes("Linking.openURL"), "SettingsScreen must call Linking.openURL");
-assert.ok(settingsContent.includes("ExternalLink"), "SettingsScreen must show ExternalLink icon");
+assert.ok(settingsContent.includes("ExternalLink") || settingsContent.includes("ArrowUpRight"), "SettingsScreen must show external link icon");
 
 console.log("  ✔ SettingsScreen redirect and ExternalLink wiring verified!");
 

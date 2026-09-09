@@ -132,12 +132,17 @@ type GameState = {
   streak: number;
   hasSeenWelcome: boolean;
   hasCompletedOnboarding: boolean;
+  trialEndsAt: number | null;
+  hasUsedFreeTrial: boolean;
 
   // Actions
   completeWelcome: () => void;
   resetWelcome: () => void;
   completeOnboarding: (startingDifficulty?: Difficulty) => void;
   resetOnboarding: () => void;
+  activateThreeDayTrial: () => void;
+  checkTrialStatus: () => boolean;
+  getTrialDaysRemaining: () => number;
   recordGameWon: (difficulty: Difficulty, timeSec: number) => void;
   recordGamePlayed: (difficulty: Difficulty) => void;
   setScreen: (screen: 'home' | 'playing') => void;
@@ -163,7 +168,7 @@ type GameState = {
   completeDailyChallenge: (dateStr: string, timeSec?: number, mistakes?: number) => void;
 };
 
-const initialBoard = Array(81).fill(null).map(() => ({
+const initialBoard: CellState[] = Array(81).fill(null).map(() => ({
   value: null,
   notes: 0,
   isLocked: false,
@@ -189,10 +194,10 @@ const initialDifficultyStats: Record<string, DifficultyStatsRecord> = {
 
 export const useGameStore = create<GameState>()(
   persist(
-    (set) => ({
+    (set, get): GameState => ({
       board: initialBoard,
       solution: Array(81).fill(0),
-      selectedCell: null,
+      selectedCell: null as number | null,
       isNotesMode: false,
       mistakes: 0,
       timer: 0,
@@ -216,6 +221,8 @@ export const useGameStore = create<GameState>()(
       streak: 0,
       hasSeenWelcome: false,
       hasCompletedOnboarding: false,
+      trialEndsAt: null,
+      hasUsedFreeTrial: false,
 
       completeWelcome: () => set({ hasSeenWelcome: true }),
       resetWelcome: () => set({ hasSeenWelcome: false, hasCompletedOnboarding: false }),
@@ -225,6 +232,35 @@ export const useGameStore = create<GameState>()(
         difficulty: startingDifficulty || state.difficulty || 'Easy',
       })),
       resetOnboarding: () => set({ hasCompletedOnboarding: false }),
+
+      activateThreeDayTrial: () => set(() => {
+        const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+        const endsAt = Date.now() + THREE_DAYS_MS;
+        console.log("🎉 [GameStore] 3-Day Free Trial Activated until:", new Date(endsAt).toISOString());
+        return {
+          trialEndsAt: endsAt,
+          hasUsedFreeTrial: true,
+          isPremium: true,
+        };
+      }),
+
+      checkTrialStatus: () => {
+        const state = useGameStore.getState();
+        if (state.trialEndsAt && state.trialEndsAt > Date.now()) {
+          if (!state.isPremium) {
+            set({ isPremium: true });
+          }
+          return true;
+        }
+        return false;
+      },
+
+      getTrialDaysRemaining: () => {
+        const state = useGameStore.getState();
+        if (!state.trialEndsAt || state.trialEndsAt <= Date.now()) return 0;
+        const diffMs = state.trialEndsAt - Date.now();
+        return Math.max(1, Math.ceil(diffMs / (24 * 60 * 60 * 1000)));
+      },
 
       recordGameWon: (difficulty, timeSec) => set((state) => {
         if (state.isGameCompleted) return state;
@@ -314,7 +350,13 @@ export const useGameStore = create<GameState>()(
       }),
 
       setScreen: (screen) => set({ screen }),
-      setPremium: (status) => set({ isPremium: status }),
+      setPremium: (status) =>
+        set((state) => {
+          const isTrialActive = Boolean(
+            state.trialEndsAt && state.trialEndsAt > Date.now()
+          );
+          return { isPremium: status || isTrialActive };
+        }),
 
       updateSetting: (key, value) =>
         set((state) => ({
