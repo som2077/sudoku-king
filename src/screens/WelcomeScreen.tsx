@@ -8,6 +8,7 @@ import {
   Pressable,
   TextInput,
   ScrollView,
+  Linking,
 } from "react-native";
 import { Text } from "../components/Text";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,10 +23,12 @@ import {
   X,
   Search,
   Scan,
+  ExternalLink,
 } from "lucide-react-native";
 import { useTranslation, SUPPORTED_LANGUAGES, LanguageMeta } from "../i18n";
 import { useGameStore } from "../store/useGameStore";
 import { haptics } from "../utils/haptics";
+import { APP_LINKS } from "../constants/links";
 
 interface WelcomeScreenProps {
   onGetStarted: () => void;
@@ -340,6 +343,25 @@ export default function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
                   ? "Welcome to Sudoku King. By using our app, you agree to play fairly and enjoy brain-training puzzles. All puzzles, challenges, and graphics are protected intellectual property. Our app works 100% offline and stores your game progress locally on your device."
                   : "Sudoku King respects your personal privacy. We do not sell your personal data. We use local device storage (MMKV) to save your solved puzzles, streaks, and settings. Standard crash analytics and non-personalized advertising services adhere to Google Play policies."}
               </Text>
+
+              <TouchableOpacity
+                style={styles.openBrowserBtn}
+                onPress={() => {
+                  const url =
+                    legalModal === "terms"
+                      ? APP_LINKS.TERMS_URL
+                      : APP_LINKS.PRIVACY_URL;
+                  Linking.openURL(url).catch(() => {});
+                }}
+                activeOpacity={0.8}
+              >
+                <ExternalLink size={14} color="#1D4ED8" />
+                <Text style={styles.openBrowserBtnText}>
+                  {legalModal === "terms"
+                    ? "Read Full Terms on Website"
+                    : "Read Full Privacy Policy on Website"}
+                </Text>
+              </TouchableOpacity>
             </ScrollView>
           </View>
         </View>
@@ -656,5 +678,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6B7280",
     marginTop: 1,
+  },
+  openBrowserBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
+  openBrowserBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#1D4ED8",
   },
 });

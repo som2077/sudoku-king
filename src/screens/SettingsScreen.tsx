@@ -16,6 +16,7 @@ import {
   X,
   Crown,
   Mail,
+  ExternalLink,
 } from "lucide-react-native";
 import {
   FilledBell,
@@ -88,6 +89,36 @@ export function SettingsScreen({
     } catch (err) {
       console.warn("⚠️ [Settings] Failed to open rules URL:", err);
       await Linking.openURL(APP_LINKS.REFERENCE_RULES_URL).catch(() => {});
+    }
+  };
+
+  const handleOpenTerms = async () => {
+    try {
+      const url = APP_LINKS.TERMS_URL;
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        setActiveModal("terms");
+      }
+    } catch (err) {
+      console.warn("⚠️ [Settings] Failed to open terms URL:", err);
+      setActiveModal("terms");
+    }
+  };
+
+  const handleOpenPrivacy = async () => {
+    try {
+      const url = APP_LINKS.PRIVACY_URL;
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        setActiveModal("privacy");
+      }
+    } catch (err) {
+      console.warn("⚠️ [Settings] Failed to open privacy URL:", err);
+      setActiveModal("privacy");
     }
   };
 
@@ -208,6 +239,7 @@ export function SettingsScreen({
                 {t("settings.sudokuRules", "Rules")}
               </Text>
             </View>
+            <ExternalLink size={16} color="#9CA3AF" />
           </TouchableOpacity>
         </View>
 
@@ -237,7 +269,7 @@ export function SettingsScreen({
           {/* Terms of Services */}
           <TouchableOpacity
             style={styles.row}
-            onPress={() => setActiveModal("terms")}
+            onPress={handleOpenTerms}
             activeOpacity={0.65}
             accessibilityRole="button"
             accessibilityLabel={t("settings.terms", "Terms and Conditions")}
@@ -248,6 +280,7 @@ export function SettingsScreen({
                 {t("settings.terms", "Terms and Conditions")}
               </Text>
             </View>
+            <ExternalLink size={16} color="#9CA3AF" />
           </TouchableOpacity>
 
           <View style={styles.rowDivider} />
@@ -255,7 +288,7 @@ export function SettingsScreen({
           {/* Privacy Policy */}
           <TouchableOpacity
             style={styles.row}
-            onPress={() => setActiveModal("privacy")}
+            onPress={handleOpenPrivacy}
             activeOpacity={0.65}
             accessibilityRole="button"
             accessibilityLabel={t("settings.privacy", "Privacy Policy")}
@@ -266,6 +299,7 @@ export function SettingsScreen({
                 {t("settings.privacy", "Privacy Policy")}
               </Text>
             </View>
+            <ExternalLink size={16} color="#9CA3AF" />
           </TouchableOpacity>
         </View>
 

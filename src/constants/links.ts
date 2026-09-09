@@ -13,6 +13,16 @@ export const APP_LINKS = {
   WEBSITE_HOME: "https://sudokuking.imperialtech.me",
 
   /**
+   * Official Terms and Conditions URL
+   */
+  TERMS_URL: "https://sudokuking.imperialtech.me/terms",
+
+  /**
+   * Official Privacy Policy URL
+   */
+  PRIVACY_URL: "https://sudokuking.imperialtech.me/privacy",
+
+  /**
    * Reference rules URL
    */
   REFERENCE_RULES_URL: "https://sudoku.com/sudoku-rules/",

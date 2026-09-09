@@ -27,29 +27,35 @@ export function Footer() {
           >
             Rules & Guides
           </Link>
+          <Link
+            href="/terms"
+            className="hover:text-slate-950 transition-colors apple-press-subtle"
+          >
+            Terms of Service
+          </Link>
+          <Link
+            href="/privacy"
+            className="hover:text-slate-950 transition-colors apple-press-subtle"
+          >
+            Privacy Policy
+          </Link>
           <a
-            href="#game"
+            href="/#game"
             className="hover:text-slate-950 transition-colors apple-press-subtle"
           >
             Play Game
           </a>
           <a
-            href="#leaderboard"
+            href="/#leaderboard"
             className="hover:text-slate-950 transition-colors apple-press-subtle"
           >
             Leaderboard
           </a>
           <a
-            href="#features"
+            href="/#features"
             className="hover:text-slate-950 transition-colors apple-press-subtle"
           >
             Features
-          </a>
-          <a
-            href="#modes"
-            className="hover:text-slate-950 transition-colors apple-press-subtle"
-          >
-            Progression Tiers
           </a>
           <a
             href="https://github.com"
