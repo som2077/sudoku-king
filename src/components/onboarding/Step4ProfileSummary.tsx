@@ -18,9 +18,8 @@ export function Step4ProfileSummary({
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>
-        Building a{" "}
-        <Text style={styles.accentText}>{dailyMinutes}-minute</Text> Sudoku
-        habit is a realistic goal. It&apos;s not hard at all!
+        Building a <Text style={styles.accentText}>{dailyMinutes}-minute</Text>{" "}
+        Sudoku habit is a realistic goal. It&apos;s not hard at all!
       </Text>
       <Text style={styles.stepSubtitle}>
         Small daily sessions sharpen your focus, improve your logic, and make
