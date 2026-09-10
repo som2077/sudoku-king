@@ -29,6 +29,5 @@ export const AppGradientBackground = React.memo(function AppGradientBackground({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
 });
