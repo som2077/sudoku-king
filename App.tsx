@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  InteractionManager,
   StyleSheet,
 } from "react-native";
 import {
@@ -201,62 +202,65 @@ export default function App() {
     NativeStatusBar.setBackgroundColor("transparent", true);
     NativeStatusBar.setTranslucent(true);
 
-    fetchRemoteConfig();
-    purchaseService.initialize().catch((err) => {
-      console.warn("⚠️ [RevenueCat] Initialization error:", err);
+    let responseSubscription: { remove: () => void } | null = null;
+    const interactionTask = InteractionManager.runAfterInteractions(() => {
+      fetchRemoteConfig();
+      purchaseService.initialize().catch((err) => {
+        console.warn("⚠️ [RevenueCat] Initialization error:", err);
+      });
+
+      // Initialize Firebase Cloud Messaging Push Notifications
+      notificationService.initialize(
+        (payload) => handleNotificationAction(payload),
+        (payload) => setForegroundNotification(payload),
+      );
+
+      // Initialize Local 6 Daily Recurring Notifications
+      try {
+        const ExpoNotifications = require("expo-notifications");
+        if (ExpoNotifications?.setNotificationHandler) {
+          ExpoNotifications.setNotificationHandler({
+            handleNotification: async () => ({
+              shouldShowAlert: false,
+              shouldPlaySound: true,
+              shouldSetBadge: false,
+              shouldShowBanner: false,
+              shouldShowList: true,
+            }),
+          });
+        }
+
+        const { settings: currentSettings, hasCompletedOnboarding: isOnboarded } =
+          useGameStore.getState();
+        if (isOnboarded && currentSettings.notificationsEnabled) {
+          localNotificationScheduler.scheduleDailyNotifications();
+        }
+
+        if (ExpoNotifications?.addNotificationResponseReceivedListener) {
+          responseSubscription =
+            ExpoNotifications.addNotificationResponseReceivedListener(
+              (response: any) => {
+                const content = response?.notification?.request?.content;
+                if (content?.data) {
+                  handleNotificationAction({
+                    title: content.title ?? undefined,
+                    body: content.body ?? undefined,
+                    data: content.data as Record<string, string>,
+                  });
+                }
+              },
+            );
+        }
+      } catch (e) {
+        console.log(
+          "ℹ️ [Local Notifications] Scheduler waiting for native rebuild:",
+          e,
+        );
+      }
     });
 
-    // Initialize Firebase Cloud Messaging Push Notifications
-    notificationService.initialize(
-      (payload) => handleNotificationAction(payload),
-      (payload) => setForegroundNotification(payload),
-    );
-
-    // Initialize Local 6 Daily Recurring Notifications
-    let responseSubscription: { remove: () => void } | null = null;
-    try {
-      const ExpoNotifications = require("expo-notifications");
-      if (ExpoNotifications?.setNotificationHandler) {
-        ExpoNotifications.setNotificationHandler({
-          handleNotification: async () => ({
-            shouldShowAlert: false,
-            shouldPlaySound: true,
-            shouldSetBadge: false,
-            shouldShowBanner: false,
-            shouldShowList: true,
-          }),
-        });
-      }
-
-      const { settings: currentSettings, hasCompletedOnboarding: isOnboarded } =
-        useGameStore.getState();
-      if (isOnboarded && currentSettings.notificationsEnabled) {
-        localNotificationScheduler.scheduleDailyNotifications();
-      }
-
-      if (ExpoNotifications?.addNotificationResponseReceivedListener) {
-        responseSubscription =
-          ExpoNotifications.addNotificationResponseReceivedListener(
-            (response: any) => {
-              const content = response?.notification?.request?.content;
-              if (content?.data) {
-                handleNotificationAction({
-                  title: content.title ?? undefined,
-                  body: content.body ?? undefined,
-                  data: content.data as Record<string, string>,
-                });
-              }
-            },
-          );
-      }
-    } catch (e) {
-      console.log(
-        "ℹ️ [Local Notifications] Scheduler waiting for native rebuild:",
-        e,
-      );
-    }
-
     return () => {
+      interactionTask.cancel();
       responseSubscription?.remove?.();
     };
   }, []);

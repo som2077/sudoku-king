@@ -73,6 +73,9 @@ function Board() {
     selectedCell !== null && board[selectedCell]
       ? board[selectedCell].value
       : null;
+  const selectedRow = selectedCell === null ? -1 : getRow(selectedCell);
+  const selectedCol = selectedCell === null ? -1 : getCol(selectedCell);
+  const selectedBlock = selectedCell === null ? -1 : getBlock(selectedCell);
 
   return (
     <View style={styles.boardWrapper}>
@@ -109,9 +112,9 @@ function Board() {
                               if (selectedCell !== null) {
                                 if (
                                   highlightAreas &&
-                                  (row === getRow(selectedCell) ||
-                                    col === getCol(selectedCell) ||
-                                    getBlock(i) === getBlock(selectedCell))
+                                  (row === selectedRow ||
+                                    col === selectedCol ||
+                                    blockRow * 3 + blockCol === selectedBlock)
                                 ) {
                                   isHighlighted = true;
                                 }

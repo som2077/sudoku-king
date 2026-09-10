@@ -219,6 +219,9 @@ export default function HomeScreen({
   const [showDifficultySheet, setShowDifficultySheet] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<Tab>("home");
   const [showAwards, setShowAwards] = React.useState(false);
+  const [visitedTabs, setVisitedTabs] = React.useState<Set<Tab>>(
+    () => new Set(["home"]),
+  );
 
   const { t } = useTranslation();
   const scrollRef = React.useRef<ScrollView>(null);
@@ -332,6 +335,9 @@ export default function HomeScreen({
       dragStartIdx.current = index;
       activeTabRef.current = tab;
       setActiveTab(tab);
+      setVisitedTabs((current) =>
+        current.has(tab) ? current : new Set(current).add(tab),
+      );
       scrollRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: false });
     },
     [SCREEN_WIDTH],
@@ -368,6 +374,9 @@ export default function HomeScreen({
       if (targetTab && targetTab !== activeTabRef.current) {
         activeTabRef.current = targetTab;
         setActiveTab(targetTab);
+        setVisitedTabs((current) =>
+          current.has(targetTab) ? current : new Set(current).add(targetTab),
+        );
       }
     },
     [SCREEN_WIDTH],
@@ -385,6 +394,9 @@ export default function HomeScreen({
       if (targetTab && targetTab !== activeTabRef.current) {
         activeTabRef.current = targetTab;
         setActiveTab(targetTab);
+        setVisitedTabs((current) =>
+          current.has(targetTab) ? current : new Set(current).add(targetTab),
+        );
       }
     },
     [SCREEN_WIDTH],
@@ -622,7 +634,7 @@ export default function HomeScreen({
 
           {/* ── 2. DAILY CHALLENGES TAB ── */}
           <View style={{ width: SCREEN_WIDTH, flex: 1 }}>
-            <MemoizedDailyChallengesScreen />
+            {visitedTabs.has("daily") && <MemoizedDailyChallengesScreen />}
           </View>
 
           {/* ── 3. SETTINGS TAB ── */}
@@ -632,11 +644,13 @@ export default function HomeScreen({
               flex: 1,
             }}
           >
-            <MemoizedSettingsScreen
-              onOpenPaywall={onOpenPaywall}
-              onRestorePurchases={onRestorePurchases}
-              onOpenAwards={handleOpenAwards}
-            />
+            {visitedTabs.has("settings") && (
+              <MemoizedSettingsScreen
+                onOpenPaywall={onOpenPaywall}
+                onRestorePurchases={onRestorePurchases}
+                onOpenAwards={handleOpenAwards}
+              />
+            )}
           </View>
         </ScrollView>
 
