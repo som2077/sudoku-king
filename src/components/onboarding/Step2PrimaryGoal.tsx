@@ -1,5 +1,5 @@
-import React from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useRef } from "react";
+import { Animated, View, TouchableOpacity, StyleSheet } from "react-native";
 import {
   Brain,
   HeartHandshake,
@@ -8,6 +8,9 @@ import {
   Check,
 } from "lucide-react-native";
 import { Text } from "../Text";
+
+const AnimatedTouchableOpacity =
+  Animated.createAnimatedComponent(TouchableOpacity);
 
 interface Step2PrimaryGoalProps {
   goal: string;
@@ -48,6 +51,16 @@ export function Step2PrimaryGoal({
       bg: "#FEF3C7",
     },
   ];
+  const cardScales = useRef(goalItems.map(() => new Animated.Value(1))).current;
+
+  const animateCard = (index: number, toValue: number) => {
+    Animated.spring(cardScales[index], {
+      toValue,
+      friction: 6,
+      tension: 180,
+      useNativeDriver: true,
+    }).start();
+  };
 
   return (
     <View style={styles.stepContainer}>
@@ -58,13 +71,19 @@ export function Step2PrimaryGoal({
       </Text>
 
       <View style={styles.cardsList}>
-        {goalItems.map((item) => {
+        {goalItems.map((item, index) => {
           const isSelected = goal === item.id;
           return (
-            <TouchableOpacity
+            <AnimatedTouchableOpacity
               key={item.id}
               onPress={() => onSelectGoal(item.id)}
-              style={[styles.goalCard, isSelected && styles.goalCardSelected]}
+              onPressIn={() => animateCard(index, 0.98)}
+              onPressOut={() => animateCard(index, 1)}
+              style={[
+                styles.goalCard,
+                { transform: [{ scale: cardScales[index] }] },
+                isSelected && styles.goalCardSelected,
+              ]}
               activeOpacity={0.75}
               accessibilityRole="radio"
               accessibilityState={{ checked: isSelected }}
@@ -87,7 +106,7 @@ export function Step2PrimaryGoal({
                   <Check size={14} color="#FFFFFF" strokeWidth={3} />
                 )}
               </View>
-            </TouchableOpacity>
+            </AnimatedTouchableOpacity>
           );
         })}
       </View>
@@ -119,14 +138,19 @@ const styles = StyleSheet.create({
   goalCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FFFfff",
     borderWidth: 1.5,
     borderColor: "#E5E7EB",
     borderRadius: 16,
     padding: 16,
+    shadowColor: "#11182760",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   goalCardSelected: {
-    borderColor: "#000000",
+    borderColor: "#00000080",
     backgroundColor: "#F8FAFC",
   },
   goalIconWrap: {
@@ -158,7 +182,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   goalRadioSelected: {
-    borderColor: "#000000",
+    borderColor: "#00000030",
     backgroundColor: "#000000",
   },
 });

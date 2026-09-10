@@ -1,7 +1,10 @@
-import React from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useRef } from "react";
+import { Animated, View, TouchableOpacity, StyleSheet } from "react-native";
 import { Sun, Coffee, Moon, BellOff, Check } from "lucide-react-native";
 import { Text } from "../Text";
+
+const AnimatedTouchableOpacity =
+  Animated.createAnimatedComponent(TouchableOpacity);
 
 export type ReminderSlotType =
   | "morning"
@@ -49,6 +52,18 @@ export function Step3Reminder({
       bg: "#F3F4F6",
     },
   ];
+  const cardScales = useRef(
+    reminderOptions.map(() => new Animated.Value(1)),
+  ).current;
+
+  const animateCard = (index: number, toValue: number) => {
+    Animated.spring(cardScales[index], {
+      toValue,
+      friction: 6,
+      tension: 180,
+      useNativeDriver: true,
+    }).start();
+  };
 
   return (
     <View style={styles.stepContainer}>
@@ -59,14 +74,17 @@ export function Step3Reminder({
       </Text>
 
       <View style={styles.cardsList}>
-        {reminderOptions.map((slot) => {
+        {reminderOptions.map((slot, index) => {
           const isSelected = reminderSlot === slot.id;
           return (
-            <TouchableOpacity
+            <AnimatedTouchableOpacity
               key={slot.id}
               onPress={() => onSelectSlot(slot.id)}
+              onPressIn={() => animateCard(index, 0.98)}
+              onPressOut={() => animateCard(index, 1)}
               style={[
                 styles.channelRow,
+                { transform: [{ scale: cardScales[index] }] },
                 isSelected && styles.channelRowSelected,
               ]}
               activeOpacity={0.7}
@@ -100,7 +118,7 @@ export function Step3Reminder({
                   <Check size={14} color="#FFFFFF" strokeWidth={3} />
                 )}
               </View>
-            </TouchableOpacity>
+            </AnimatedTouchableOpacity>
           );
         })}
       </View>
@@ -137,6 +155,11 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     borderRadius: 16,
     padding: 14,
+    shadowColor: "#11182760",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   channelRowSelected: {
     borderColor: "#2563EB",
