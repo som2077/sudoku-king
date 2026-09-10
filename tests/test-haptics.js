@@ -37,6 +37,12 @@ async function run() {
   assert(welcomeCode.includes('haptics.selection()'), 'WelcomeScreen must trigger haptics.selection on language select');
   console.log('  ✔ WelcomeScreen wired with Get Started and language selection haptics');
 
+  // 4. Verify board-cell integration
+  const cellPath = path.resolve('src/components/game/Cell.tsx');
+  const cellCode = fs.readFileSync(cellPath, 'utf8');
+  assert(cellCode.includes('haptics.selection()'), 'Board cells must trigger selection haptics');
+  console.log('  ✔ Sudoku board cells trigger selection haptics');
+
   console.log('🎉 All Haptics & Onboarding verification tests passed successfully!');
 }
 

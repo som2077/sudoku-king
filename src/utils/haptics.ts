@@ -1,11 +1,19 @@
 import { Vibration, Platform } from "react-native";
-import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
+import { createAudioPlayer, preload, setAudioModeAsync } from "expo-audio";
 import { useGameStore } from "../store/useGameStore";
+
+const TAP_SOUND = require("../../assets/taps.mp3");
+const BLOCK_COMPLETE_SOUND = require("../../assets/blockComplete.mp3");
+const GAME_WIN_SOUND = require("../../assets/gameWin.mp3");
 
 let tapAudio: ReturnType<typeof createAudioPlayer> | null = null;
 let blockCompleteAudio: ReturnType<typeof createAudioPlayer> | null = null;
 let gameWinAudio: ReturnType<typeof createAudioPlayer> | null = null;
 let audioModeConfigured = false;
+
+// The board is tapped frequently, so keep its short sound ready before the
+// first interaction instead of loading it during a cell press.
+void preload(TAP_SOUND).catch(() => {});
 
 /**
  * Universal Haptics Engine for Sudoku King.
@@ -22,19 +30,15 @@ class HapticsEngine {
 
   private playSound(player: {
     isLoaded: boolean;
-    seekTo: (seconds: number) => Promise<void>;
+    currentTime: number;
     play: () => void;
   }) {
     if (!this.isSoundEnabled()) return;
-    if (!player.isLoaded) {
-      player.play();
-      return;
-    }
 
-    void player
-      .seekTo(0)
-      .then(() => player.play())
-      .catch(() => player.play());
+    // Do not wait for seekTo() before playing. Rapid board taps can otherwise
+    // queue promises and make the sound appear delayed or disappear.
+    if (player.isLoaded) player.currentTime = 0;
+    player.play();
   }
 
   private configureAudioMode() {
@@ -45,21 +49,19 @@ class HapticsEngine {
 
   tapSound() {
     this.configureAudioMode();
-    tapAudio ??= createAudioPlayer(require("../../assets/taps.mp3"));
+    tapAudio ??= createAudioPlayer(TAP_SOUND);
     this.playSound(tapAudio);
   }
 
   blockCompleteSound() {
     this.configureAudioMode();
-    blockCompleteAudio ??= createAudioPlayer(
-      require("../../assets/blockComplete.mp3"),
-    );
+    blockCompleteAudio ??= createAudioPlayer(BLOCK_COMPLETE_SOUND);
     this.playSound(blockCompleteAudio);
   }
 
   gameWinSound() {
     this.configureAudioMode();
-    gameWinAudio ??= createAudioPlayer(require("../../assets/gameWin.mp3"));
+    gameWinAudio ??= createAudioPlayer(GAME_WIN_SOUND);
     this.playSound(gameWinAudio);
   }
 

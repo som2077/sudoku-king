@@ -8,13 +8,13 @@ import {
   Linking,
   StyleSheet,
   Pressable,
-  Switch,
   TextInput,
   ActivityIndicator,
   Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { Image } from "expo-image";
 import {
   X,
   Crown,
@@ -50,6 +50,29 @@ interface SettingsScreenProps {
 }
 
 type ModalType = "how_to_play" | "rules" | "help" | "terms" | "privacy" | null;
+
+function SettingsToggle({
+  value,
+  onChange,
+}: {
+  value: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={() => onChange(!value)}
+      activeOpacity={0.8}
+      accessibilityRole="switch"
+      accessibilityLabel="Toggle notifications"
+      accessibilityState={{ checked: value }}
+      style={styles.toggleTouchTarget}
+    >
+      <View style={[styles.toggleTrack, value && styles.toggleTrackOn]}>
+        <View style={[styles.toggleThumb, value && styles.toggleThumbOn]} />
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 export function SettingsScreen({
   onOpenPaywall,
@@ -133,6 +156,7 @@ export function SettingsScreen({
   };
 
   const handleToggleNotifications = async (val: boolean) => {
+    haptics.selection();
     updateSetting("notificationsEnabled", val);
     try {
       if (val) {
@@ -267,11 +291,6 @@ export function SettingsScreen({
           </TouchableOpacity>
 
           {/* ── 2. Preferences Section (Notification Switch) ── */}
-          {/* <Text style={styles.sectionHeader}>
-          </Text> */}
-          <Text style={styles.sectionHeader}>
-            {t("settings.preferences", "Preferences")}
-          </Text>
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={styles.rowLeft}>
@@ -280,14 +299,9 @@ export function SettingsScreen({
                   {t("settings.notifications", "Notification")}
                 </Text>
               </View>
-              <Switch
+              <SettingsToggle
                 value={notificationsEnabled}
-                onValueChange={handleToggleNotifications}
-                trackColor={{ false: "#E2E8F0", true: "#18181B" }}
-                thumbColor="#FFFFFF"
-                ios_backgroundColor="#E2E8F0"
-                accessibilityRole="switch"
-                accessibilityLabel="Toggle notifications"
+                onChange={handleToggleNotifications}
               />
             </View>
 
@@ -317,11 +331,6 @@ export function SettingsScreen({
           </View>
 
           {/* ── 3. Guides & Rules Section ── */}
-          {/* <Text style={styles.sectionHeader}>
-            </Text> */}
-          <Text style={styles.sectionHeader}>
-            {t("settings.rulesAndGuides", "Guides & Rules")}
-          </Text>
           <View style={styles.card}>
             {/* How to Play */}
             <TouchableOpacity
@@ -432,60 +441,18 @@ export function SettingsScreen({
             accessibilityRole="button"
             accessibilityLabel="Sudoku King Version Information"
           >
-            {/* Mini Sudoku Grid App Icon */}
-            <View style={styles.versionIconContainer}>
-              {/* Row 1: 1, 2, 3 */}
-              <View style={styles.miniGridRow}>
-                <View style={styles.miniGridCell}>
-                  <Text style={styles.miniGridNumDark}>1</Text>
-                </View>
-                <View style={styles.miniGridVLine} />
-                <View style={styles.miniGridCell}>
-                  <Text style={styles.miniGridNumBlue}>2</Text>
-                </View>
-                <View style={styles.miniGridVLine} />
-                <View style={styles.miniGridCell}>
-                  <Text style={styles.miniGridNumDark}>3</Text>
-                </View>
-              </View>
-
-              <View style={styles.miniGridHLine} />
-
-              {/* Row 2: 6, empty, 4 */}
-              <View style={styles.miniGridRow}>
-                <View style={styles.miniGridCell}>
-                  <Text style={styles.miniGridNumBlue}>6</Text>
-                </View>
-                <View style={styles.miniGridVLine} />
-                <View style={styles.miniGridCell} />
-                <View style={styles.miniGridVLine} />
-                <View style={styles.miniGridCell}>
-                  <Text style={styles.miniGridNumDark}>4</Text>
-                </View>
-              </View>
-
-              <View style={styles.miniGridHLine} />
-
-              {/* Row 3: 7, 8, 9 */}
-              <View style={styles.miniGridRow}>
-                <View style={styles.miniGridCell}>
-                  <Text style={styles.miniGridNumBlue}>7</Text>
-                </View>
-                <View style={styles.miniGridVLine} />
-                <View style={styles.miniGridCell}>
-                  <Text style={styles.miniGridNumDark}>8</Text>
-                </View>
-                <View style={styles.miniGridVLine} />
-                <View style={styles.miniGridCell}>
-                  <Text style={styles.miniGridNumBlue}>9</Text>
-                </View>
-              </View>
-            </View>
+            {/* Sudoku King game logo */}
+            <Image
+              source={require("../../assets/endlogo.svg")}
+              style={styles.versionLogo}
+              contentFit="contain"
+              accessibilityLabel="Sudoku King logo"
+            />
 
             {/* Details Column */}
             <View style={styles.versionInfoCol}>
               <Text style={styles.versionAppTitle}>
-                Sudoku King - Puzzle Game
+                Sudoku King - Mind Game
               </Text>
               <Text style={styles.versionNumberText}>Version 3.56.1</Text>
               <Text style={styles.versionCopyrightText}>
@@ -1002,6 +969,35 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F4F6",
     marginLeft: 50,
   },
+  toggleTouchTarget: {
+    paddingVertical: 8,
+    paddingLeft: 12,
+  },
+  toggleTrack: {
+    width: 54,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#E5E7EB",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  toggleTrackOn: {
+    backgroundColor: "#1D1A27",
+  },
+  toggleThumb: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000000",
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  toggleThumbOn: {
+    alignSelf: "flex-end",
+  },
 
   /* ── Version Info Card ── */
   versionCard: {
@@ -1031,6 +1027,14 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     justifyContent: "space-evenly",
     padding: 2,
+  },
+  versionLogo: {
+    width: 52,
+    height: 54,
+    //  borderRadius: 12,
+    // borderWidth: 1,
+    // borderColor: "#D1D5DB",
+    // backgroundColor: "#FFFFFF",
   },
   miniGridRow: {
     flexDirection: "row",

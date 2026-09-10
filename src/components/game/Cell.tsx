@@ -87,6 +87,8 @@ const Cell = ({
     <TouchableOpacity
       activeOpacity={0.65}
       onPress={() => {
+        // Keep board selection tactile while respecting the user's vibration setting.
+        haptics.selection();
         haptics.tapSound();
         onPress(index);
       }}
