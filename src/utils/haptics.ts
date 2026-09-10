@@ -1,11 +1,57 @@
 import { Vibration, Platform } from "react-native";
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import { useGameStore } from "../store/useGameStore";
+
+const tapAudio = createAudioPlayer(require("../../assets/taps.mp3"));
+const blockCompleteAudio = createAudioPlayer(
+  require("../../assets/blockComplete.mp3"),
+);
+const gameWinAudio = createAudioPlayer(require("../../assets/gameWin.mp3"));
+
+void setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
 
 /**
  * Universal Haptics Engine for Sudoku King.
  * Provides crisp tactile feedback across Android and iOS with zero crash risk.
  */
 class HapticsEngine {
+  private isSoundEnabled(): boolean {
+    try {
+      return useGameStore.getState().settings?.soundEnabled ?? true;
+    } catch {
+      return true;
+    }
+  }
+
+  private playSound(player: {
+    isLoaded: boolean;
+    seekTo: (seconds: number) => Promise<void>;
+    play: () => void;
+  }) {
+    if (!this.isSoundEnabled()) return;
+    if (!player.isLoaded) {
+      player.play();
+      return;
+    }
+
+    void player
+      .seekTo(0)
+      .then(() => player.play())
+      .catch(() => player.play());
+  }
+
+  tapSound() {
+    this.playSound(tapAudio);
+  }
+
+  blockCompleteSound() {
+    this.playSound(blockCompleteAudio);
+  }
+
+  gameWinSound() {
+    this.playSound(gameWinAudio);
+  }
+
   private isEnabled(): boolean {
     try {
       const state = useGameStore.getState();

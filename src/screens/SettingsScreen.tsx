@@ -98,7 +98,8 @@ export function SettingsScreen({
     } catch (err: any) {
       Alert.alert(
         "Restore Failed",
-        err?.message || "Failed to restore purchases. Please check your network connection.",
+        err?.message ||
+          "Failed to restore purchases. Please check your network connection.",
       );
     } finally {
       setRestoring(false);

@@ -1,6 +1,7 @@
 import React, { memo } from "react";
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 import { Text } from "../ui/Text";
+import { haptics } from "../../utils/haptics";
 
 interface CellProps {
   index: number;
@@ -11,6 +12,7 @@ interface CellProps {
   isError: boolean;
   isHighlighted: boolean;
   isSameValue: boolean;
+  isBlockCompleted: boolean;
   onPress: (index: number) => void;
 }
 
@@ -23,6 +25,7 @@ const Cell = ({
   isError,
   isHighlighted,
   isSameValue,
+  isBlockCompleted,
   onPress,
 }: CellProps) => {
   // ── Background Color Palette ──────────────────────────────────────────────
@@ -31,6 +34,8 @@ const Cell = ({
     bg = "#2563EB"; // Brand royal blue for active selected cell
   } else if (isError) {
     bg = "#FEE2E2"; // Soft error red
+  } else if (isBlockCompleted) {
+    bg = "#DCFCE7"; // Subtle success tint for completed 3x3 blocks
   } else if (isSameValue && value !== null) {
     bg = "#DBEAFE"; // Distinct soft blue highlight for matching numbers across the board
   } else if (isHighlighted) {
@@ -81,7 +86,10 @@ const Cell = ({
   return (
     <TouchableOpacity
       activeOpacity={0.65}
-      onPress={() => onPress(index)}
+      onPress={() => {
+        haptics.tapSound();
+        onPress(index);
+      }}
       style={[styles.cell, { backgroundColor: bg }]}
     >
       {value ? (

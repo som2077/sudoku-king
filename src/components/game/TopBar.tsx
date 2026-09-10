@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   TouchableOpacity,
@@ -29,6 +29,7 @@ import {
   Clock,
 } from "lucide-react-native";
 import { useTranslation } from "../../i18n";
+import { haptics } from "../../utils/haptics";
 
 const TimerText = React.memo(function TimerText() {
   const timer = useGameStore((s) => s.timer);
@@ -81,6 +82,18 @@ export default function TopBar({
     board.every((cell) => cell.value !== null && !cell.isError) &&
     mistakes < 3;
 
+  const hasPlayedWinSound = useRef(false);
+  useEffect(() => {
+    if (!isGameWon) {
+      hasPlayedWinSound.current = false;
+      return;
+    }
+    if (!hasPlayedWinSound.current) {
+      hasPlayedWinSound.current = true;
+      haptics.gameWinSound();
+    }
+  }, [isGameWon]);
+
   // ── Timer Interval ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (isPaused || isGameOver || isGameWon || isLeaveModalOpen) return;
@@ -126,6 +139,8 @@ export default function TopBar({
   };
 
   const handleHintClick = () => {
+    haptics.impactLight();
+    haptics.tapSound();
     if (isPremium || hintsRemaining > 0) {
       useHint();
     } else {
@@ -234,7 +249,11 @@ export default function TopBar({
         <View style={styles.toolsRow}>
           {/* Undo Card */}
           <TouchableOpacity
-            onPress={undo}
+            onPress={() => {
+              haptics.impactLight();
+              haptics.tapSound();
+              undo();
+            }}
             style={styles.toolCard}
             activeOpacity={0.7}
           >
@@ -244,7 +263,11 @@ export default function TopBar({
 
           {/* Eraser Card */}
           <TouchableOpacity
-            onPress={erase}
+            onPress={() => {
+              haptics.impactLight();
+              haptics.tapSound();
+              erase();
+            }}
             style={styles.toolCard}
             activeOpacity={0.7}
           >
@@ -254,7 +277,11 @@ export default function TopBar({
 
           {/* Pencil (Notes) Card */}
           <TouchableOpacity
-            onPress={toggleNotesMode}
+            onPress={() => {
+              haptics.selection();
+              haptics.tapSound();
+              toggleNotesMode();
+            }}
             style={[styles.toolCard, isNotesMode && styles.toolCardActive]}
             activeOpacity={0.7}
           >

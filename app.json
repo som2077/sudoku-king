@@ -50,7 +50,8 @@
             "enableShrinkResourcesInReleaseBuilds": true
           }
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "extra": {
       "eas": {

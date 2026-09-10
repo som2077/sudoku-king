@@ -1,7 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { View, useWindowDimensions, StyleSheet } from "react-native";
 import Cell from "./Cell";
 import { useGameStore } from "../../store/useGameStore";
+import { haptics } from "../../utils/haptics";
 import { getRow, getCol, getBlock } from "../../utils/sudokuLogic";
 
 const COLOR_BORDER = "#000000"; // Crisp premium dark border for 3x3 block borders & outer frame
@@ -29,6 +30,41 @@ function Board() {
     return { cellSize: cell, blockSize: block, boardSize: total };
   }, [screenWidth]);
 
+  const completedBlocks = useMemo(
+    () => {
+      if (!board || board.length !== 81) return Array(9).fill(false);
+
+      return (
+      Array.from({ length: 9 }, (_, blockIndex) => {
+        const blockRow = Math.floor(blockIndex / 3);
+        const blockCol = blockIndex % 3;
+
+        return Array.from({ length: 9 }, (_, cellOffset) => {
+          const row = blockRow * 3 + Math.floor(cellOffset / 3);
+          const col = blockCol * 3 + (cellOffset % 3);
+          return board[row * 9 + col];
+        }).every((cell) => cell.value !== null && !cell.isError);
+      })
+      );
+    },
+    [board],
+  );
+
+  const previousCompletedBlocks = useRef<boolean[] | null>(null);
+  useEffect(() => {
+    if (previousCompletedBlocks.current) {
+      const completedNewBlock = completedBlocks.some(
+        (completed, index) =>
+          completed && !previousCompletedBlocks.current?.[index],
+      );
+      if (completedNewBlock) {
+        haptics.success();
+        haptics.blockCompleteSound();
+      }
+    }
+    previousCompletedBlocks.current = completedBlocks;
+  }, [completedBlocks]);
+
   if (!board || board.length !== 81) {
     return null;
   }
@@ -52,6 +88,8 @@ function Board() {
                     style={[
                       styles.blockContainer,
                       { width: blockSize, height: blockSize },
+                      completedBlocks[blockRow * 3 + blockCol] &&
+                        styles.completedBlock,
                     ]}
                   >
                     {[0, 1, 2].map((subRow) => {
@@ -103,6 +141,9 @@ function Board() {
                                       isError={cell.isError}
                                       isHighlighted={isHighlighted}
                                       isSameValue={isSameValue}
+                                      isBlockCompleted={
+                                        completedBlocks[blockRow * 3 + blockCol]
+                                      }
                                       onPress={selectCell}
                                     />
                                   </View>
@@ -158,6 +199,9 @@ const styles = StyleSheet.create({
   blockContainer: {
     // padding: 1,
     flexDirection: "column",
+  },
+  completedBlock: {
+    backgroundColor: "#DCFCE7",
   },
   subRow: {
     flexDirection: "row",

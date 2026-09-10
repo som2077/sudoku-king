@@ -38,6 +38,7 @@ function Keypad({
   const isComplete = (num: number) => numberCounts[num] >= 9;
 
   const handleNumberPress = (num: number) => {
+    haptics.tapSound();
     if (isNotesMode) {
       toggleNote(num);
     } else {
