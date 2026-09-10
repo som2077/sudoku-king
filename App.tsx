@@ -98,7 +98,6 @@ export default function App() {
     screen,
     setScreen,
     mistakes,
-    board,
     secondChance,
     isPremium,
     setPremium,
@@ -127,7 +126,6 @@ export default function App() {
       screen: state.screen,
       setScreen: state.setScreen,
       mistakes: state.mistakes,
-      board: state.board,
       secondChance: state.secondChance,
       isPremium: state.isPremium,
       setPremium: state.setPremium,
@@ -154,11 +152,20 @@ export default function App() {
     })),
   );
 
+  // Subscribe to derived booleans instead of the full 81-cell board. This
+  // keeps the root screen stable while the player enters numbers.
+  const isGameWon = useGameStore(
+    (state) =>
+      state.board.length > 0 &&
+      state.board.every((cell) => cell.value !== null && !cell.isError) &&
+      state.mistakes < 3,
+  );
+  const isBoardEmpty = useGameStore(
+    (state) =>
+      state.board.length !== 81 || state.board.every((cell) => cell.value === null),
+  );
+
   const isGameOver = mistakes >= 3;
-  const isGameWon =
-    board.length > 0 &&
-    board.every((cell) => cell.value !== null && !cell.isError) &&
-    mistakes < 3;
 
   const [bannerLoaded, setBannerLoaded] = useState(false);
   const [foregroundNotification, setForegroundNotification] =
@@ -301,13 +308,11 @@ export default function App() {
 
   useEffect(() => {
     if (screen === "playing") {
-      const isBoardEmpty =
-        !board || board.length !== 81 || board.every((c) => c.value === null);
       if (isBoardEmpty) {
         startNewGame(difficulty || "Medium");
       }
     }
-  }, [screen, board, difficulty, startNewGame]);
+  }, [screen, isBoardEmpty, difficulty, startNewGame]);
 
   useEffect(() => {
     const analytics = getAnalytics();
