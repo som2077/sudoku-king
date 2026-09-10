@@ -58,6 +58,16 @@ class HapticsEngine {
   }
 
   /**
+   * Distinct double impact for an incorrect Sudoku entry.
+   */
+  error() {
+    if (!this.isEnabled()) return;
+    try {
+      Vibration.vibrate([0, 35, 45, 35]);
+    } catch {}
+  }
+
+  /**
    * Success feedback (double tap pattern) for completing onboarding or goals
    */
   success() {

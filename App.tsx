@@ -13,6 +13,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { useEffect, useState, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { StatusBar as NativeStatusBar } from "react-native";
 import { getAnalytics, logEvent } from "@react-native-firebase/analytics";
 import Purchases from "react-native-purchases";
@@ -43,6 +44,7 @@ import {
   showInterstitialAd as adManagerShowInterstitial,
 } from "./src/services/adManager";
 import InAppNotificationBanner from "./src/components/InAppNotificationBanner";
+import TutorialOverlay from "./src/components/game/TutorialOverlay";
 import {
   notificationService,
   type NotificationPayload,
@@ -114,7 +116,42 @@ export default function App() {
     resetWelcome,
     hasCompletedOnboarding,
     completeOnboarding,
-  } = useGameStore();
+    totalPlayed,
+    hasCompletedTutorial,
+    hasSkippedTutorial,
+    completeTutorial,
+    skipTutorial,
+  } = useGameStore(
+    useShallow((state) => ({
+      screen: state.screen,
+      setScreen: state.setScreen,
+      mistakes: state.mistakes,
+      board: state.board,
+      secondChance: state.secondChance,
+      isPremium: state.isPremium,
+      setPremium: state.setPremium,
+      fetchRemoteConfig: state.fetchRemoteConfig,
+      history: state.history,
+      startNewGame: state.startNewGame,
+      addHint: state.addHint,
+      useHint: state.useHint,
+      currentDailyChallenge: state.currentDailyChallenge,
+      completeDailyChallenge: state.completeDailyChallenge,
+      difficulty: state.difficulty,
+      recordGameWon: state.recordGameWon,
+      startDailyChallenge: state.startDailyChallenge,
+      hasSeenWelcome: state.hasSeenWelcome,
+      completeWelcome: state.completeWelcome,
+      resetWelcome: state.resetWelcome,
+      hasCompletedOnboarding: state.hasCompletedOnboarding,
+      completeOnboarding: state.completeOnboarding,
+      totalPlayed: state.totalPlayed,
+      hasCompletedTutorial: state.hasCompletedTutorial,
+      hasSkippedTutorial: state.hasSkippedTutorial,
+      completeTutorial: state.completeTutorial,
+      skipTutorial: state.skipTutorial,
+    })),
+  );
 
   const isGameOver = mistakes >= 3;
   const isGameWon =
@@ -527,6 +564,16 @@ export default function App() {
             setPendingOnboardingDiff(null);
           }
         }}
+      />
+      <TutorialOverlay
+        visible={
+          screen === "playing" &&
+          totalPlayed === 1 &&
+          !hasCompletedTutorial &&
+          !hasSkippedTutorial
+        }
+        onComplete={completeTutorial}
+        onSkip={skipTutorial}
       />
       <StatusBar style={screen === "playing" ? "light" : "dark"} />
     </SafeAreaProvider>

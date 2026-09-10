@@ -7,7 +7,7 @@ import { getRow, getCol, getBlock } from "../../utils/sudokuLogic";
 const COLOR_BORDER = "#000000"; // Crisp premium dark border for 3x3 block borders & outer frame
 const COLOR_THIN = "#00000030"; // Clean, elegant divider between individual cells
 
-export default function Board() {
+function Board() {
   const { width: screenWidth } = useWindowDimensions();
   const board = useGameStore((s) => s.board);
   const selectedCell = useGameStore((s) => s.selectedCell);
@@ -129,6 +129,8 @@ export default function Board() {
     </View>
   );
 }
+
+export default React.memo(Board);
 
 const styles = StyleSheet.create({
   boardWrapper: {

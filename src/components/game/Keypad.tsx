@@ -2,6 +2,7 @@ import React from "react";
 import { View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { Text } from "../ui/Text";
 import { useGameStore } from "../../store/useGameStore";
+import { haptics } from "../../utils/haptics";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 // Max card width ~380, padding 16 each side = 348 available width.
@@ -11,12 +12,14 @@ const GAP = 10;
 const BTN_WIDTH = Math.floor((CONTAINER_MAX_WIDTH - GAP * 4) / 5);
 const BTN_HEIGHT = Math.min(Math.max(BTN_WIDTH * 0.95, 54), 62);
 
-export default function Keypad({
+function Keypad({
   showRewardedAd,
 }: {
   showRewardedAd?: (cb: () => void) => void;
 }) {
   const board = useGameStore((s) => s.board);
+  const solution = useGameStore((s) => s.solution);
+  const selectedCell = useGameStore((s) => s.selectedCell);
   const placeNumber = useGameStore((s) => s.placeNumber);
   const isNotesMode = useGameStore((s) => s.isNotesMode);
   const toggleNote = useGameStore((s) => s.toggleNote);
@@ -38,6 +41,18 @@ export default function Keypad({
     if (isNotesMode) {
       toggleNote(num);
     } else {
+      const cell = selectedCell === null ? null : board[selectedCell];
+      const isEditableCell =
+        cell && !cell.isLocked && (cell.value === null || cell.isError);
+      const isKnownIncorrectEntry =
+        selectedCell !== null &&
+        solution.length === 81 &&
+        solution[selectedCell] !== 0 &&
+        solution[selectedCell] !== num;
+
+      if (isEditableCell && isKnownIncorrectEntry) {
+        haptics.error();
+      }
       placeNumber(num);
     }
   };
@@ -73,6 +88,8 @@ export default function Keypad({
     </View>
   );
 }
+
+export default React.memo(Keypad);
 
 const styles = StyleSheet.create({
   container: {

@@ -268,7 +268,9 @@ export function SettingsScreen({
           {/* ── 2. Preferences Section (Notification Switch) ── */}
           {/* <Text style={styles.sectionHeader}>
           </Text> */}
-          {t("settings.preferences", "Preferences")}
+          <Text style={styles.sectionHeader}>
+            {t("settings.preferences", "Preferences")}
+          </Text>
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={styles.rowLeft}>
@@ -316,7 +318,9 @@ export function SettingsScreen({
           {/* ── 3. Guides & Rules Section ── */}
           {/* <Text style={styles.sectionHeader}>
             </Text> */}
-          {t("settings.rulesAndGuides", "Guides & Rules")}
+          <Text style={styles.sectionHeader}>
+            {t("settings.rulesAndGuides", "Guides & Rules")}
+          </Text>
           <View style={styles.card}>
             {/* How to Play */}
             <TouchableOpacity
