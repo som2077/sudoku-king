@@ -97,12 +97,12 @@ export function Navbar() {
             >
               Rules & Guide
             </Link>
-            <a
+            {/* <a
               href="#features"
               className="rounded-full px-2.5 py-1.5 transition-all hover:bg-black/[0.04] hover:text-[#8a5a18] xl:px-3.5 xl:py-2 apple-press-subtle"
             >
               Features
-            </a>
+            </a> */}
           </div>
         </nav>
 
