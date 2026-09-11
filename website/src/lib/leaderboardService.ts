@@ -115,64 +115,9 @@ export const savePlayerProfile = (profile: PlayerProfile): void => {
   profileListeners.forEach((fn) => fn());
 };
 
-// Seeded generator for daily leaderboard competitors
+// Removed seeded generator to ensure only real users are shown on the leaderboard
 export const generateDailyCompetitors = (dateStr: string): LeaderboardEntry[] => {
-  const names = [
-    "GrandmasterChen",
-    "LogicQueen",
-    "NumberNinja",
-    "Elena_R",
-    "Kaito_Sudoku",
-    "Priya_Sharma",
-    "AlexV",
-    "Sophie_M",
-    "Matteo_99",
-    "LucasSilva",
-    "ZackMaster",
-    "Anna_K",
-    "David_Logic",
-    "Kenjiro",
-    "Clara_B",
-    "Liam_Puzzles",
-    "Aarav_King",
-    "Nina_Solver",
-    "Felix_D",
-    "Maya_Mind",
-  ];
-
-  // Deterministic seed from date
-  let hash = 0;
-  for (let i = 0; i < dateStr.length; i++) {
-    hash = (hash << 5) - hash + dateStr.charCodeAt(i);
-    hash |= 0;
-  }
-
-  const entries: LeaderboardEntry[] = [];
-  const baseTimes = [
-    124, 138, 145, 159, 168, 175, 189, 194, 205, 218, 230, 245, 258, 270, 285, 305,
-    320, 340, 365, 390,
-  ];
-
-  for (let i = 0; i < names.length; i++) {
-    const country = COUNTRIES[(Math.abs(hash + i * 7)) % COUNTRIES.length];
-    const timeSec = baseTimes[i] + ((Math.abs(hash * (i + 1))) % 15);
-    const score = Math.max(1000, 10000 - timeSec * 12);
-    entries.push({
-      id: `seed-${dateStr}-${i}`,
-      puzzleDate: dateStr,
-      username: names[i],
-      countryCode: country.code,
-      countryName: country.name,
-      avatarSeed: names[i],
-      timeSeconds: timeSec,
-      score,
-      mistakes: i < 5 ? 0 : i < 12 ? 1 : 2,
-      hintsUsed: i < 8 ? 0 : 1,
-      submittedAt: new Date(Date.now() - (names.length - i) * 180000).toISOString(),
-    });
-  }
-
-  return entries.sort((a, b) => b.score - a.score || a.timeSeconds - b.timeSeconds);
+  return [];
 };
 
 // In-memory client cache with TTL to make date tab switches instantaneous

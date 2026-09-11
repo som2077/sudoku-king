@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useSudokuStore } from "@/store/useSudokuStore";
 import { Difficulty } from "@/lib/sudokuEngine";
+import { StreakCard } from "@/components/ui/streak-card";
+import { calculateDailyStreak, calculateBestDailyStreak, getRolling7DaysData } from "@/lib/gameStats";
+import { PlayerProfileModal } from "@/components/leaderboard/PlayerProfileModal";
+import { getPlayerProfile, PlayerProfile } from "@/lib/leaderboardService";
 import {
   Dialog,
   DialogContent,
@@ -11,11 +15,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart2, Trophy, Clock, Flame, Percent } from "lucide-react";
+import { BarChart2, Trophy, Clock, Flame, Percent, User, Edit } from "lucide-react";
 
 export function StatsModal() {
   const { activeModal, stats, difficulty, closeModal } = useSudokuStore();
   const [selectedDiff, setSelectedDiff] = useState<Difficulty>(difficulty);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [profile, setProfile] = useState<PlayerProfile>(() => getPlayerProfile());
 
   const isOpen = activeModal === "stats";
 
@@ -47,7 +53,13 @@ export function StatsModal() {
 
   const difficulties: Difficulty[] = ["Fast", "Easy", "Medium", "Hard", "Expert", "Master"];
 
+
+  const dailyStreak = calculateDailyStreak(stats.dailyCompleted);
+  const bestDailyStreak = calculateBestDailyStreak(stats.dailyCompleted);
+  const { streakDays, dayLabels } = getRolling7DaysData(stats.dailyCompleted);
+  
   return (
+
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="sm:max-w-md bg-white/90 backdrop-blur-2xl border border-black/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.12)] rounded-3xl">
         <DialogHeader>
@@ -61,6 +73,25 @@ export function StatsModal() {
             Lifetime records and performance metrics tracked deterministically per difficulty.
           </DialogDescription>
         </DialogHeader>
+
+        
+        <div className="flex items-center justify-between p-3 rounded-2xl bg-indigo-50/50 border border-indigo-100 mb-2">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center border border-indigo-200/50 text-indigo-500 shadow-sm">
+              <User className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold tracking-wider text-indigo-400 uppercase">Playing As</span>
+              <span className="text-sm font-extrabold text-slate-800">{profile.username} <span className="text-base leading-none ml-1">{getPlayerProfile().countryCode === profile.countryCode ? getPlayerProfile().countryName ? getPlayerProfile().countryName.length > 0 : false : false}</span></span>
+            </div>
+          </div>
+          <button 
+            onClick={() => setIsProfileOpen(true)}
+            className="p-2 rounded-xl bg-white border border-indigo-100 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm apple-press"
+          >
+            <Edit className="h-4 w-4" />
+          </button>
+        </div>
 
         {/* Difficulty Tab Selector */}
         <Tabs
@@ -147,12 +178,15 @@ export function StatsModal() {
           </div>
         </div>
 
-        {/* Daily challenges footer */}
-        <div className="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-between text-xs text-indigo-800 font-mono font-semibold">
-          <span>Daily Challenges Solved:</span>
-          <span className="font-bold">{stats.dailyCompleted.length} Days</span>
-        </div>
+        <StreakCard 
+          currentStreak={dailyStreak} 
+          bestStreak={bestDailyStreak} 
+          streakDays={streakDays} 
+          dayLabels={dayLabels}
+          className="mt-1"
+        />
       </DialogContent>
+      <PlayerProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} onProfileUpdated={(p) => setProfile(p)} />
     </Dialog>
   );
 }

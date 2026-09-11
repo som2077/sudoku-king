@@ -5,17 +5,18 @@ import { cn } from "@/lib/utils";
 export interface StreakCardProps extends React.HTMLAttributes<HTMLDivElement> {
   currentStreak: number;
   bestStreak?: number;
-  streakDays?: boolean[]; // e.g. [true, true, true, false, false, false, false] for Mon-Sun
+  streakDays?: boolean[]; // e.g. [true, true, true, false, false, false, false]
+  dayLabels?: string[]; // Dynamic labels matching streakDays length
 }
 
 export function StreakCard({
   currentStreak = 0,
   bestStreak = 0,
   streakDays = [true, true, true, false, false, false, false],
+  dayLabels = ["M", "T", "W", "T", "F", "S", "S"],
   className,
   ...props
 }: StreakCardProps) {
-  const days = ["M", "T", "W", "T", "F", "S", "S"];
 
   return (
     <div
@@ -42,7 +43,7 @@ export function StreakCard({
       </div>
 
       <div className="mt-2 flex justify-between gap-1">
-        {days.map((day, i) => {
+        {dayLabels.map((day, i) => {
           const isActive = streakDays[i];
           return (
             <div key={i} className="flex flex-col items-center gap-2">

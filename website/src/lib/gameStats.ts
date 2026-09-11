@@ -115,3 +115,83 @@ export const recordGameLost = (difficulty: Difficulty): PlayerStats => {
   trackEvent("game_lost", { difficulty });
   return stats;
 };
+
+// Helper functions for Daily Streak calculation
+export const getRolling7DaysData = (dailyCompleted: string[]) => {
+  const datesSet = new Set(dailyCompleted);
+  const streakDays: boolean[] = [];
+  const dayLabels: string[] = [];
+  const dayNames = ["S", "M", "T", "W", "T", "F", "S"];
+  
+  const today = new Date();
+  
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+    
+    streakDays.push(datesSet.has(dateStr));
+    dayLabels.push(dayNames[d.getDay()]);
+  }
+  
+  return { streakDays, dayLabels };
+};
+
+export const calculateDailyStreak = (dailyCompleted: string[]) => {
+  const sortedDates = [...new Set(dailyCompleted)].sort((a, b) => b.localeCompare(a)); // desc
+  if (sortedDates.length === 0) return 0;
+  
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+  
+  if (sortedDates[0] !== todayStr && sortedDates[0] !== yesterdayStr) {
+    return 0; // Streak broken
+  }
+  
+  let currentStreak = 1;
+  let currentDate = new Date(sortedDates[0]);
+  
+  for (let i = 1; i < sortedDates.length; i++) {
+    const prevDate = new Date(currentDate);
+    prevDate.setDate(prevDate.getDate() - 1);
+    const prevDateStr = prevDate.toISOString().split("T")[0];
+    
+    if (sortedDates[i] === prevDateStr) {
+      currentStreak++;
+      currentDate = prevDate;
+    } else {
+      break;
+    }
+  }
+  
+  return currentStreak;
+};
+
+export const calculateBestDailyStreak = (dailyCompleted: string[]) => {
+  const sortedDates = [...new Set(dailyCompleted)].sort((a, b) => a.localeCompare(b)); // asc
+  if (sortedDates.length === 0) return 0;
+  
+  let best = 1;
+  let current = 1;
+  let currentDate = new Date(sortedDates[0]);
+  
+  for (let i = 1; i < sortedDates.length; i++) {
+    const expectedNext = new Date(currentDate);
+    expectedNext.setDate(expectedNext.getDate() + 1);
+    const expectedNextStr = expectedNext.toISOString().split("T")[0];
+    
+    if (sortedDates[i] === expectedNextStr) {
+      current++;
+      currentDate = expectedNext;
+    } else {
+      best = Math.max(best, current);
+      current = 1;
+      currentDate = new Date(sortedDates[i]);
+    }
+  }
+  
+  return Math.max(best, current);
+};
