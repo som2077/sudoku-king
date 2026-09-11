@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -24,6 +24,18 @@ type DifficultyFilter = "All" | "Beginner" | "Intermediate" | "Advanced";
 export function RulesTechniqueList() {
   const [activeFilter, setActiveFilter] = useState<DifficultyFilter>("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const filter = params.get("filter");
+      if (filter === "Beginner" || filter === "Intermediate" || filter === "Advanced") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setActiveFilter(filter);
+      }
+    }
+  }, []);
+
 
   const filteredTechniques = useMemo(() => {
     return sudokuTechniques.filter((tech) => {
