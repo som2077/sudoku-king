@@ -17,7 +17,6 @@ const footerLinks = {
     { label: "Terms of Service", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
   ],
-  Social: [{ label: "GitHub", href: "https://github.com" }],
 };
 
 export function Footer() {
@@ -50,7 +49,7 @@ export function Footer() {
             </p>
           </div>
 
-          <div className="grid flex-1 grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-4 sm:gap-x-6">
+          <div className="grid flex-1 grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 sm:gap-x-6">
             {Object.entries(footerLinks).map(([category, links]) => (
               <div key={category} className="flex flex-col gap-3">
                 <h3 className="text-[15px] font-semibold text-[#1d1d1f]">

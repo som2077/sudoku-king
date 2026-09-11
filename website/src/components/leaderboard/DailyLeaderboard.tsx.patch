@@ -1,0 +1,116 @@
+--- website/src/components/leaderboard/DailyLeaderboard.tsx
++++ website/src/components/leaderboard/DailyLeaderboard.tsx
+@@ -4,6 +4,16 @@
+ import { getYesterdayDate, todayStr } from "@/lib/dateUtils";
+ import { PlayerProfileModal } from "./PlayerProfileModal";
+ import { LeaderboardPodium } from "./LeaderboardPodium";
++import {
++  LeaderboardCard,
++  LeaderboardCardHeader,
++  LeaderboardCardTitle,
++  LeaderboardCardContent,
++  LeaderboardItem,
++  LeaderboardItemRank,
++  LeaderboardItemUser,
++  LeaderboardItemScore,
++} from "@/components/ui/leaderboard-card";
+ import { Trophy, User, Sparkles } from "lucide-react";
+ import { Button } from "@/components/ui/button";
+ import { LivePresenceBadge } from "../live/LivePresenceBadge";
+@@ -151,60 +161,50 @@
+             <LeaderboardPodium topThree={topThree} />
+ 
+             {/* Rankings Table - Apple Squircle Container */}
+-            <div className="mt-6 rounded-3xl border border-black/[0.06] bg-white overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.03)]">
+-              <div className="grid grid-cols-12 px-4 py-3 bg-slate-50/80 text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 border-b border-black/[0.04]">
+-                <span className="col-span-2 sm:col-span-1">Rank</span>
+-                <span className="col-span-5 sm:col-span-6">Solver</span>
+-                <span className="col-span-3 sm:col-span-3 text-right">Time</span>
+-                <span className="col-span-2 sm:col-span-2 text-right">Score</span>
+-              </div>
++            <LeaderboardCard className="mt-6 border-black/[0.06] shadow-[0_2px_16px_rgba(0,0,0,0.03)] overflow-hidden">
++              <LeaderboardCardHeader className="py-4 bg-slate-50/80 border-black/[0.04]">
++                <div className="grid grid-cols-12 text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
++                  <span className="col-span-2 sm:col-span-1">Rank</span>
++                  <span className="col-span-5 sm:col-span-6 px-4">Solver</span>
++                  <span className="col-span-3 sm:col-span-3 text-right">Time</span>
++                  <span className="col-span-2 sm:col-span-2 text-right">Score</span>
++                </div>
++              </LeaderboardCardHeader>
+ 
+-              <div className="divide-y divide-slate-100 max-h-[420px] overflow-y-auto">
++              <LeaderboardCardContent className="divide-y divide-slate-100 max-h-[420px] overflow-y-auto">
+                 {entries.map((entry) => {
+                   const isCurrentUser = entry.username === userProfile.username;
+                   const rank = entry.rank || 1;
+ 
+                   return (
+-                    <div
++                    <LeaderboardItem
+                       key={entry.id}
+-                      className={`grid grid-cols-12 px-4 py-3 items-center text-xs transition-colors ${
+-                        isCurrentUser
+-                          ? "bg-blue-50/70 border-l-4 border-l-blue-600 font-bold"
+-                          : "hover:bg-slate-50/80"
+-                      }`}
++                      isCurrentUser={isCurrentUser}
++                      className="grid grid-cols-12 py-2 items-center text-xs"
+                     >
+                       {/* Rank Badge */}
+-                      <div className="col-span-2 sm:col-span-1 flex items-center font-mono font-black">
+-                        {rank === 1 ? (
+-                          <span className="text-amber-600">🥇 #1</span>
+-                        ) : rank === 2 ? (
+-                          <span className="text-slate-600">🥈 #2</span>
+-                        ) : rank === 3 ? (
+-                          <span className="text-amber-700">🥉 #3</span>
+-                        ) : (
+-                          <span className="text-slate-500">#{rank}</span>
+-                        )}
+-                      </div>
++                      <LeaderboardItemRank rank={rank} className="col-span-2 sm:col-span-1" />
+ 
+                       {/* Solver Name & Flag */}
+-                      <div className="col-span-5 sm:col-span-6 flex items-center gap-2 truncate pr-2">
++                      <LeaderboardItemUser className="col-span-5 sm:col-span-6">
+                         <span className="text-base">{getCountryFlag(entry.countryCode)}</span>
+                         <span className="truncate font-semibold text-slate-900">
+                           {entry.username}
+                         </span>
+                         {isCurrentUser && (
+-                          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white">
++                          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white shrink-0">
+                             YOU
+                           </span>
+                         )}
+-                      </div>
++                      </LeaderboardItemUser>
+ 
+                       {/* Time */}
+                       <div className="col-span-3 sm:col-span-3 text-right font-mono font-bold text-slate-900 tabular-nums">
+                         {formatSeconds(entry.timeSeconds)}
+                       </div>
+ 
+                       {/* Score */}
+-                      <div className="col-span-2 sm:col-span-2 text-right font-mono font-bold text-blue-600 tabular-nums">
++                      <LeaderboardItemScore className="col-span-2 sm:col-span-2 text-blue-600">
+                         {entry.score}
+-                      </div>
+-                    </div>
++                      </LeaderboardItemScore>
++                    </LeaderboardItem>
+                   );
+                 })}
+-              </div>
++              </LeaderboardCardContent>
+ 
+               {/* Sticky "Your Standing" Bottom Bar */}
+@@ -231,7 +231,7 @@
+                   <span>Play Today&apos;s Challenge</span>
+                 </Button>
+               </div>
+-            </div>
++            </LeaderboardCard>
+           </>
+         )}
+       </div>
