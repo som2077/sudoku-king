@@ -162,7 +162,8 @@ export default function App() {
   );
   const isBoardEmpty = useGameStore(
     (state) =>
-      state.board.length !== 81 || state.board.every((cell) => cell.value === null),
+      state.board.length !== 81 ||
+      state.board.every((cell) => cell.value === null),
   );
 
   const isGameOver = mistakes >= 3;
@@ -171,7 +172,8 @@ export default function App() {
   const [foregroundNotification, setForegroundNotification] =
     useState<NotificationPayload | null>(null);
   const [showCustomPaywall, setShowCustomPaywall] = useState(false);
-  const [pendingOnboardingDiff, setPendingOnboardingDiff] = useState<Difficulty | null>(null);
+  const [pendingOnboardingDiff, setPendingOnboardingDiff] =
+    useState<Difficulty | null>(null);
 
   const handleNotificationAction = (payload: NotificationPayload) => {
     console.log("🎯 [Notification Action Handler]:", payload);
@@ -237,8 +239,10 @@ export default function App() {
           });
         }
 
-        const { settings: currentSettings, hasCompletedOnboarding: isOnboarded } =
-          useGameStore.getState();
+        const {
+          settings: currentSettings,
+          hasCompletedOnboarding: isOnboarded,
+        } = useGameStore.getState();
         if (isOnboarded && currentSettings.notificationsEnabled) {
           localNotificationScheduler.scheduleDailyNotifications();
         }

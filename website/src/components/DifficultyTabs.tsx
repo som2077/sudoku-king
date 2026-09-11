@@ -65,7 +65,7 @@ export function DifficultyTabs() {
   ];
 
   return (
-    <section id="modes" className="py-16 md:py-24 bg-slate-50/60 border-t border-slate-200">
+    <section id="modes" className="py-16 md:py-24 bg-white border-t border-slate-200">
       <div className="container mx-auto max-w-5xl px-4 sm:px-6">
         <div className="flex flex-col items-center text-center mb-12">
           <Badge variant="outline" className="mb-3 px-3 py-1 gap-1.5 border-indigo-200 bg-indigo-50 text-indigo-700 font-mono font-bold text-xs">

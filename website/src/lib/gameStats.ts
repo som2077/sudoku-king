@@ -32,6 +32,7 @@ const DEFAULT_STATS: PlayerStats = {
     Hard: { ...DEFAULT_DIFF_STATS },
     Expert: { ...DEFAULT_DIFF_STATS },
     Master: { ...DEFAULT_DIFF_STATS },
+    Extreme: { ...DEFAULT_DIFF_STATS },
   },
   dailyCompleted: [],
 };

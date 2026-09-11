@@ -11,7 +11,6 @@ import {
   PlayCircle,
   Search,
   Sparkles,
-  Zap,
 } from "lucide-react";
 import {
   foundationalRules,

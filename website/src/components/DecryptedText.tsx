@@ -37,9 +37,8 @@ export default function DecryptedText({
   ...props
 }: DecryptedTextProps) {
   const [displayText, setDisplayText] = useState<string>(text);
-  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [isAnimating, setIsAnimating] = useState<boolean>(animateOn === 'view' || animateOn === 'inViewHover');
   const [revealedIndices, setRevealedIndices] = useState<Set<number>>(new Set());
-  const [hasAnimated, setHasAnimated] = useState<boolean>(false);
   const [isDecrypted, setIsDecrypted] = useState<boolean>(animateOn !== 'click');
   const [direction, setDirection] = useState<Direction>('forward');
 
@@ -309,36 +308,6 @@ export default function DecryptedText({
     setIsDecrypted(true);
     setDirection('forward');
   }, [text]);
-
-  /* View Observer */
-  useEffect(() => {
-    if (animateOn !== 'view' && animateOn !== 'inViewHover') return;
-
-    const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && !hasAnimated) {
-          triggerDecrypt();
-          setHasAnimated(true);
-        }
-      });
-    };
-
-    const observerOptions = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1
-    };
-
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
-    const currentRef = containerRef.current;
-    if (currentRef) {
-      observer.observe(currentRef);
-    }
-
-    return () => {
-      if (currentRef) observer.unobserve(currentRef);
-    };
-  }, [animateOn, hasAnimated, triggerDecrypt]);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */

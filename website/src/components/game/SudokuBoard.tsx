@@ -94,6 +94,30 @@ export function SudokuBoard() {
   const selectedC = selectedCell !== null ? getCol(selectedCell) : -1;
   const selectedB = selectedCell !== null ? getBlock(selectedCell) : -1;
 
+  // Pre-calculate duplicates if setting is enabled
+  const duplicateCells = React.useMemo(() => {
+    const dups = new Set<number>();
+    if (!settings.highlightDuplicates) return dups;
+
+    for (let i = 0; i < 81; i++) {
+      const val = board[i];
+      if (val === 0) continue;
+      const r = getRow(i);
+      const c = getCol(i);
+      const b = getBlock(i);
+      
+      for (let j = 0; j < 81; j++) {
+        if (i !== j && board[j] === val) {
+          if (getRow(j) === r || getCol(j) === c || getBlock(j) === b) {
+            dups.add(i);
+            dups.add(j);
+          }
+        }
+      }
+    }
+    return dups;
+  }, [board, settings.highlightDuplicates]);
+
   return (
     <div className="relative w-full max-w-[480px] mx-auto aspect-square p-2 sm:p-3 rounded-3xl bg-white border border-slate-300 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden select-none">
       {/* 9x9 Grid */}
@@ -118,7 +142,8 @@ export function SudokuBoard() {
             settings.highlightSameNumbers &&
             selectedVal !== 0 &&
             val === selectedVal;
-          const isError = errorCells.includes(idx);
+
+          const isError = errorCells.includes(idx) || duplicateCells.has(idx);
           const cellNotes = notes[idx] || [];
 
           return (

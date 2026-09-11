@@ -29,6 +29,12 @@ export function SettingsModal() {
       icon: CheckCircle2,
     },
     {
+      key: "highlightDuplicates" as const,
+      label: "Highlight Duplicates",
+      desc: "Highlight conflicting numbers in the same row, column, or block.",
+      icon: Eye,
+    },
+    {
       key: "highlightArea" as const,
       label: "Highlight Row, Column & Block",
       desc: "Gently shade the relevant row, column, and 3x3 block.",

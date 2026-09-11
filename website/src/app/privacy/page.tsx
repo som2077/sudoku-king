@@ -5,7 +5,6 @@ import { Footer } from "@/components/Footer";
 import {
   ShieldCheck,
   Lock,
-  Eye,
   Database,
   Smartphone,
   Globe,
@@ -14,7 +13,6 @@ import {
   Calendar,
   Sparkles,
   CheckCircle2,
-  AlertCircle,
 } from "lucide-react";
 
 export const metadata: Metadata = {

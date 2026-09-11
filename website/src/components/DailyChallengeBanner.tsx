@@ -23,7 +23,7 @@ export function DailyChallengeBanner() {
   );
 
   return (
-    <section id="daily" className="py-16 md:py-20 border-t border-slate-200 bg-white/50">
+    <section id="daily" className="py-16 md:py-20 border-t border-slate-200 bg-white">
       <div className="container mx-auto max-w-5xl px-4 sm:px-6">
         <SpotlightCard
           spotlightColor="rgba(245, 158, 11, 0.08)"

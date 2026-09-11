@@ -83,7 +83,7 @@ export function DailyLeaderboard() {
   };
 
   return (
-    <section id="leaderboard" className="py-12 sm:py-16 border-t border-slate-200 bg-slate-50/40 scroll-mt-16">
+    <section id="leaderboard" className="py-12 sm:py-16 border-t border-slate-200 bg-white scroll-mt-16">
       <div className="container mx-auto max-w-5xl px-3 sm:px-6">
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">

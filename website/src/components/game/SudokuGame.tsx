@@ -54,10 +54,10 @@ function SudokuGameSkeleton() {
 
       {/* Skeleton Main Stage */}
       <div className="container mx-auto max-w-6xl px-3 sm:px-6 py-6 sm:py-8 flex-1 flex flex-col justify-center">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-center justify-center">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 xl:gap-16">
           {/* Left: 9x9 Board Skeleton */}
-          <div className="lg:col-span-7 flex flex-col items-center justify-center">
-            <div className="relative w-full max-w-[480px] mx-auto aspect-square p-2 sm:p-2.5 rounded-2xl bg-white border-2 border-slate-900 shadow-xl shadow-slate-900/5 overflow-hidden">
+          <div className="w-full max-w-[480px] flex flex-col items-center justify-center">
+            <div className="relative w-full mx-auto aspect-square p-2 sm:p-2.5 rounded-2xl bg-white border-2 border-slate-900 shadow-xl shadow-slate-900/5 overflow-hidden">
               <div className="grid grid-cols-9 w-full h-full bg-white rounded-xl overflow-hidden">
                 {Array.from({ length: 81 }).map((_, i) => (
                   <div
@@ -70,7 +70,7 @@ function SudokuGameSkeleton() {
           </div>
 
           {/* Right: Controls & Keypad Skeleton */}
-          <div className="lg:col-span-5 flex flex-col items-center lg:items-start w-full max-w-[480px]">
+          <div className="w-full max-w-[480px] flex flex-col items-center lg:items-start">
             <div className="w-full grid grid-cols-4 gap-2 sm:gap-2.5 mb-4">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="h-16 rounded-xl bg-white border border-slate-200 animate-pulse shadow-xs" />
@@ -99,28 +99,28 @@ function SudokuGameContent() {
 
   return (
     <div className="flex flex-col w-full bg-background text-foreground min-h-[calc(100vh-4rem)]">
-      {/* Game HUD Bar */}
-      <SudokuHeader />
-
-      {/* Live Activity Solvers Feed */}
-      <LiveActivityTicker />
+      {/* Game HUD Bar & Ticker (Sticky together) */}
+      <div className="sticky top-0 z-40 w-full flex flex-col bg-white shadow-sm shadow-slate-200/50">
+        <SudokuHeader />
+        <LiveActivityTicker />
+      </div>
 
       {/* Main Game Stage */}
       <div className="container mx-auto max-w-6xl px-3 sm:px-6 py-6 sm:py-8 flex-1 flex flex-col justify-center">
         <ActiveHintBanner />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 items-center justify-center">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 xl:gap-16">
           {/* Left: Sudoku 9x9 Board */}
-          <div className="lg:col-span-7 flex flex-col items-center justify-center">
+          <div className="w-full max-w-[480px] flex flex-col items-center justify-center">
             <SudokuBoard />
           </div>
 
           {/* Right: Controls & Keypad */}
-          <div className="lg:col-span-5 flex flex-col items-center lg:items-start w-full">
+          <div className="w-full max-w-[480px] flex flex-col items-center lg:items-start">
             <SudokuControls />
 
             {/* Keyboard Shortcuts Helper - Web3 Tactile Card */}
-            <div className="mt-4 w-full max-w-[480px] p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs text-[11px] text-slate-600 hidden sm:block">
+            <div className="mt-4 w-full p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs text-[11px] text-slate-600 hidden sm:block">
               <div className="flex items-center justify-between font-bold text-slate-900 mb-2">
                 <span className="flex items-center gap-1.5 font-mono text-xs">
                   <Keyboard className="h-3.5 w-3.5 text-indigo-600" />

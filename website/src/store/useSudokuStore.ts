@@ -9,6 +9,7 @@ import {
   findSmartHint,
   HintResult,
   getCandidatesForCell,
+  getDailyDifficulty,
 } from "@/lib/sudokuEngine";
 import { soundEffects } from "@/lib/soundEffects";
 import {
@@ -98,6 +99,7 @@ interface SudokuState {
 }
 
 const ACTIVE_GAME_KEY = "sudoku_king_active_game_cache_v1";
+const SETTINGS_KEY = "sudoku_king_settings_v1";
 
 interface SavedGameCache {
   difficulty: Difficulty;
@@ -109,6 +111,7 @@ interface SavedGameCache {
   mistakes: number;
   score: number;
   timer: number;
+  hintsLeft: number;
 }
 
 const saveActiveGame = (state: SudokuState) => {
@@ -124,6 +127,7 @@ const saveActiveGame = (state: SudokuState) => {
       mistakes: state.mistakes,
       score: state.score,
       timer: state.timer,
+      hintsLeft: state.hintsLeft,
     };
     localStorage.setItem(ACTIVE_GAME_KEY, JSON.stringify(cache));
   } catch {}
@@ -145,6 +149,17 @@ const DEFAULT_SETTINGS: GameSettings = {
   soundEnabled: true,
   timerVisible: true,
   mistakesLimit: true,
+};
+
+const loadSettings = (): GameSettings => {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (raw) {
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    }
+  } catch {}
+  return DEFAULT_SETTINGS;
 };
 
 export const useSudokuStore = create<SudokuState>((set, get) => {
@@ -175,16 +190,21 @@ export const useSudokuStore = create<SudokuState>((set, get) => {
 
     activeModal: "none",
     stats: loadStats(),
-    settings: DEFAULT_SETTINGS,
+    settings: loadSettings(),
 
     history: [{ board: [...puzzle], notes: {} }],
     historyIndex: 0,
 
     startNewGame: (difficulty, dailyDate) => {
       clearActiveGame();
-      const diff = difficulty || get().difficulty;
+      const diff = dailyDate
+        ? getDailyDifficulty(dailyDate)
+        : difficulty || get().difficulty;
       const date = dailyDate || null;
-      const { puzzle, solution } = generatePuzzle(diff, date || undefined);
+      const { puzzle, solution } = generatePuzzle(
+        diff,
+        date ? `daily-${date}` : undefined,
+      );
 
       recordGameStarted(diff);
 
@@ -202,6 +222,7 @@ export const useSudokuStore = create<SudokuState>((set, get) => {
         score: 1000,
         timer: 0,
         notesMode: false,
+        fastPencilMode: false,
         hintsLeft: 3,
         activeHint: null,
         errorCells: [],
@@ -240,6 +261,7 @@ export const useSudokuStore = create<SudokuState>((set, get) => {
             mistakes: saved.mistakes || 0,
             score: saved.score || 1000,
             timer: saved.timer || 0,
+            hintsLeft: saved.hintsLeft !== undefined ? saved.hintsLeft : 3,
             history: [{ board: [...saved.board], notes: saved.notes || {} }],
             historyIndex: 0,
           });
@@ -307,7 +329,15 @@ export const useSudokuStore = create<SudokuState>((set, get) => {
       const isCorrect = state.solution[idx] === num;
 
       if (state.settings.autoCheckMistakes && !isCorrect) {
-        // Mistake!
+        // Match the mobile game: keep the incorrect digit visible and mark it
+        // as an error so the player can erase or correct it.
+        const nextBoard = [...state.board];
+        nextBoard[idx] = num;
+        const nextNotes = { ...state.notes };
+        delete nextNotes[idx];
+        const newHistory = state.history.slice(0, state.historyIndex + 1);
+        newHistory.push({ board: nextBoard, notes: nextNotes });
+
         const nextMistakes = state.mistakes + 1;
         soundEffects.playError();
 
@@ -318,12 +348,17 @@ export const useSudokuStore = create<SudokuState>((set, get) => {
         }
 
         set({
+          board: nextBoard,
+          notes: nextNotes,
           mistakes: nextMistakes,
           score: Math.max(0, state.score - 50),
           errorCells: [...state.errorCells, idx],
           status: isGameOver ? "game-over" : "playing",
           activeModal: isGameOver ? "game-over" : state.activeModal,
+          history: newHistory,
+          historyIndex: newHistory.length - 1,
         });
+        if (!isGameOver) saveActiveGame(get());
         return;
       }
 
@@ -454,14 +489,23 @@ export const useSudokuStore = create<SudokuState>((set, get) => {
 
     getHint: () => {
       const state = get();
-      if (state.status !== "playing" || state.hintsLeft <= 0) return;
+      const selectedCell = state.selectedCell;
+      if (
+        state.status !== "playing" ||
+        state.hintsLeft <= 0 ||
+        selectedCell === null ||
+        state.initialBoard[selectedCell] !== 0 ||
+        state.board[selectedCell] !== 0
+      ) return;
 
-      const hint = findSmartHint(state.board, state.solution);
+      const hint = findSmartHint(state.board, state.solution, selectedCell);
       if (!hint) return;
 
-      // Select that cell, reveal the explanation and auto-fill it!
+      // Match the mobile game: a hint reveals and locks the selected cell.
       const nextBoard = [...state.board];
       nextBoard[hint.index] = hint.value;
+      const nextInitialBoard = [...state.initialBoard];
+      nextInitialBoard[hint.index] = hint.value;
 
       const nextNotes = { ...state.notes };
       delete nextNotes[hint.index];
@@ -480,6 +524,9 @@ export const useSudokuStore = create<SudokuState>((set, get) => {
 
       soundEffects.playNumber(hint.value);
 
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push({ board: nextBoard, notes: nextNotes });
+
       const isWon = nextBoard.every((val, i) => val === state.solution[i]);
       if (isWon) {
         soundEffects.playVictory();
@@ -490,6 +537,7 @@ export const useSudokuStore = create<SudokuState>((set, get) => {
         );
         set({
           board: nextBoard,
+          initialBoard: nextInitialBoard,
           notes: nextNotes,
           selectedCell: hint.index,
           activeHint: hint,
@@ -497,16 +545,21 @@ export const useSudokuStore = create<SudokuState>((set, get) => {
           status: "victory",
           activeModal: "victory",
           stats: updatedStats,
+          history: newHistory,
+          historyIndex: newHistory.length - 1,
         });
         return;
       }
 
       set({
         board: nextBoard,
+        initialBoard: nextInitialBoard,
         notes: nextNotes,
         selectedCell: hint.index,
         activeHint: hint,
         hintsLeft: state.hintsLeft - 1,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
       });
     },
 
@@ -586,6 +639,11 @@ export const useSudokuStore = create<SudokuState>((set, get) => {
         soundEffects.setEnabled(partial.soundEnabled);
       }
       set({ settings: updated });
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+        } catch {}
+      }
     },
   };
 });
