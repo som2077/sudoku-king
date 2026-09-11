@@ -9,17 +9,8 @@ import {
   PlayerProfile,
   getCountryFlag,
 } from "@/lib/leaderboardService";
-import { LeaderboardPodium } from "./LeaderboardPodium";
 import { PlayerProfileModal } from "./PlayerProfileModal";
-import {
-  LeaderboardCard,
-  LeaderboardCardHeader,
-  LeaderboardCardContent,
-  LeaderboardItem,
-  LeaderboardItemRank,
-  LeaderboardItemUser,
-  LeaderboardItemScore,
-} from "@/components/ui/leaderboard-card";
+import { LeaderboardCard, PodiumRanking, ListRanking } from "@/components/ui/leaderboard-card";
 import { LivePresenceBadge } from "@/components/live/LivePresenceBadge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +66,6 @@ export function DailyLeaderboard() {
     setIsLoading(true);
   };
 
-  const topThree = entries.slice(0, 3);
 
   const currentUserEntry = entries.find((e) => e.username === userProfile.username);
 
@@ -91,16 +81,35 @@ export function DailyLeaderboard() {
     return d.toISOString().split("T")[0];
   };
 
+  // Prepare mappings for LeaderboardCard API
+  const podiumRankings: PodiumRanking[] = entries.slice(0, 3).map((entry) => ({
+    userId: entry.id,
+    userName: entry.username,
+    rank: entry.rank || 1,
+    value: entry.score,
+    flag: getCountryFlag(entry.countryCode),
+    timeStr: formatSeconds(entry.timeSeconds),
+  }));
+
+  const listRankings: ListRanking[] = entries.map((entry) => ({
+    userId: entry.id,
+    rank: entry.rank || 1,
+    userName: entry.username,
+    value: entry.score,
+    displayed: true,
+    flag: getCountryFlag(entry.countryCode),
+    timeStr: formatSeconds(entry.timeSeconds),
+  }));
+
   return (
-    <section id="leaderboard" className="py-12 sm:py-16 border-t border-slate-200 bg-white scroll-mt-16">
-      <div className="container mx-auto max-w-5xl px-3 sm:px-6">
+    <section id="leaderboard" className="w-full bg-[#fafafa] py-16 sm:py-24 border-t border-black/[0.04]">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
         {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 gap-1 text-xs font-mono font-bold rounded-full">
-                <Trophy className="h-3.5 w-3.5 text-blue-600 fill-blue-600" />
-                GLOBAL CONSENSUS
+        <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200/50 shadow-xs font-mono font-bold px-2 py-0.5">
+                🏆 GLOBAL CONSENSUS
               </Badge>
               <LivePresenceBadge />
             </div>
@@ -158,58 +167,13 @@ export function DailyLeaderboard() {
           </div>
         ) : (
           <>
-            <LeaderboardPodium topThree={topThree} />
-
-            <LeaderboardCard className="mt-6 border-black/[0.06] shadow-[0_2px_16px_rgba(0,0,0,0.03)] overflow-hidden">
-              <LeaderboardCardHeader className="py-4 bg-slate-50/80 border-black/[0.04]">
-                <div className="grid grid-cols-12 text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-                  <span className="col-span-2 sm:col-span-1">Rank</span>
-                  <span className="col-span-5 sm:col-span-6 px-4">Solver</span>
-                  <span className="col-span-3 sm:col-span-3 text-right">Time</span>
-                  <span className="col-span-2 sm:col-span-2 text-right">Score</span>
-                </div>
-              </LeaderboardCardHeader>
-
-              <LeaderboardCardContent className="divide-y divide-slate-100 max-h-[420px] overflow-y-auto">
-                {entries.map((entry) => {
-                  const isCurrentUser = entry.username === userProfile.username;
-                  const rank = entry.rank || 1;
-
-                  return (
-                    <LeaderboardItem
-                      key={entry.id}
-                      isCurrentUser={isCurrentUser}
-                      className="grid grid-cols-12 py-2 items-center text-xs"
-                    >
-                      {/* Rank Badge */}
-                      <LeaderboardItemRank rank={rank} className="col-span-2 sm:col-span-1" />
-
-                      {/* Solver Name & Flag */}
-                      <LeaderboardItemUser className="col-span-5 sm:col-span-6">
-                        <span className="text-base">{getCountryFlag(entry.countryCode)}</span>
-                        <span className="truncate font-semibold text-slate-900">
-                          {entry.username}
-                        </span>
-                        {isCurrentUser && (
-                          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white shrink-0">
-                            YOU
-                          </span>
-                        )}
-                      </LeaderboardItemUser>
-
-                      {/* Time */}
-                      <div className="col-span-3 sm:col-span-3 text-right font-mono font-bold text-slate-900 tabular-nums">
-                        {formatSeconds(entry.timeSeconds)}
-                      </div>
-
-                      {/* Score */}
-                      <LeaderboardItemScore className="col-span-2 sm:col-span-2 text-blue-600">
-                        {entry.score}
-                      </LeaderboardItemScore>
-                    </LeaderboardItem>
-                  );
-                })}
-              </LeaderboardCardContent>
+            <LeaderboardCard
+              title="Live Rankings"
+              currentUserId={currentUserEntry?.id}
+              podiumRankings={podiumRankings}
+              rankings={listRankings}
+              className="mt-6 border border-black/[0.08] shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl bg-slate-50/50 p-4 sm:p-6"
+            />
 
               {/* Sticky "Your Standing" Bottom Bar */}
               <div className="p-4 bg-slate-50/90 border-t border-black/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
@@ -242,7 +206,7 @@ export function DailyLeaderboard() {
                   <span>Play Today&apos;s Challenge</span>
                 </Button>
               </div>
-            </LeaderboardCard>
+            
           </>
         )}
       </div>

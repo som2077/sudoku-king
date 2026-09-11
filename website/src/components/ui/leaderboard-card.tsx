@@ -1,128 +1,227 @@
-import * as React from "react"
+import React from "react";
+import { cn } from "@/lib/utils";
+import { Trophy, Clock, Sparkles, Crown } from "lucide-react";
+import Image from "next/image";
 
-import { cn } from "@/lib/utils"
+export interface PodiumRanking {
+  userId: string;
+  userName: string;
+  rank: number;
+  value: number;
+  avatarUrl?: string;
+  flag?: string; // custom addition
+  timeStr?: string; // custom addition
+}
 
-const LeaderboardCard = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "rounded-3xl border border-slate-200 bg-white text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50",
-      className
-    )}
-    {...props}
-  />
-))
-LeaderboardCard.displayName = "LeaderboardCard"
+export interface ListRanking {
+  userId: string;
+  rank: number;
+  userName: string;
+  byline?: string;
+  value: number;
+  displayed: boolean;
+  avatarUrl?: string;
+  flag?: string; // custom addition
+  timeStr?: string; // custom addition
+}
 
-const LeaderboardCardHeader = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6 border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/20 rounded-t-3xl", className)}
-    {...props}
-  />
-))
-LeaderboardCardHeader.displayName = "LeaderboardCardHeader"
+export interface LeaderboardCardProps {
+  title?: string;
+  fromDate?: string;
+  toDate?: string;
+  currentUserId?: string;
+  selectedRunId?: string;
+  onRunChange?: (id: string) => void;
+  runOptions?: { id: string; label: string }[];
+  podiumRankings?: PodiumRanking[];
+  rankings?: ListRanking[];
+  className?: string;
+}
 
-const LeaderboardCardTitle = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h3
-    ref={ref}
-    className={cn(
-      "font-bold text-xl tracking-tight",
-      className
-    )}
-    {...props}
-  />
-))
-LeaderboardCardTitle.displayName = "LeaderboardCardTitle"
-
-const LeaderboardCardContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-0 overflow-hidden", className)} {...props} />
-))
-LeaderboardCardContent.displayName = "LeaderboardCardContent"
-
-const LeaderboardItem = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { isCurrentUser?: boolean }
->(({ className, isCurrentUser, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "flex items-center justify-between p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50",
-      isCurrentUser && "bg-blue-50/50 hover:bg-blue-50 dark:bg-blue-900/20 dark:hover:bg-blue-900/30",
-      className
-    )}
-    {...props}
-  />
-))
-LeaderboardItem.displayName = "LeaderboardItem"
-
-const LeaderboardItemRank = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { rank: number }
->(({ className, rank, ...props }, ref) => {
-  const isTop3 = rank <= 3;
+export function LeaderboardCard({
+  title = "Leaderboard",
+  fromDate,
+  toDate,
+  currentUserId,
+  selectedRunId,
+  onRunChange,
+  runOptions,
+  podiumRankings = [],
+  rankings = [],
+  className,
+}: LeaderboardCardProps) {
   return (
-    <div
-      ref={ref}
-      className={cn(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-sm",
-        rank === 1 ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-500" :
-        rank === 2 ? "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300" :
-        rank === 3 ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" :
-        "text-slate-500",
-        className
+    <div className={cn("flex flex-col gap-6", className)}>
+      {/* Header Area */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Trophy className="h-6 w-6 text-amber-500" />
+            {title}
+          </h2>
+          {(fromDate || toDate) && (
+            <p className="text-sm text-slate-500 font-medium">
+              {fromDate} {toDate && `- ${toDate}`}
+            </p>
+          )}
+        </div>
+
+        {runOptions && runOptions.length > 0 && (
+          <select
+            value={selectedRunId}
+            onChange={(e) => onRunChange?.(e.target.value)}
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          >
+            {runOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
+      {/* Podium Area */}
+      {podiumRankings.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end pt-8 pb-4 max-w-2xl mx-auto w-full select-none">
+          {/* 2nd Place */}
+          {podiumRankings[1] && <PodiumItem ranking={podiumRankings[1]} />}
+          {/* 1st Place */}
+          {podiumRankings[0] && <PodiumItem ranking={podiumRankings[0]} isFirst />}
+          {/* 3rd Place */}
+          {podiumRankings[2] && <PodiumItem ranking={podiumRankings[2]} />}
+        </div>
       )}
-      {...props}
-    >
-      {isTop3 ? (rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉") : rank}
+
+      {/* List Area */}
+      {rankings.length > 0 && (
+        <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+          <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto p-2">
+            {rankings.map((ranking) => {
+              if (!ranking.displayed) return null;
+              const isMe = ranking.userId === currentUserId;
+
+              return (
+                <div
+                  key={ranking.userId}
+                  className={cn(
+                    "flex items-center w-full px-4 py-3 rounded-xl transition-colors",
+                    isMe ? "bg-blue-50/60" : "hover:bg-slate-50"
+                  )}
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center font-bold text-sm text-slate-500">
+                    {ranking.rank === 1 ? "🥇" : ranking.rank === 2 ? "🥈" : ranking.rank === 3 ? "🥉" : `#${ranking.rank}`}
+                  </div>
+
+                  <div className="flex flex-1 items-center gap-3 px-3 sm:px-4 overflow-hidden">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-lg overflow-hidden relative">
+                      {ranking.avatarUrl ? (
+                        <Image src={ranking.avatarUrl} alt={ranking.userName} fill className="object-cover" unoptimized />
+                      ) : ranking.flag ? (
+                        ranking.flag
+                      ) : (
+                        ranking.userName.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex flex-col truncate">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-sm sm:text-[15px] truncate">
+                          {ranking.userName}
+                        </span>
+                        {isMe && (
+                          <span className="shrink-0 text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full bg-blue-600 text-white shadow-sm">
+                            YOU
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-500 truncate">
+                        {ranking.timeStr ? `Time: ${ranking.timeStr}` : ranking.byline}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end justify-center shrink-0">
+                    <div className="font-mono font-bold text-blue-600 text-base sm:text-lg tabular-nums">
+                      {ranking.value}
+                    </div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                      PTS
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
-  )
-})
-LeaderboardItemRank.displayName = "LeaderboardItemRank"
+  );
+}
 
-const LeaderboardItemUser = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex flex-1 items-center gap-3 px-4 overflow-hidden", className)}
-    {...props}
-  />
-))
-LeaderboardItemUser.displayName = "LeaderboardItemUser"
+function PodiumItem({ ranking, isFirst = false }: { ranking: PodiumRanking; isFirst?: boolean }) {
+  return (
+    <div className={cn("flex flex-col items-center", isFirst ? "-mt-4" : "")}>
+      <div
+        className={cn(
+          "flex flex-col items-center w-full text-center relative rounded-t-3xl border-t border-x px-2 pt-8 pb-3 shadow-sm",
+          isFirst
+            ? "border-amber-200 bg-linear-to-b from-amber-50 to-white z-10"
+            : ranking.rank === 2
+            ? "border-slate-200 bg-linear-to-b from-slate-50 to-white"
+            : "border-orange-200/50 bg-linear-to-b from-orange-50/30 to-white"
+        )}
+      >
+        <div
+          className={cn(
+            "absolute -top-6 flex items-center justify-center rounded-full border-2 shadow-sm text-lg sm:text-xl bg-white overflow-hidden",
+            isFirst ? "h-14 w-14 border-amber-400" : "h-12 w-12 border-slate-200"
+          )}
+        >
+          {ranking.avatarUrl ? (
+            <Image src={ranking.avatarUrl} alt={ranking.userName} fill className="object-cover" unoptimized />
+          ) : ranking.flag ? (
+            ranking.flag
+          ) : (
+            ranking.userName.charAt(0).toUpperCase()
+          )}
+        </div>
+        {isFirst && (
+          <div className="absolute -top-9 h-6 w-6 rounded-full bg-amber-400 border border-amber-300 text-white flex items-center justify-center shadow-md">
+            <Crown className="h-3.5 w-3.5 fill-current" />
+          </div>
+        )}
 
-const LeaderboardItemScore = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("font-mono font-bold text-slate-900 dark:text-slate-100 text-right", className)}
-    {...props}
-  />
-))
-LeaderboardItemScore.displayName = "LeaderboardItemScore"
-
-export {
-  LeaderboardCard,
-  LeaderboardCardHeader,
-  LeaderboardCardTitle,
-  LeaderboardCardContent,
-  LeaderboardItem,
-  LeaderboardItemRank,
-  LeaderboardItemUser,
-  LeaderboardItemScore,
+        <div className="font-bold text-xs sm:text-sm text-slate-900 truncate w-full tracking-tight mt-1">
+          {ranking.userName}
+        </div>
+        {ranking.timeStr && (
+          <div className="flex items-center gap-1 font-mono font-bold text-[10px] sm:text-xs text-slate-500 mt-1 tabular-nums">
+            <Clock className="h-3 w-3" />
+            <span>{ranking.timeStr}</span>
+          </div>
+        )}
+        <div
+          className={cn(
+            "text-[10px] font-mono font-black mt-1 flex items-center gap-1 tabular-nums",
+            isFirst ? "text-amber-600" : ranking.rank === 2 ? "text-slate-500" : "text-orange-700"
+          )}
+        >
+          {isFirst && <Sparkles className="h-3 w-3 fill-current" />}
+          <span>{ranking.value} pts</span>
+        </div>
+      </div>
+      <div
+        className={cn(
+          "w-full flex items-center justify-center font-mono font-black border-b border-x rounded-b-2xl shadow-sm",
+          isFirst
+            ? "h-16 sm:h-20 bg-amber-100 border-amber-200 text-amber-700 text-base"
+            : ranking.rank === 2
+            ? "h-10 sm:h-14 bg-slate-100 border-slate-200 text-slate-600 text-sm"
+            : "h-8 sm:h-10 bg-orange-100/50 border-orange-200/50 text-orange-800 text-sm"
+        )}
+      >
+        #{ranking.rank}
+      </div>
+    </div>
+  );
 }

@@ -23,7 +23,7 @@ function useHasMounted() {
 
 function SudokuGameSkeleton() {
   return (
-    <div className="flex flex-col w-full bg-background text-foreground min-h-[calc(100vh-4rem)]">
+    <div className="flex flex-col w-full bg-background text-foreground relative">
       {/* Skeleton Header HUD */}
       <div className="w-full border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-40">
         <div className="container mx-auto max-w-7xl px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
@@ -53,8 +53,8 @@ function SudokuGameSkeleton() {
       </div>
 
       {/* Skeleton Main Stage */}
-      <div className="container mx-auto max-w-6xl px-3 sm:px-6 py-6 sm:py-8 flex-1 flex flex-col justify-center">
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 xl:gap-16">
+      <div className="container mx-auto max-w-6xl px-3 sm:px-6 py-6 sm:py-10 flex flex-col items-center">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 xl:gap-16 w-full">
           {/* Left: 9x9 Board Skeleton */}
           <div className="w-full max-w-[480px] flex flex-col items-center justify-center">
             <div className="relative w-full mx-auto aspect-square p-2 sm:p-2.5 rounded-2xl bg-white border-2 border-slate-900 shadow-xl shadow-slate-900/5 overflow-hidden">
@@ -98,7 +98,7 @@ function SudokuGameContent() {
   }, [restoreSavedGame]);
 
   return (
-    <div className="flex flex-col w-full bg-background text-foreground min-h-[calc(100vh-4rem)]">
+    <div className="flex flex-col w-full bg-background text-foreground relative">
       {/* Game HUD Bar & Ticker (Sticky together) */}
       <div className="sticky top-0 z-40 w-full flex flex-col bg-white shadow-sm shadow-slate-200/50">
         <SudokuHeader />
@@ -106,10 +106,10 @@ function SudokuGameContent() {
       </div>
 
       {/* Main Game Stage */}
-      <div className="container mx-auto max-w-6xl px-3 sm:px-6 py-6 sm:py-8 flex-1 flex flex-col justify-center">
+      <div className="container mx-auto max-w-6xl px-3 sm:px-6 py-6 sm:py-10 flex flex-col items-center">
         <ActiveHintBanner />
 
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 xl:gap-16">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 xl:gap-16 w-full">
           {/* Left: Sudoku 9x9 Board */}
           <div className="w-full max-w-[480px] flex flex-col items-center justify-center">
             <SudokuBoard />

@@ -1,116 +1,123 @@
 --- website/src/components/leaderboard/DailyLeaderboard.tsx
 +++ website/src/components/leaderboard/DailyLeaderboard.tsx
-@@ -4,6 +4,16 @@
- import { getYesterdayDate, todayStr } from "@/lib/dateUtils";
+@@ -10,15 +10,7 @@
+   getCountryFlag,
+ } from "@/lib/leaderboardService";
  import { PlayerProfileModal } from "./PlayerProfileModal";
- import { LeaderboardPodium } from "./LeaderboardPodium";
-+import {
-+  LeaderboardCard,
-+  LeaderboardCardHeader,
-+  LeaderboardCardTitle,
-+  LeaderboardCardContent,
-+  LeaderboardItem,
-+  LeaderboardItemRank,
-+  LeaderboardItemUser,
-+  LeaderboardItemScore,
-+} from "@/components/ui/leaderboard-card";
- import { Trophy, User, Sparkles } from "lucide-react";
+-import {
+-  LeaderboardCard,
+-  LeaderboardCardHeader,
+-  LeaderboardCardTitle,
+-  LeaderboardCardContent,
+-  LeaderboardItem,
+-  LeaderboardItemRank,
+-  LeaderboardItemUser,
+-  LeaderboardItemScore,
+-} from "@/components/ui/leaderboard-card";
++import { LeaderboardCard, PodiumRanking, ListRanking } from "@/components/ui/leaderboard-card";
+ import { LivePresenceBadge } from "@/components/live/LivePresenceBadge";
  import { Button } from "@/components/ui/button";
- import { LivePresenceBadge } from "../live/LivePresenceBadge";
-@@ -151,60 +161,50 @@
-             <LeaderboardPodium topThree={topThree} />
+ import { Badge } from "@/components/ui/badge";
+@@ -118,6 +110,25 @@
+     setIsProfileOpen(true);
+   };
  
-             {/* Rankings Table - Apple Squircle Container */}
--            <div className="mt-6 rounded-3xl border border-black/[0.06] bg-white overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.03)]">
--              <div className="grid grid-cols-12 px-4 py-3 bg-slate-50/80 text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 border-b border-black/[0.04]">
--                <span className="col-span-2 sm:col-span-1">Rank</span>
--                <span className="col-span-5 sm:col-span-6">Solver</span>
--                <span className="col-span-3 sm:col-span-3 text-right">Time</span>
--                <span className="col-span-2 sm:col-span-2 text-right">Score</span>
--              </div>
-+            <LeaderboardCard className="mt-6 border-black/[0.06] shadow-[0_2px_16px_rgba(0,0,0,0.03)] overflow-hidden">
-+              <LeaderboardCardHeader className="py-4 bg-slate-50/80 border-black/[0.04]">
-+                <div className="grid grid-cols-12 text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500">
-+                  <span className="col-span-2 sm:col-span-1">Rank</span>
-+                  <span className="col-span-5 sm:col-span-6 px-4">Solver</span>
-+                  <span className="col-span-3 sm:col-span-3 text-right">Time</span>
-+                  <span className="col-span-2 sm:col-span-2 text-right">Score</span>
-+                </div>
-+              </LeaderboardCardHeader>
- 
--              <div className="divide-y divide-slate-100 max-h-[420px] overflow-y-auto">
-+              <LeaderboardCardContent className="divide-y divide-slate-100 max-h-[420px] overflow-y-auto">
-                 {entries.map((entry) => {
-                   const isCurrentUser = entry.username === userProfile.username;
-                   const rank = entry.rank || 1;
- 
-                   return (
--                    <div
-+                    <LeaderboardItem
-                       key={entry.id}
--                      className={`grid grid-cols-12 px-4 py-3 items-center text-xs transition-colors ${
--                        isCurrentUser
--                          ? "bg-blue-50/70 border-l-4 border-l-blue-600 font-bold"
--                          : "hover:bg-slate-50/80"
--                      }`}
-+                      isCurrentUser={isCurrentUser}
-+                      className="grid grid-cols-12 py-2 items-center text-xs"
-                     >
-                       {/* Rank Badge */}
--                      <div className="col-span-2 sm:col-span-1 flex items-center font-mono font-black">
--                        {rank === 1 ? (
--                          <span className="text-amber-600">🥇 #1</span>
--                        ) : rank === 2 ? (
--                          <span className="text-slate-600">🥈 #2</span>
--                        ) : rank === 3 ? (
--                          <span className="text-amber-700">🥉 #3</span>
--                        ) : (
--                          <span className="text-slate-500">#{rank}</span>
--                        )}
++  // Prepare mappings for LeaderboardCard API
++  const podiumRankings: PodiumRanking[] = entries.slice(0, 3).map((entry) => ({
++    userId: entry.id,
++    userName: entry.username,
++    rank: entry.rank || 1,
++    value: entry.score,
++    flag: getCountryFlag(entry.countryCode),
++    timeStr: formatSeconds(entry.timeSeconds),
++  }));
++
++  const listRankings: ListRanking[] = entries.map((entry) => ({
++    userId: entry.id,
++    rank: entry.rank || 1,
++    userName: entry.username,
++    value: entry.score,
++    displayed: true,
++    flag: getCountryFlag(entry.countryCode),
++    timeStr: formatSeconds(entry.timeSeconds),
++  }));
++
+   return (
+     <section id="leaderboard" className="w-full bg-[#fafafa] py-16 sm:py-24 border-t border-black/[0.04]">
+       <div className="mx-auto max-w-4xl px-4 sm:px-6">
+@@ -158,68 +169,13 @@
+           </div>
+         ) : (
+           <>
+-            <LeaderboardCard className="mt-2 border-black/[0.08] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+-              <LeaderboardCardHeader className="py-5 bg-white border-b border-slate-100 flex flex-row items-center justify-between">
+-                <LeaderboardCardTitle className="text-lg text-slate-900 flex items-center gap-2">
+-                  <Trophy className="h-5 w-5 text-amber-500" />
+-                  Live Rankings
+-                </LeaderboardCardTitle>
+-                <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-mono">
+-                  {totalSolvers} players
+-                </Badge>
+-              </LeaderboardCardHeader>
+-
+-              <LeaderboardCardContent className="divide-y divide-slate-100 max-h-[480px] overflow-y-auto bg-slate-50/30 p-2">
+-                {entries.map((entry) => {
+-                  const isCurrentUser = entry.username === userProfile.username;
+-                  const rank = entry.rank || 1;
+-
+-                  return (
+-                    <LeaderboardItem
+-                      key={entry.id}
+-                      isCurrentUser={isCurrentUser}
+-                      className="rounded-xl mx-2 my-1"
+-                    >
+-                      <div className="flex items-center w-full">
+-                        {/* Rank Badge */}
+-                        <LeaderboardItemRank rank={rank} />
+-
+-                        {/* Solver Name & Flag */}
+-                        <LeaderboardItemUser>
+-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-lg shadow-sm">
+-                            {getCountryFlag(entry.countryCode)}
+-                          </div>
+-                          <div className="flex flex-col">
+-                            <div className="flex items-center gap-2">
+-                              <span className="font-bold text-slate-900 text-[15px]">
+-                                {entry.username}
+-                              </span>
+-                              {isCurrentUser && (
+-                                <span className="text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full bg-blue-600 text-white shadow-sm shadow-blue-500/20">
+-                                  YOU
+-                                </span>
+-                              )}
+-                            </div>
+-                            <span className="text-xs text-slate-500 font-mono font-medium">
+-                              Time: {formatSeconds(entry.timeSeconds)}
+-                            </span>
+-                          </div>
+-                        </LeaderboardItemUser>
+-
+-                        {/* Score */}
+-                        <div className="flex flex-col items-end justify-center">
+-                          <LeaderboardItemScore className="text-blue-600 text-base sm:text-lg">
+-                            {entry.score}
+-                          </LeaderboardItemScore>
+-                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+-                            PTS
+-                          </span>
+-                        </div>
 -                      </div>
-+                      <LeaderboardItemRank rank={rank} className="col-span-2 sm:col-span-1" />
- 
-                       {/* Solver Name & Flag */}
--                      <div className="col-span-5 sm:col-span-6 flex items-center gap-2 truncate pr-2">
-+                      <LeaderboardItemUser className="col-span-5 sm:col-span-6">
-                         <span className="text-base">{getCountryFlag(entry.countryCode)}</span>
-                         <span className="truncate font-semibold text-slate-900">
-                           {entry.username}
-                         </span>
-                         {isCurrentUser && (
--                          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white">
-+                          <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white shrink-0">
-                             YOU
-                           </span>
-                         )}
--                      </div>
-+                      </LeaderboardItemUser>
- 
-                       {/* Time */}
-                       <div className="col-span-3 sm:col-span-3 text-right font-mono font-bold text-slate-900 tabular-nums">
-                         {formatSeconds(entry.timeSeconds)}
-                       </div>
- 
-                       {/* Score */}
--                      <div className="col-span-2 sm:col-span-2 text-right font-mono font-bold text-blue-600 tabular-nums">
-+                      <LeaderboardItemScore className="col-span-2 sm:col-span-2 text-blue-600">
-                         {entry.score}
--                      </div>
--                    </div>
-+                      </LeaderboardItemScore>
-+                    </LeaderboardItem>
-                   );
-                 })}
--              </div>
-+              </LeaderboardCardContent>
+-                    </LeaderboardItem>
+-                  );
+-                })}
+-              </LeaderboardCardContent>
++            <LeaderboardCard
++              title="Live Rankings"
++              currentUserId={currentUserEntry?.id}
++              podiumRankings={podiumRankings}
++              rankings={listRankings}
++              className="mt-6"
++            />
  
                {/* Sticky "Your Standing" Bottom Bar */}
-@@ -231,7 +231,7 @@
-                   <span>Play Today&apos;s Challenge</span>
-                 </Button>
-               </div>
--            </div>
-+            </LeaderboardCard>
-           </>
-         )}
-       </div>
+               <div className="p-4 bg-slate-50/90 border-t border-black/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
