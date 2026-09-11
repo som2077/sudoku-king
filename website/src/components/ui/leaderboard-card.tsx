@@ -1,16 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Trophy, Clock, Sparkles, Crown } from "lucide-react";
+import { Crown } from "lucide-react";
 import Image from "next/image";
 
 export interface PodiumRanking {
   userId: string;
   userName: string;
   rank: number;
-  value: number;
+  value: number | string;
   avatarUrl?: string;
-  flag?: string; // custom addition
-  timeStr?: string; // custom addition
+  flag?: string;
+  timeStr?: string;
 }
 
 export interface ListRanking {
@@ -18,11 +18,11 @@ export interface ListRanking {
   rank: number;
   userName: string;
   byline?: string;
-  value: number;
+  value: number | string;
   displayed: boolean;
   avatarUrl?: string;
-  flag?: string; // custom addition
-  timeStr?: string; // custom addition
+  flag?: string;
+  timeStr?: string;
 }
 
 export interface LeaderboardCardProps {
@@ -39,7 +39,7 @@ export interface LeaderboardCardProps {
 }
 
 export function LeaderboardCard({
-  title = "Leaderboard",
+  title = "Weekly Leaderboard",
   fromDate,
   toDate,
   currentUserId,
@@ -50,17 +50,23 @@ export function LeaderboardCard({
   rankings = [],
   className,
 }: LeaderboardCardProps) {
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(rankings.length / pageSize));
+  const visibleRankings = rankings.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
-    <div className={cn("flex flex-col gap-6", className)}>
+    <div className={cn("flex flex-col rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1C1C1C] text-slate-900 dark:text-slate-100 p-4 sm:p-6 shadow-sm", className)}>
+      
       {/* Header Area */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
-          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-amber-500" />
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-8">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg sm:text-xl font-bold">
             {title}
           </h2>
           {(fromDate || toDate) && (
-            <p className="text-sm text-slate-500 font-medium">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {fromDate} {toDate && `- ${toDate}`}
             </p>
           )}
@@ -70,7 +76,7 @@ export function LeaderboardCard({
           <select
             value={selectedRunId}
             onChange={(e) => onRunChange?.(e.target.value)}
-            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="rounded-md border border-slate-200 dark:border-slate-700 bg-transparent px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-slate-400"
           >
             {runOptions.map((opt) => (
               <option key={opt.id} value={opt.id}>
@@ -83,38 +89,61 @@ export function LeaderboardCard({
 
       {/* Podium Area */}
       {podiumRankings.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end pt-8 pb-4 max-w-2xl mx-auto w-full select-none">
+        <div className="flex items-end justify-center gap-2 sm:gap-4 mb-8 max-w-lg mx-auto w-full pt-4">
           {/* 2nd Place */}
-          {podiumRankings[1] && <PodiumItem ranking={podiumRankings[1]} />}
+          {podiumRankings.find((r) => r.rank === 2) && (
+            <div className="w-[30%]">
+              <PodiumItem ranking={podiumRankings.find((r) => r.rank === 2)!} heightClass="h-24 sm:h-28" />
+            </div>
+          )}
           {/* 1st Place */}
-          {podiumRankings[0] && <PodiumItem ranking={podiumRankings[0]} isFirst />}
+          {podiumRankings.find((r) => r.rank === 1) && (
+            <div className="w-[36%]">
+              <PodiumItem ranking={podiumRankings.find((r) => r.rank === 1)!} heightClass="h-32 sm:h-40" isFirst />
+            </div>
+          )}
           {/* 3rd Place */}
-          {podiumRankings[2] && <PodiumItem ranking={podiumRankings[2]} />}
+          {podiumRankings.find((r) => r.rank === 3) && (
+            <div className="w-[30%]">
+              <PodiumItem ranking={podiumRankings.find((r) => r.rank === 3)!} heightClass="h-20 sm:h-24" />
+            </div>
+          )}
         </div>
       )}
 
       {/* List Area */}
       {rankings.length > 0 && (
-        <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
-          <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto p-2">
-            {rankings.map((ranking) => {
+        <div className="flex flex-col border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-transparent">
+          <div className="flex flex-col">
+            {visibleRankings.map((ranking, index) => {
               if (!ranking.displayed) return null;
+              
               const isMe = ranking.userId === currentUserId;
+              const showEllipsis = index > 0 && visibleRankings[index - 1].rank < ranking.rank - 1;
 
               return (
-                <div
-                  key={ranking.userId}
-                  className={cn(
-                    "flex items-center w-full px-4 py-3 rounded-xl transition-colors",
-                    isMe ? "bg-blue-50/60" : "hover:bg-slate-50"
+                <React.Fragment key={ranking.userId}>
+                  {showEllipsis && (
+                    <div className="w-full flex justify-center py-1.5 bg-slate-50 dark:bg-slate-800/20 text-slate-400 dark:text-slate-500 text-lg leading-none border-b border-slate-200 dark:border-slate-800">
+                      ...
+                    </div>
                   )}
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center font-bold text-sm text-slate-500">
-                    {ranking.rank === 1 ? "🥇" : ranking.rank === 2 ? "🥈" : ranking.rank === 3 ? "🥉" : `#${ranking.rank}`}
-                  </div>
+                  <div
+                    className={cn(
+                      "flex items-center w-full px-4 py-3 border-b border-slate-200 dark:border-slate-800 last:border-b-0",
+                      isMe ? "bg-slate-50 dark:bg-slate-800/40 outline outline-1 outline-slate-300 dark:outline-slate-600 rounded-md my-[1px] relative z-10" : ""
+                    )}
+                  >
+                    {/* Rank Number & Crown */}
+                    <div className="flex items-center w-10 sm:w-14 shrink-0 font-bold text-sm text-slate-700 dark:text-slate-300 gap-1.5">
+                      <span>{ranking.rank}</span>
+                      {ranking.rank <= 3 && (
+                        <Crown className="h-3.5 w-3.5 text-amber-500" />
+                      )}
+                    </div>
 
-                  <div className="flex flex-1 items-center gap-3 px-3 sm:px-4 overflow-hidden">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-lg overflow-hidden relative">
+                    {/* Avatar */}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 text-lg overflow-hidden relative border border-slate-200 dark:border-slate-700">
                       {ranking.avatarUrl ? (
                         <Image src={ranking.avatarUrl} alt={ranking.userName} fill className="object-cover" unoptimized />
                       ) : ranking.flag ? (
@@ -123,34 +152,73 @@ export function LeaderboardCard({
                         ranking.userName.charAt(0).toUpperCase()
                       )}
                     </div>
-                    <div className="flex flex-col truncate">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 text-sm sm:text-[15px] truncate">
-                          {ranking.userName}
-                        </span>
-                        {isMe && (
-                          <span className="shrink-0 text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full bg-blue-600 text-white shadow-sm">
-                            YOU
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs text-slate-500 truncate">
+
+                    {/* Name & Byline */}
+                    <div className="flex flex-col flex-1 truncate px-3 sm:px-4">
+                      <span className="font-semibold text-sm truncate text-slate-900 dark:text-slate-100">
+                        {ranking.userName}
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
                         {ranking.timeStr ? `Time: ${ranking.timeStr}` : ranking.byline}
                       </span>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col items-end justify-center shrink-0">
-                    <div className="font-mono font-bold text-blue-600 text-base sm:text-lg tabular-nums">
-                      {ranking.value}
+                    {/* Score */}
+                    <div className="flex flex-col items-end shrink-0">
+                      <span className="font-mono text-sm sm:text-base font-medium text-slate-900 dark:text-slate-100">
+                        {ranking.value}
+                      </span>
                     </div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                      PTS
-                    </span>
                   </div>
-                </div>
+                </React.Fragment>
               );
             })}
+          </div>
+          
+          {/* Footer Pagination */}
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-2">
+              <span>Show</span>
+              <select 
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-slate-400"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className={cn(
+                  "px-2 py-1 rounded transition-colors cursor-pointer", 
+                  currentPage === 1 
+                    ? "bg-slate-100 dark:bg-slate-800 opacity-50 cursor-not-allowed" 
+                    : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200"
+                )}
+              >
+                &lt;
+              </button>
+              <span>Page {currentPage} of {totalPages}</span>
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className={cn(
+                  "px-2 py-1 rounded transition-colors cursor-pointer", 
+                  currentPage === totalPages 
+                    ? "bg-slate-100 dark:bg-slate-800 opacity-50 cursor-not-allowed" 
+                    : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200"
+                )}
+              >
+                &gt;
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -158,23 +226,14 @@ export function LeaderboardCard({
   );
 }
 
-function PodiumItem({ ranking, isFirst = false }: { ranking: PodiumRanking; isFirst?: boolean }) {
+function PodiumItem({ ranking, isFirst = false, heightClass }: { ranking: PodiumRanking; isFirst?: boolean; heightClass: string }) {
   return (
-    <div className={cn("flex flex-col items-center", isFirst ? "-mt-4" : "")}>
-      <div
-        className={cn(
-          "flex flex-col items-center w-full text-center relative rounded-t-3xl border-t border-x px-2 pt-8 pb-3 shadow-sm",
-          isFirst
-            ? "border-amber-200 bg-linear-to-b from-amber-50 to-white z-10"
-            : ranking.rank === 2
-            ? "border-slate-200 bg-linear-to-b from-slate-50 to-white"
-            : "border-orange-200/50 bg-linear-to-b from-orange-50/30 to-white"
-        )}
-      >
+    <div className="flex flex-col items-center w-full">
+      <div className="flex flex-col items-center mb-2 relative">
         <div
           className={cn(
-            "absolute -top-6 flex items-center justify-center rounded-full border-2 shadow-sm text-lg sm:text-xl bg-white overflow-hidden",
-            isFirst ? "h-14 w-14 border-amber-400" : "h-12 w-12 border-slate-200"
+            "flex items-center justify-center rounded-full border-2 bg-slate-200 dark:bg-slate-800 overflow-hidden relative shrink-0",
+            isFirst ? "h-14 w-14 sm:h-16 sm:w-16 border-amber-400" : "h-10 w-10 sm:h-12 sm:w-12 border-slate-400 dark:border-slate-600"
           )}
         >
           {ranking.avatarUrl ? (
@@ -185,42 +244,32 @@ function PodiumItem({ ranking, isFirst = false }: { ranking: PodiumRanking; isFi
             ranking.userName.charAt(0).toUpperCase()
           )}
         </div>
-        {isFirst && (
-          <div className="absolute -top-9 h-6 w-6 rounded-full bg-amber-400 border border-amber-300 text-white flex items-center justify-center shadow-md">
-            <Crown className="h-3.5 w-3.5 fill-current" />
-          </div>
-        )}
-
-        <div className="font-bold text-xs sm:text-sm text-slate-900 truncate w-full tracking-tight mt-1">
-          {ranking.userName}
-        </div>
-        {ranking.timeStr && (
-          <div className="flex items-center gap-1 font-mono font-bold text-[10px] sm:text-xs text-slate-500 mt-1 tabular-nums">
-            <Clock className="h-3 w-3" />
-            <span>{ranking.timeStr}</span>
-          </div>
-        )}
-        <div
-          className={cn(
-            "text-[10px] font-mono font-black mt-1 flex items-center gap-1 tabular-nums",
-            isFirst ? "text-amber-600" : ranking.rank === 2 ? "text-slate-500" : "text-orange-700"
-          )}
-        >
-          {isFirst && <Sparkles className="h-3 w-3 fill-current" />}
-          <span>{ranking.value} pts</span>
+        {/* Little crown overlay bottom right of avatar */}
+        <div className="absolute -bottom-1 -right-1 bg-slate-900 dark:bg-black rounded-full p-0.5">
+          <Crown className={cn("h-3 w-3 sm:h-4 sm:w-4", isFirst ? "text-amber-500" : ranking.rank === 2 ? "text-slate-400" : "text-amber-700")} />
         </div>
       </div>
+      
+      <div className="font-semibold text-xs text-slate-900 dark:text-slate-100 truncate w-full text-center max-w-[80px]">
+        {ranking.userName}
+      </div>
+      <div className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-mono mb-2">
+        {ranking.value}
+      </div>
+
+      {/* Solid Block */}
       <div
         className={cn(
-          "w-full flex items-center justify-center font-mono font-black border-b border-x rounded-b-2xl shadow-sm",
+          "w-full rounded-t-md flex items-start justify-center pt-2 font-bold text-slate-900 dark:text-slate-900 text-sm",
+          heightClass,
           isFirst
-            ? "h-16 sm:h-20 bg-amber-100 border-amber-200 text-amber-700 text-base"
+            ? "bg-[#D4AF37]" // Gold
             : ranking.rank === 2
-            ? "h-10 sm:h-14 bg-slate-100 border-slate-200 text-slate-600 text-sm"
-            : "h-8 sm:h-10 bg-orange-100/50 border-orange-200/50 text-orange-800 text-sm"
+            ? "bg-[#71717A]" // Silver/Gray
+            : "bg-[#8B5A2B]" // Bronze
         )}
       >
-        #{ranking.rank}
+        {ranking.rank}
       </div>
     </div>
   );
