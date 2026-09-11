@@ -42,7 +42,7 @@ export function SudokuControls() {
   });
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-[480px] mx-auto select-none">
+    <div className="flex flex-col gap-4 w-full max-w-[560px] mx-auto select-none">
       {/* 4 Action Buttons - Apple Squircle Style */}
       <div className="grid grid-cols-4 gap-2 sm:gap-3">
         {/* Undo */}
@@ -88,16 +88,22 @@ export function SudokuControls() {
         >
           <div
             className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
-              notesMode ? "bg-blue-600 text-white font-bold" : "bg-slate-100 text-slate-800 group-hover:bg-slate-200/80"
+              notesMode
+                ? "bg-blue-600 text-white font-bold"
+                : "bg-slate-100 text-slate-800 group-hover:bg-slate-200/80"
             }`}
           >
             <Pencil className="h-4 w-4" />
           </div>
           <div className="flex items-center gap-1 mt-1.5">
-            <span className="text-[11px] sm:text-xs font-semibold tracking-tight">Notes</span>
+            <span className="text-[11px] sm:text-xs font-semibold tracking-tight">
+              Notes
+            </span>
             <span
               className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-full ${
-                notesMode ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500 border border-slate-200"
+                notesMode
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-500 border border-slate-200"
               }`}
             >
               {notesMode ? "ON" : "OFF"}
@@ -126,31 +132,56 @@ export function SudokuControls() {
         </button>
       </div>
 
-      {/* Number Keypad 1 - 9 (Apple iOS Dial / Keypad aesthetic) */}
-      <div className="grid grid-cols-9 gap-1 sm:gap-1.5 bg-white p-2 sm:p-2.5 rounded-3xl border border-black/[0.06] shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
-          const count = digitCounts[num];
-          const remaining = Math.max(0, 9 - count);
-          const isComplete = remaining === 0;
+      {/* Number Keypad 1 - 9 (Mobile Layout: 2 Rows) */}
+      <div className="flex flex-col gap-2 sm:gap-2.5">
+        <div className="flex justify-center gap-1.5 sm:gap-2">
+          {[1, 2, 3, 4, 5].map((num) => {
+            const count = digitCounts[num];
+            const remaining = Math.max(0, 9 - count);
+            const isComplete = remaining === 0;
 
-          return (
-            <button
-              key={num}
-              onClick={() => inputDigit(num)}
-              disabled={!isGameActive || isComplete}
-              className={`group relative flex flex-col items-center justify-center py-2 sm:py-3 rounded-2xl border transition-all duration-100 cursor-pointer ${
-                isComplete
-                  ? "opacity-25 border-transparent bg-slate-50 cursor-not-allowed"
-                  : "border-slate-100 bg-slate-50/70 hover:bg-slate-900 hover:text-white hover:border-slate-900 active:scale-[0.91] shadow-2xs apple-spring"
-              }`}
-            >
-              <span className="text-xl sm:text-2xl font-bold font-mono leading-none">{num}</span>
-              <span className="text-[9px] sm:text-[10px] font-mono font-bold text-slate-400 group-hover:text-slate-300 mt-1">
-                {isComplete ? <Check className="h-3 w-3 inline text-emerald-600" /> : remaining}
-              </span>
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={num}
+                onClick={() => inputDigit(num)}
+                disabled={!isGameActive || isComplete}
+                className={`group relative flex flex-col items-center justify-center py-2.5 sm:py-3.5 w-[18%] sm:w-[72px] rounded-[18px] border-[1.5px] transition-all duration-100 cursor-pointer ${
+                  isComplete
+                    ? "opacity-25 border-slate-100 bg-slate-50 cursor-not-allowed"
+                    : "border-slate-200 bg-white hover:bg-slate-900 hover:text-white hover:border-slate-900 active:scale-[0.91] shadow-sm apple-spring"
+                }`}
+              >
+                <span className="text-2xl sm:text-3xl font-extrabold font-sans leading-none">
+                  {num}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex justify-center gap-1.5 sm:gap-2">
+          {[6, 7, 8, 9].map((num) => {
+            const count = digitCounts[num];
+            const remaining = Math.max(0, 9 - count);
+            const isComplete = remaining === 0;
+
+            return (
+              <button
+                key={num}
+                onClick={() => inputDigit(num)}
+                disabled={!isGameActive || isComplete}
+                className={`group relative flex flex-col items-center justify-center py-2.5 sm:py-3.5 w-[18%] sm:w-[72px] rounded-[18px] border-[1.5px] transition-all duration-100 cursor-pointer ${
+                  isComplete
+                    ? "opacity-25 border-slate-100 bg-slate-50 cursor-not-allowed"
+                    : "border-slate-200 bg-white hover:bg-slate-900 hover:text-white hover:border-slate-900 active:scale-[0.91] shadow-sm apple-spring"
+                }`}
+              >
+                <span className="text-2xl sm:text-3xl font-extrabold font-sans leading-none">
+                  {num}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Auxiliary Tools Bar - Apple Segmented Pills */}

@@ -31,22 +31,39 @@ const Cell = memo(function Cell({
   const r = getRow(index);
   const c = getCol(index);
 
-  // Borders for 3x3 blocks: solid slate-800 divider, soft slate-200 divider for single cells
-  const borderB = (r + 1) % 3 === 0 && r !== 8 ? "border-b-2 border-b-slate-800" : "border-b border-b-slate-200/80";
-  const borderR = (c + 1) % 3 === 0 && c !== 8 ? "border-r-2 border-r-slate-800" : "border-r border-r-slate-200/80";
+  // Borders for 3x3 blocks: solid slate-900 divider, thin slate-300 divider for single cells
+  const borderB =
+    (r + 1) % 3 === 0 && r !== 8
+      ? "border-b-2 border-b-slate-900"
+      : r !== 8
+        ? "border-b border-b-slate-300"
+        : "";
+  const borderR =
+    (c + 1) % 3 === 0 && c !== 8
+      ? "border-r-2 border-r-slate-900"
+      : c !== 8
+        ? "border-r border-r-slate-300"
+        : "";
 
   let bgClass = "bg-white hover:bg-slate-50/80";
-  let textClass = isInitial ? "text-slate-950 font-black" : "text-blue-600 font-bold";
+  let textClass = isInitial
+    ? "text-slate-950 font-black"
+    : "text-blue-600 font-bold";
 
   if (isError) {
-    bgClass = "bg-rose-50 ring-2 ring-rose-500 ring-inset text-rose-700 animate-pulse";
+    bgClass =
+      "bg-rose-50 ring-2 ring-rose-500 ring-inset text-rose-700 animate-pulse";
     textClass = "text-rose-700 font-black";
   } else if (isSelected) {
     bgClass = "bg-blue-50/90 ring-2 ring-blue-600 ring-inset z-10";
-    textClass = isInitial ? "text-slate-950 font-black" : "text-blue-700 font-black";
+    textClass = isInitial
+      ? "text-slate-950 font-black"
+      : "text-blue-700 font-black";
   } else if (isSameNumber) {
-    bgClass = "bg-blue-50/50";
-    textClass = isInitial ? "text-slate-950 font-black" : "text-blue-600 font-bold";
+    bgClass = "bg-slate-200/60";
+    textClass = isInitial
+      ? "text-slate-950 font-black"
+      : "text-blue-600 font-bold";
   } else if (isInSelectedHouse) {
     bgClass = "bg-slate-100/60";
   }
@@ -58,17 +75,29 @@ const Cell = memo(function Cell({
       aria-selected={isSelected}
       tabIndex={isSelected ? 0 : -1}
       suppressHydrationWarning
-      className={`relative aspect-square flex items-center justify-center text-lg sm:text-2xl select-none cursor-pointer transition-colors duration-100 active:scale-[0.93] active:transition-transform active:duration-75 ${borderB} ${borderR} ${bgClass} ${textClass}`}
+      className={`relative aspect-square flex items-center justify-center text-[30px] sm:text-[40px] select-none cursor-pointer transition-colors duration-100 active:scale-[0.93] active:transition-transform active:duration-75 ${borderB} ${borderR} ${bgClass} ${textClass}`}
       aria-label={`Row ${r + 1}, Col ${c + 1}: ${
-        value !== 0 ? value : notes.length > 0 ? `Notes ${notes.join(", ")}` : "empty"
+        value !== 0
+          ? value
+          : notes.length > 0
+            ? `Notes ${notes.join(", ")}`
+            : "empty"
       }${isInitial ? ", given clue" : ""}`}
     >
       {value !== 0 ? (
-        <span suppressHydrationWarning className="font-mono leading-none">{value}</span>
+        <span
+          suppressHydrationWarning
+          className="font-sans font-bold leading-none"
+        >
+          {value}
+        </span>
       ) : notes.length > 0 ? (
-        <div className="grid grid-cols-3 gap-0 w-full h-full p-0.5 pointer-events-none text-[8px] sm:text-[10px] leading-none text-slate-500 font-mono">
+        <div className="grid grid-cols-3 gap-0 w-full h-full p-[2px] pointer-events-none text-[9px] sm:text-[11px] leading-none text-slate-500 font-sans">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-            <span key={n} className="flex items-center justify-center font-bold">
+            <span
+              key={n}
+              className="flex items-center justify-center font-bold"
+            >
               {notes.includes(n) ? n : ""}
             </span>
           ))}
@@ -105,7 +134,7 @@ export function SudokuBoard() {
       const r = getRow(i);
       const c = getCol(i);
       const b = getBlock(i);
-      
+
       for (let j = 0; j < 81; j++) {
         if (i !== j && board[j] === val) {
           if (getRow(j) === r || getCol(j) === c || getBlock(j) === b) {
@@ -119,13 +148,13 @@ export function SudokuBoard() {
   }, [board, settings.highlightDuplicates]);
 
   return (
-    <div className="relative w-full max-w-[480px] mx-auto aspect-square p-2 sm:p-3 rounded-3xl bg-white border border-slate-300 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden select-none">
+    <div className="relative w-full max-w-[560px] mx-auto aspect-square rounded-[5px] bg-white border-[2.5px] border-slate-900 overflow-hidden select-none">
       {/* 9x9 Grid */}
       <div
         role="grid"
         aria-label="Sudoku Board 9 by 9"
         suppressHydrationWarning
-        className="grid grid-cols-9 w-full h-full bg-white rounded-2xl overflow-hidden border border-slate-200"
+        className="grid grid-cols-9 w-full h-full bg-white"
       >
         {board.map((val, idx) => {
           const r = getRow(idx);
@@ -173,9 +202,15 @@ export function SudokuBoard() {
           >
             <Play className="h-7 w-7 fill-current ml-1 text-white" />
           </button>
-          <h3 className="text-xl font-extrabold tracking-tight text-slate-950">Game Paused</h3>
+          <h3 className="text-xl font-extrabold tracking-tight text-slate-950">
+            Game Paused
+          </h3>
           <p className="text-sm text-slate-600 mt-1 max-w-xs font-normal">
-            Click to resume or press <kbd className="px-1.5 py-0.5 bg-slate-100 rounded-md border border-slate-300 text-xs font-mono font-bold text-slate-800 shadow-2xs">P</kbd> to continue solving.
+            Click to resume or press{" "}
+            <kbd className="px-1.5 py-0.5 bg-slate-100 rounded-md border border-slate-300 text-xs font-mono font-bold text-slate-800 shadow-2xs">
+              P
+            </kbd>{" "}
+            to continue solving.
           </p>
         </div>
       )}
