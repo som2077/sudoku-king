@@ -35,7 +35,7 @@ interface DayCellProps {
   dayLabel: string;
   isActive: boolean;
   onPress: (date: Date) => void;
-  streakStatus: "streak" | "missed" | "future";
+  streakStatus: "streak" | "missed" | "future" | "inprogress";
 }
 
 const DayCell = React.memo(function DayCell({
@@ -53,11 +53,12 @@ const DayCell = React.memo(function DayCell({
   if (isFuture) borderColor = "transparent";
   else if (isActive) borderColor = "#1D1A27";
   else if (streakStatus === "streak") borderColor = "#22c55e90";
+  else if (streakStatus === "inprogress") borderColor = "#f59e0b90"; // Amber/orange for in-progress
   else if (streakStatus === "missed") borderColor = "#ef444490";
 
   return (
     <Pressable
-      style={{ alignItems: "center", gap: 3, width: 57 }}
+      style={{ alignItems: "center", gap: 3, width: 57, position: "relative" }}
       accessibilityRole="button"
       accessibilityLabel={`Select ${date.toDateString()}`}
       onPress={handlePress}
@@ -82,13 +83,29 @@ const DayCell = React.memo(function DayCell({
           borderWidth: isActive || isFuture ? 0 : 1.5,
           borderStyle: isFuture ? "solid" : "dashed",
           borderColor,
+          overflow: "hidden",
         }}
       >
+        {/* Half-circle background for in-progress */}
+        {streakStatus === "inprogress" && !isActive && (
+          <View
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 20,
+              backgroundColor: "#fef3c7", // Light amber fill for the left half
+            }}
+          />
+        )}
+        
         <Text
           style={{
             fontSize: 14,
             fontWeight: isActive ? "bold" : "500",
             color: isActive ? "#FFFFFF" : isFuture ? "#00000090" : "#555555",
+            zIndex: 1, // Ensure text is above the half-circle
           }}
         >
           {dayLabel}
@@ -100,7 +117,7 @@ const DayCell = React.memo(function DayCell({
 
 export function WeeklyCalendarStrip() {
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
-  const { dailyChallengesProgress } = useGameStore();
+  const { dailyChallengesProgress, currentDailyChallenge } = useGameStore();
 
   const weekDates = useMemo(() => {
     const startOfWeek = getStartOfWeek(selectedDate);
@@ -127,7 +144,7 @@ export function WeeklyCalendarStrip() {
             diffTime / (1000 * 60 * 60 * 24),
           );
 
-          let streakStatus: "streak" | "missed" | "future";
+          let streakStatus: "streak" | "missed" | "future" | "inprogress";
           if (diffDaysFromToday > 0) {
             streakStatus = "future";
           } else {
@@ -136,7 +153,9 @@ export function WeeklyCalendarStrip() {
               dailyChallengesProgress,
               dateStr,
             );
-            streakStatus = isCompleted ? "streak" : "missed";
+            const progressItem = dailyChallengesProgress[dateStr] as any;
+            const isInProgress = !isCompleted && (progressItem?.savedState || currentDailyChallenge === dateStr);
+            streakStatus = isCompleted ? "streak" : isInProgress ? "inprogress" : "missed";
           }
 
           return (

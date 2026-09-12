@@ -17,6 +17,8 @@ export interface Translations {
   'diff.selectTitle': string;
   'diff.cancel': string;
   'home.solvedToday': string;
+  'home.monthlyChallenges'?: string;
+  'home.totalPuzzlesSolved'?: string;
   'home.performance': string;
   'home.day': string;
   'home.week': string;
@@ -167,6 +169,8 @@ export const TRANSLATIONS: Record<string, Partial<Translations>> = {
     'diff.selectTitle': 'Select Difficulty',
     'diff.cancel': 'Cancel',
     'home.solvedToday': 'Puzzles solved today',
+    'home.monthlyChallenges': 'Monthly Challenges',
+    'home.totalPuzzlesSolved': 'Total Puzzles Solved',
     'home.performance': 'Performance',
     'home.day': 'Day',
     'home.week': 'Week',

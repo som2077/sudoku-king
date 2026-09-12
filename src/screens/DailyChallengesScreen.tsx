@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { Text } from "../components/Text";
 import {
   View,
@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
+  PanResponder,
+  Animated,
 } from "react-native";
 import {
   ChevronLeft,
@@ -25,6 +27,78 @@ import {
   getDailyChallengeItem,
 } from "../store/useGameStore";
 import { useTranslation } from "../i18n";
+import { Svg, Circle } from "react-native-svg";
+
+function DayProgressRing({
+  size = 32,
+  progress = 0,
+  color = "#3B82F6",
+  trackColor = "#E5E7EB",
+  fillColor = "transparent",
+}: {
+  size?: number;
+  progress?: number;
+  color?: string;
+  trackColor?: string;
+  fillColor?: string;
+}) {
+  const strokeWidth = 2.8;
+  const center = size / 2;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clampedProgress = Math.min(Math.max(progress, 0), 1);
+  const strokeDashoffset = circumference * (1 - clampedProgress);
+
+  return (
+    <View
+      style={{
+        position: "absolute",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Svg width={size} height={size}>
+        {/* Background track circle */}
+        {trackColor !== "transparent" && (
+          <Circle
+            cx={center}
+            cy={center}
+            r={radius}
+            stroke={trackColor}
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+        )}
+
+        {/* Solid fill for selected circle */}
+        {fillColor !== "transparent" && (
+          <Circle
+            cx={center}
+            cy={center}
+            r={size / 2}
+            fill={fillColor}
+          />
+        )}
+
+        {/* Progress Arc */}
+        {clampedProgress > 0 && (
+          <Circle
+            cx={center}
+            cy={center}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={`${circumference} ${circumference}`}
+            strokeDashoffset={strokeDashoffset}
+            fill="transparent"
+            transform={`rotate(-90 ${center} ${center})`}
+          />
+        )}
+      </Svg>
+    </View>
+  );
+}
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DAYS_LABEL = ["M", "T", "W", "T", "F", "S", "S"];
@@ -82,10 +156,11 @@ export function DailyChallengesScreen() {
   const {
     startDailyChallenge,
     dailyChallengesProgress,
+    currentDailyChallenge,
     streak = 0,
     settings,
   } = useGameStore();
-  const language = settings?.language || 'en';
+  const language = settings?.language || "en";
 
   const now = new Date();
   const todayDate = now.getDate();
@@ -130,13 +205,77 @@ export function DailyChallengesScreen() {
     startDailyChallenge(selectedDateStr);
   };
 
-  const changeMonth = (direction: 1 | -1) => {
-    setVisibleMonthIdx((prev) => {
-      const next = prev + direction;
-      if (next < 0 || next > 11) return prev;
-      return next;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+  const isAnimating = useRef(false);
+
+  const animateMonthChange = (direction: 1 | -1) => {
+    if (isAnimating.current) return;
+    const targetIdx = visibleMonthIdx + direction;
+    if (targetIdx < 0 || targetIdx > 11) return;
+
+    isAnimating.current = true;
+    const exitOffset = direction === 1 ? -SCREEN_WIDTH * 0.45 : SCREEN_WIDTH * 0.45;
+    const enterOffset = direction === 1 ? SCREEN_WIDTH * 0.45 : -SCREEN_WIDTH * 0.45;
+
+    Animated.parallel([
+      Animated.timing(translateX, {
+        toValue: exitOffset,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0.3,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setVisibleMonthIdx(targetIdx);
+      translateX.setValue(enterOffset);
+      Animated.parallel([
+        Animated.spring(translateX, {
+          toValue: 0,
+          friction: 8,
+          tension: 65,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        isAnimating.current = false;
+      });
     });
   };
+
+  const changeMonth = (direction: 1 | -1) => {
+    animateMonthChange(direction);
+  };
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          return (
+            Math.abs(gestureState.dx) > 15 &&
+            Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5
+          );
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dx > 45) {
+            // Swipe Right -> Previous Month
+            animateMonthChange(-1);
+          } else if (gestureState.dx < -45) {
+            // Swipe Left -> Next Month
+            animateMonthChange(1);
+          }
+        },
+      }),
+    [visibleMonthIdx],
+  );
 
   const grid = useMemo(
     () => buildCalendarGrid(currentYear, visibleMonthIdx),
@@ -212,10 +351,11 @@ export function DailyChallengesScreen() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.heroBanner}
+          {...panResponder.panHandlers}
         >
           {/* Header Row: Title */}
           <View style={[styles.heroHeader, { paddingTop: insets.top + 8 }]}>
-            <Text style={styles.heroTitle}>{t('daily.title')}</Text>
+            <Text style={styles.heroTitle}>{t("daily.title")}</Text>
           </View>
 
           {/* Month Navigation & Trophy Visual */}
@@ -232,8 +372,16 @@ export function DailyChallengesScreen() {
               <ChevronLeft color="#FFFFFF" size={28} />
             </TouchableOpacity>
 
-            {/* Dynamic Trophy Presentation */}
-            <View style={styles.trophyContainer}>
+            {/* Dynamic Trophy Presentation with Swipe Animation */}
+            <Animated.View
+              style={[
+                styles.trophyContainer,
+                {
+                  transform: [{ translateX }],
+                  opacity: opacityAnim,
+                },
+              ]}
+            >
               <View style={styles.trophyAnimWrapper}>
                 <View
                   style={[
@@ -252,7 +400,7 @@ export function DailyChallengesScreen() {
               </View>
               <Text style={styles.trophyTitleText}>{trophyTitle}</Text>
               <Text style={styles.trophySubtitleText}>{trophySubtitle}</Text>
-            </View>
+            </Animated.View>
 
             <TouchableOpacity
               onPress={() => changeMonth(1)}
@@ -356,6 +504,16 @@ export function DailyChallengesScreen() {
                     dailyChallengesProgress,
                     curDateStr,
                   );
+
+                  const progressItem = dailyChallengesProgress[
+                    curDateStr
+                  ] as any;
+                  const isInProgress =
+                    !isCompleted &&
+                    !isFuture &&
+                    (progressItem?.savedState ||
+                      currentDailyChallenge === curDateStr);
+
                   const isSelected = day === selectedDate;
 
                   return (
@@ -373,20 +531,43 @@ export function DailyChallengesScreen() {
                       style={[
                         styles.dayCell,
                         isToday && !isSelected && styles.dayCellToday,
-                        isSelected && styles.dayCellSelected,
-                        isCompleted && !isSelected && styles.dayCellCompleted,
                       ]}
                     >
-                      {/* Top Crown icon for completed puzzles */}
-                      {isCompleted ? (
-                        <View style={styles.crownWrapper}>
-                          <Crown
-                            size={18}
-                            color={isSelected ? "#FFFFFF" : "#D97706"}
-                            fill={isSelected ? "#FFFFFF" : "#F59E0B"}
-                          />
-                        </View>
-                      ) : isFuture ? (
+                      {/* Selected State: Solid circle matching screenshot item 12 */}
+                      {isSelected ? (
+                        <DayProgressRing
+                          size={32}
+                          progress={isCompleted ? 1 : isInProgress ? 0.4 : 0}
+                          color={isCompleted ? "#10B981" : "#60A5FA"}
+                          trackColor="transparent"
+                          fillColor="#2563EB"
+                        />
+                      ) : (
+                        <>
+                          {/* In-Progress: Light track with Blue half-arc */}
+                          {isInProgress && (
+                            <DayProgressRing
+                              size={32}
+                              progress={0.4}
+                              color="#3B82F6"
+                              trackColor="#E5E7EB"
+                            />
+                          )}
+
+                          {/* Completed: Full Green ring */}
+                          {isCompleted && (
+                            <DayProgressRing
+                              size={32}
+                              progress={1}
+                              color="#10B981"
+                              trackColor="#E5E7EB"
+                            />
+                          )}
+                        </>
+                      )}
+
+                      {/* Content */}
+                      {isFuture ? (
                         <View style={styles.futureWrapper}>
                           <Text style={styles.dayTextFuture}>{day}</Text>
                           <Lock size={10} color="#D1D5DB" />
@@ -395,8 +576,9 @@ export function DailyChallengesScreen() {
                         <Text
                           style={[
                             styles.dayText,
-                            isToday && styles.dayTextToday,
+                            isToday && !isSelected && styles.dayTextToday,
                             isSelected && styles.dayTextSelected,
+                            isCompleted && !isSelected && { color: "#10B981" },
                           ]}
                         >
                           {day}
@@ -434,7 +616,8 @@ export function DailyChallengesScreen() {
                     <Text
                       style={[styles.diffBadgeText, { color: diffMeta.color }]}
                     >
-                      {t(`diff.${selectedDifficulty.toLowerCase()}` as any) || selectedDifficulty}
+                      {t(`diff.${selectedDifficulty.toLowerCase()}` as any) ||
+                        selectedDifficulty}
                     </Text>
                   </View>
                   <Text style={styles.cluesText}>
@@ -454,7 +637,8 @@ export function DailyChallengesScreen() {
               {isSelectedCompleted ? (
                 <View style={styles.statusCompletedBox}>
                   <Text style={styles.statusCompletedText}>
-                    👑 {t('daily.completed')} · {formatDuration(selectedProgressItem?.timeSec)}
+                    👑 {t("daily.completed")} ·{" "}
+                    {formatDuration(selectedProgressItem?.timeSec)}
                     {selectedProgressItem?.mistakes !== undefined
                       ? ` · ${selectedProgressItem.mistakes} mistakes`
                       : ""}
@@ -496,18 +680,19 @@ export function DailyChallengesScreen() {
               <View style={styles.btnContentRow}>
                 <RotateCcw size={18} color="#FFFFFF" />
                 <Text style={styles.playBtnText}>
-                  {t('daily.completed')} ({formatDuration(selectedProgressItem?.timeSec)})
+                  {t("daily.completed")} (
+                  {formatDuration(selectedProgressItem?.timeSec)})
                 </Text>
               </View>
             ) : isTodaySelected ? (
               <View style={styles.btnContentRow}>
                 <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.playBtnText}>{t('daily.play')}</Text>
+                <Text style={styles.playBtnText}>{t("daily.play")}</Text>
               </View>
             ) : (
               <View style={styles.btnContentRow}>
                 <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
-                <Text style={styles.playBtnText}>{t('daily.play')}</Text>
+                <Text style={styles.playBtnText}>{t("daily.play")}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -686,20 +871,12 @@ const styles = StyleSheet.create({
     height: 38,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
   },
   dayCellToday: {
-    borderWidth: 2,
-    borderColor: "#2563EB",
-    backgroundColor: "rgba(37, 99, 235, 0.05)",
+    // No rectangular outline - clean circle only
   },
   dayCellSelected: {
-    backgroundColor: "#2563EB",
-  },
-  dayCellCompleted: {
-    backgroundColor: "#FEF3C7",
-    borderWidth: 1,
-    borderColor: "#FCD34D",
+    // No rectangular outline - clean circle only
   },
   dayText: {
     fontSize: 15,
@@ -723,10 +900,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 1,
-  },
-  crownWrapper: {
-    alignItems: "center",
-    justifyContent: "center",
   },
   todayDot: {
     position: "absolute",

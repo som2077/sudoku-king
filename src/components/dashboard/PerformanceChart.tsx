@@ -8,12 +8,13 @@ import { Difficulty } from "../../utils/sudokuLogic";
 import { DifficultyBottomSheet } from "../game/DifficultyBottomSheet";
 
 type TimeTab = "Day" | "Week" | "Month";
-type MetricFilter = "Both" | "WinRate" | "BestTime";
+type MetricFilter = "Both" | "WinRate" | "BestTime" | "WonGames";
 
 interface ChartItem {
   label: string;
   winRate: number; // %
   bestSec: number; // seconds
+  solved: number; // absolute count
   hasPlayed: boolean;
 }
 
@@ -131,6 +132,7 @@ export function PerformanceChart() {
           label: lbl,
           winRate,
           bestSec: s.bestSec,
+          solved: s.solved,
           hasPlayed: s.hasPlayed,
         };
       });
@@ -175,6 +177,7 @@ export function PerformanceChart() {
           label,
           winRate,
           bestSec: weekBest || 0,
+          solved: weekSolved,
           hasPlayed,
         });
       }
@@ -218,14 +221,16 @@ export function PerformanceChart() {
         label: monthNames[targetMonth],
         winRate,
         bestSec: monthBest || 0,
+        solved: monthSolved,
         hasPlayed,
       });
     }
     return months;
   }, [activeTimeTab, dailyHistory, dailyChallengesProgress, todaySolved, bestTimeSec, selectedDifficulty, difficultyStats]);
 
-  const playedItems = data.filter((d) => d.hasPlayed && d.bestSec > 0);
-  const maxTimeSec = playedItems.length > 0 ? Math.max(...playedItems.map((d) => d.bestSec), 1) : 1;
+  const playedItems = data.filter((d) => d.hasPlayed);
+  const maxTimeSec = playedItems.length > 0 ? Math.max(...playedItems.filter(d => d.bestSec > 0).map((d) => d.bestSec), 1) : 1;
+  const maxSolved = playedItems.length > 0 ? Math.max(...playedItems.map((d) => d.solved), 1) : 1;
   const timeTabs: TimeTab[] = ["Day", "Week", "Month"];
 
   const handleTabChange = (tab: TimeTab) => {
@@ -413,6 +418,41 @@ export function PerformanceChart() {
             {t('home.bestTime')}
           </Text>
         </TouchableOpacity>
+
+        {/* Won Games */}
+        <TouchableOpacity
+          onPress={() => setMetricFilter("WonGames")}
+          activeOpacity={0.7}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 5,
+            paddingHorizontal: 9,
+            paddingVertical: 4,
+            borderRadius: 12,
+            backgroundColor:
+              metricFilter === "WonGames" ? `#10B98122` : "transparent",
+          }}
+        >
+          <View
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: 3.5,
+              backgroundColor: "#10B981",
+              opacity: metricFilter === "WonGames" ? 1 : 0.5,
+            }}
+          />
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: metricFilter === "WonGames" ? "700" : "500",
+              color: metricFilter === "WonGames" ? "#059669" : "#9CA3AF",
+            }}
+          >
+            Won
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Bars Container */}
@@ -421,29 +461,34 @@ export function PerformanceChart() {
           const isSelected = index === selectedDay;
           const label = item.label;
 
-          const isPlayed = item.hasPlayed && (item.winRate > 0 || item.bestSec > 0);
+          const isPlayed = item.hasPlayed && (item.winRate > 0 || item.bestSec > 0 || item.solved > 0);
           const winHeight = isPlayed && item.winRate > 0
             ? Math.max(12, (item.winRate / 100) * BAR_MAX_HEIGHT)
             : 4;
           const timeHeight = isPlayed && item.bestSec > 0 && maxTimeSec > 0
             ? Math.max(12, (item.bestSec / maxTimeSec) * BAR_MAX_HEIGHT)
             : 4;
+          const wonHeight = isPlayed && item.solved > 0 && maxSolved > 0
+            ? Math.max(12, (item.solved / maxSolved) * BAR_MAX_HEIGHT)
+            : 4;
 
           const showWin = metricFilter === "Both" || metricFilter === "WinRate";
-          const showTime =
-            metricFilter === "Both" || metricFilter === "BestTime";
-          const isSingle = !showWin || !showTime;
-
+          const showTime = metricFilter === "Both" || metricFilter === "BestTime";
+          const showWon = metricFilter === "WonGames";
+          
+          const isSingle = !showWin || !showTime || showWon;
           const barWidth = isSingle ? 35 : 20;
 
           // Dynamic height of the bar(s) for this day so the tooltip floats right above it
           const targetBarHeight = !isPlayed
             ? 4
-            : isSingle
-              ? showWin
-                ? winHeight
-                : timeHeight
-              : Math.max(winHeight, timeHeight);
+            : showWon
+              ? wonHeight
+              : isSingle
+                ? showWin
+                  ? winHeight
+                  : timeHeight
+                : Math.max(winHeight, timeHeight);
 
           return (
             <TouchableOpacity
@@ -453,7 +498,7 @@ export function PerformanceChart() {
               accessibilityRole="button"
               accessibilityLabel={
                 item.hasPlayed
-                  ? `${label}: Win Rate ${item.winRate}%, Best Time ${formatTime(item.bestSec)}`
+                  ? `${label}: Win Rate ${item.winRate}%, Best Time ${formatTime(item.bestSec)}, Won ${item.solved}`
                   : `${label}: No games played`
               }
               accessibilityState={{ selected: isSelected }}
@@ -516,9 +561,11 @@ export function PerformanceChart() {
                             fontWeight: "bold",
                           }}
                         >
-                          {showWin
-                            ? `${item.winRate}%`
-                            : formatTime(item.bestSec)}
+                          {showWon
+                            ? `${item.solved}`
+                            : showWin
+                              ? `${item.winRate}%`
+                              : formatTime(item.bestSec)}
                         </Text>
                       ) : (
                         <View
@@ -623,28 +670,41 @@ export function PerformanceChart() {
                       gap: 3,
                     }}
                   >
+                    {/* Won Games Bar */}
+                    {showWon && (
+                      <View
+                        style={{
+                          width: barWidth,
+                          height: wonHeight,
+                          borderRadius: 4,
+                          backgroundColor: "#10B981",
+                          opacity: isSelected ? 1 : 0.6,
+                        }}
+                      />
+                    )}
+
                     {/* Win Rate Bar */}
-                    {showWin && (
+                    {showWin && !showWon && (
                       <View
                         style={{
                           width: barWidth,
                           height: winHeight,
                           borderRadius: 4,
                           backgroundColor: COLOR_WIN,
-                          opacity: isSelected ? 1 : 0.65,
+                          opacity: isSelected ? 1 : 0.6,
                         }}
                       />
                     )}
 
                     {/* Best Time Bar */}
-                    {showTime && (
+                    {showTime && !showWon && (
                       <View
                         style={{
                           width: barWidth,
                           height: timeHeight,
                           borderRadius: 4,
                           backgroundColor: COLOR_TIME,
-                          opacity: isSelected ? 1 : 0.65,
+                          opacity: isSelected ? 1 : 0.6,
                         }}
                       />
                     )}

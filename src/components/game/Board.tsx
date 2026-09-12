@@ -30,40 +30,66 @@ function Board() {
     return { cellSize: cell, blockSize: block, boardSize: total };
   }, [screenWidth]);
 
-  const completedBlocks = useMemo(
-    () => {
-      if (!board || board.length !== 81) return Array(9).fill(false);
+  // Track completion of 3x3 blocks, rows, and columns
+  const completedGroups = useMemo(() => {
+    if (!board || board.length !== 81) return { blocks: Array(9).fill(false), rows: Array(9).fill(false), cols: Array(9).fill(false) };
 
-      return (
-      Array.from({ length: 9 }, (_, blockIndex) => {
-        const blockRow = Math.floor(blockIndex / 3);
-        const blockCol = blockIndex % 3;
+    const blocks = Array.from({ length: 9 }, (_, blockIndex) => {
+      const blockRow = Math.floor(blockIndex / 3);
+      const blockCol = blockIndex % 3;
+      return Array.from({ length: 9 }, (_, cellOffset) => {
+        const row = blockRow * 3 + Math.floor(cellOffset / 3);
+        const col = blockCol * 3 + (cellOffset % 3);
+        return board[row * 9 + col];
+      }).every((cell) => cell.value !== null && !cell.isError);
+    });
 
-        return Array.from({ length: 9 }, (_, cellOffset) => {
-          const row = blockRow * 3 + Math.floor(cellOffset / 3);
-          const col = blockCol * 3 + (cellOffset % 3);
-          return board[row * 9 + col];
-        }).every((cell) => cell.value !== null && !cell.isError);
-      })
+    const rows = Array.from({ length: 9 }, (_, r) => {
+      return Array.from({ length: 9 }, (_, c) => board[r * 9 + c]).every(
+        (cell) => cell.value !== null && !cell.isError
       );
-    },
-    [board],
-  );
+    });
 
-  const previousCompletedBlocks = useRef<boolean[] | null>(null);
+    const cols = Array.from({ length: 9 }, (_, c) => {
+      return Array.from({ length: 9 }, (_, r) => board[r * 9 + c]).every(
+        (cell) => cell.value !== null && !cell.isError
+      );
+    });
+
+    return { blocks, rows, cols };
+  }, [board]);
+
+  const completedBlocks = completedGroups.blocks;
+
+  const previousCompleted = useRef<{
+    blocks: boolean[];
+    rows: boolean[];
+    cols: boolean[];
+  } | null>(null);
+
   useEffect(() => {
-    if (previousCompletedBlocks.current) {
-      const completedNewBlock = completedBlocks.some(
-        (completed, index) =>
-          completed && !previousCompletedBlocks.current?.[index],
+    if (previousCompleted.current) {
+      const newBlock = completedGroups.blocks.some(
+        (done, idx) => done && !previousCompleted.current?.blocks[idx]
       );
-      if (completedNewBlock) {
+      const newRow = completedGroups.rows.some(
+        (done, idx) => done && !previousCompleted.current?.rows[idx]
+      );
+      const newCol = completedGroups.cols.some(
+        (done, idx) => done && !previousCompleted.current?.cols[idx]
+      );
+
+      if (newBlock || newRow || newCol) {
         haptics.success();
         haptics.blockCompleteSound();
       }
     }
-    previousCompletedBlocks.current = completedBlocks;
-  }, [completedBlocks]);
+    previousCompleted.current = {
+      blocks: [...completedGroups.blocks],
+      rows: [...completedGroups.rows],
+      cols: [...completedGroups.cols],
+    };
+  }, [completedGroups]);
 
   if (!board || board.length !== 81) {
     return null;

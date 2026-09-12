@@ -28,17 +28,19 @@ class HapticsEngine {
     }
   }
 
-  private playSound(player: {
-    isLoaded: boolean;
-    currentTime: number;
-    play: () => void;
-  }) {
-    if (!this.isSoundEnabled()) return;
+  private playSound(player: any) {
+    if (!this.isSoundEnabled() || !player) return;
 
-    // Do not wait for seekTo() before playing. Rapid board taps can otherwise
-    // queue promises and make the sound appear delayed or disappear.
-    if (player.isLoaded) player.currentTime = 0;
-    player.play();
+    try {
+      if (player.isLoaded) {
+        player.seekTo(0);
+      }
+      player.play();
+    } catch {
+      try {
+        player.play();
+      } catch {}
+    }
   }
 
   private configureAudioMode() {

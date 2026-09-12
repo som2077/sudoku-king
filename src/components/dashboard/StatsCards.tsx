@@ -1,6 +1,6 @@
 import React from "react";
 import { Text } from "../ui/Text";
-import { View } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import { Svg, Circle } from "react-native-svg";
 import { Flame } from "lucide-react-native";
 import { useTranslation } from "../../i18n";
@@ -121,6 +121,8 @@ export function HeroCard({
   icon,
   iconBg,
   progress,
+  hideTotal,
+  onPress,
 }: {
   value: number;
   total: number;
@@ -128,8 +130,10 @@ export function HeroCard({
   icon?: React.ReactNode;
   iconBg?: string;
   progress?: number;
+  hideTotal?: boolean;
+  onPress?: () => void;
 }) {
-  return (
+  const content = (
     <View
       style={{
         ...CARD_SHADOW,
@@ -137,7 +141,6 @@ export function HeroCard({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        // marginBottom: 14,
       }}
     >
       <View>
@@ -153,9 +156,11 @@ export function HeroCard({
           >
             {value}
           </Text>
-          <Text style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 6 }}>
-            /{total}
-          </Text>
+          {!hideTotal && (
+            <Text style={{ fontSize: 14, color: "#9CA3AF", marginBottom: 6 }}>
+              /{total}
+            </Text>
+          )}
         </View>
         <Text
           style={{
@@ -177,6 +182,16 @@ export function HeroCard({
       )}
     </View>
   );
+
+  if (onPress) {
+    return (
+      <TouchableOpacity activeOpacity={0.8} onPress={onPress}>
+        {content}
+      </TouchableOpacity>
+    );
+  }
+
+  return content;
 }
 
 // ─── Small Stat Card ──────────────────────────────────────────────────────────
@@ -215,19 +230,35 @@ export function SmallCard({
 interface StatsCardsProps {
   solved: number;
   totalSolved: number;
+  lifetimeTotalSolved?: number;
 }
 
-export function StatsCards({ solved, totalSolved }: StatsCardsProps) {
+export function StatsCards({ solved, totalSolved, lifetimeTotalSolved }: StatsCardsProps) {
   const { t } = useTranslation();
+  const [showLifetime, setShowLifetime] = React.useState(false);
+
   const progress = totalSolved > 0 ? solved / totalSolved : 0;
+  
   return (
     <View style={{ marginTop: 10 }}>
-      <HeroCard
-        value={solved}
-        total={totalSolved}
-        label={t("home.solvedToday")}
-        progress={progress}
-      />
+      {showLifetime ? (
+        <HeroCard
+          value={lifetimeTotalSolved || 0}
+          total={0}
+          hideTotal={true}
+          label={t("home.totalPuzzlesSolved") || "Total Puzzles Solved"}
+          progress={1}
+          onPress={() => setShowLifetime(false)}
+        />
+      ) : (
+        <HeroCard
+          value={solved}
+          total={totalSolved}
+          label={t("home.monthlyChallenges", "Monthly Challenges")}
+          progress={progress}
+          onPress={() => setShowLifetime(true)}
+        />
+      )}
     </View>
   );
 }

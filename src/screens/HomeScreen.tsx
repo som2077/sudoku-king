@@ -20,6 +20,7 @@ import { DifficultyBottomSheet } from "../components/DifficultyBottomSheet";
 import { DailyChallengesScreen } from "./DailyChallengesScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { AwardsScreen } from "./AwardsScreen";
+import { DailyChallengePopup } from "../components/dashboard/DailyChallengePopup";
 
 const MemoizedDailyChallengesScreen = React.memo(DailyChallengesScreen);
 const MemoizedSettingsScreen = React.memo(SettingsScreen);
@@ -238,6 +239,7 @@ export default function HomeScreen({
     board = [],
     mistakes = 0,
     isGameCompleted = false,
+    dailyChallengesProgress,
   } = useGameStore(
     useShallow((s) => ({
       totalSolved: s.totalSolved,
@@ -250,6 +252,7 @@ export default function HomeScreen({
       board: s.board,
       mistakes: s.mistakes,
       isGameCompleted: s.isGameCompleted,
+      dailyChallengesProgress: s.dailyChallengesProgress,
     })),
   );
 
@@ -294,8 +297,24 @@ export default function HomeScreen({
     ? `${formatProgressTimer(timer)} · ${getDifficultyTitle(difficulty)}`
     : t('home.selectDifficulty');
 
-  const SOLVED = todaySolved || 0;
-  const TOTAL_SOLVED = totalSolved || 0;
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  
+  let monthlySolvedCount = 0;
+  if (dailyChallengesProgress) {
+    for (let d = 1; d <= totalDaysInMonth; d++) {
+      const ds = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const item = dailyChallengesProgress[ds] as any;
+      if (item && (typeof item === 'boolean' ? item : item.completed)) {
+        monthlySolvedCount++;
+      }
+    }
+  }
+
+  const SOLVED = monthlySolvedCount;
+  const TOTAL_SOLVED = totalDaysInMonth;
   const WIN_RATE =
     (totalPlayed || 0) > 0
       ? Math.round(((totalSolved || 0) / totalPlayed) * 100)
@@ -488,6 +507,7 @@ export default function HomeScreen({
                   <DashboardPager
                     solved={SOLVED}
                     totalSolved={TOTAL_SOLVED}
+                    lifetimeTotalSolved={totalSolved || 0}
                     winRate={WIN_RATE}
                     bestTime={BEST_TIME}
                   />
@@ -679,6 +699,12 @@ export default function HomeScreen({
           visible={showDifficultySheet}
           onClose={() => setShowDifficultySheet(false)}
           onSelect={handleDifficultySelect}
+        />
+        
+        <DailyChallengePopup
+          onStart={(dateStr) => {
+            useGameStore.getState().startDailyChallenge(dateStr);
+          }}
         />
       </View>
     </AppGradientBackground>

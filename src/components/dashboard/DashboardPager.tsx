@@ -54,13 +54,14 @@ function Dots({
 interface DashboardPagerProps {
   solved: number;
   totalSolved: number;
+  lifetimeTotalSolved: number;
   winRate: number;
   bestTime: string;
 }
 
 const CARD_GAP = 14;
 
-export function DashboardPager({ solved, totalSolved }: DashboardPagerProps) {
+export function DashboardPager({ solved, totalSolved, lifetimeTotalSolved }: DashboardPagerProps) {
   const [activePage, setActivePage] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const { width: screenWidth } = useWindowDimensions();
@@ -95,7 +96,7 @@ export function DashboardPager({ solved, totalSolved }: DashboardPagerProps) {
     <View style={{ paddingBottom: 5 }} onLayout={handleLayout}>
       {/* Hero card — always visible */}
       <View style={{ paddingHorizontal: 0 }}>
-        <StatsCards solved={solved} totalSolved={totalSolved} />
+        <StatsCards solved={solved} totalSolved={totalSolved} lifetimeTotalSolved={lifetimeTotalSolved} />
       </View>
 
       {/* ── Swipeable section with gap between cards ── */}

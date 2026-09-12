@@ -70,6 +70,13 @@ export interface DailyProgressItem {
   mistakes?: number;
   completedAt?: string;
   difficulty?: Difficulty;
+  savedState?: {
+    board: CellState[];
+    timer: number;
+    mistakes: number;
+    hintsRemaining: number;
+    history: any[];
+  };
 }
 
 export const getDailyDifficulty = (dateStr: string): Difficulty => {
@@ -217,6 +224,8 @@ type GameState = {
     timeSec?: number,
     mistakes?: number,
   ) => void;
+  lastDailyPopupDate: string | null;
+  setLastDailyPopupDate: (dateStr: string) => void;
 };
 
 const initialBoard: CellState[] = Array(81)
@@ -278,6 +287,9 @@ export const useGameStore = create<GameState>()(
       hasUsedFreeTrial: false,
       hasCompletedTutorial: false,
       hasSkippedTutorial: false,
+      lastDailyPopupDate: null,
+
+      setLastDailyPopupDate: (dateStr) => set({ lastDailyPopupDate: dateStr }),
 
       completeWelcome: () => set({ hasSeenWelcome: true }),
       resetWelcome: () =>
@@ -651,6 +663,28 @@ export const useGameStore = create<GameState>()(
         }
 
         set((state) => {
+          // Save active daily challenge state before overwriting if one exists
+          let newDailyProgress = state.dailyChallengesProgress;
+          if (state.currentDailyChallenge) {
+            const activeDate = state.currentDailyChallenge;
+            const currentProgress = state.dailyChallengesProgress[activeDate] as DailyProgressItem | undefined;
+            if (!currentProgress?.completed) {
+              newDailyProgress = {
+                ...state.dailyChallengesProgress,
+                [activeDate]: {
+                  ...(currentProgress || { completed: false }),
+                  savedState: {
+                    board: state.board,
+                    timer: state.timer,
+                    mistakes: state.mistakes,
+                    hintsRemaining: state.hintsRemaining,
+                    history: state.history,
+                  }
+                }
+              };
+            }
+          }
+
           const todayStr = getLocalDateString();
           const prevStats = state.difficultyStats || initialDifficultyStats;
           const prevDiff = prevStats[difficulty] || {
@@ -666,6 +700,7 @@ export const useGameStore = create<GameState>()(
           };
 
           return {
+            dailyChallengesProgress: newDailyProgress,
             board: newBoard,
             solution,
             difficulty,
@@ -706,14 +741,58 @@ export const useGameStore = create<GameState>()(
           difficulty,
           `daily-${dateStr}`,
         ); // deterministic seed
-        const newBoard = puzzle.map((val) => ({
-          value: val === 0 ? null : val,
-          notes: 0,
-          isLocked: val !== 0,
-          isError: false,
-        }));
 
         set((state) => {
+          // Save active daily challenge state before overwriting if one exists
+          let newDailyProgress = state.dailyChallengesProgress;
+          if (state.currentDailyChallenge && state.currentDailyChallenge !== dateStr) {
+            const activeDate = state.currentDailyChallenge;
+            const currentProgress = state.dailyChallengesProgress[activeDate] as DailyProgressItem | undefined;
+            if (!currentProgress?.completed) {
+              newDailyProgress = {
+                ...state.dailyChallengesProgress,
+                [activeDate]: {
+                  ...(currentProgress || { completed: false }),
+                  savedState: {
+                    board: state.board,
+                    timer: state.timer,
+                    mistakes: state.mistakes,
+                    hintsRemaining: state.hintsRemaining,
+                    history: state.history,
+                  }
+                }
+              };
+            }
+          }
+
+          const progressItem = newDailyProgress[dateStr] as DailyProgressItem | undefined;
+          
+          if (progressItem?.savedState && !progressItem.completed) {
+            // Resume from saved state
+            return {
+              dailyChallengesProgress: newDailyProgress,
+              board: progressItem.savedState.board,
+              solution,
+              difficulty,
+              selectedCell: null,
+              mistakes: progressItem.savedState.mistakes,
+              timer: progressItem.savedState.timer,
+              history: progressItem.savedState.history,
+              hintsRemaining: progressItem.savedState.hintsRemaining,
+              screen: "playing",
+              currentDailyChallenge: dateStr,
+              isGameCompleted: false,
+            };
+          }
+
+          // Generate new board
+          const newBoard = puzzle.map((val) => ({
+            value: val === 0 ? null : val,
+            notes: 0,
+            isLocked: val !== 0,
+            isError: false,
+          }));
+
           const prevStats = state.difficultyStats || initialDifficultyStats;
           const prevDiff = prevStats[difficulty] || {
             solved: 0,
@@ -728,6 +807,7 @@ export const useGameStore = create<GameState>()(
           };
 
           return {
+            dailyChallengesProgress: newDailyProgress,
             board: newBoard,
             solution,
             difficulty,
@@ -748,7 +828,7 @@ export const useGameStore = create<GameState>()(
               },
             },
             dailyHistory: {
-              ...(state.dailyHistory || {}),
+              ...state.dailyHistory,
               [dateStr]: {
                 ...prevDaily,
                 played: prevDaily.played + 1,
