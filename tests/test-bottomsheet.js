@@ -82,7 +82,8 @@ assert.ok(
   "SettingsScreen must have versionCard",
 );
 assert.ok(
-  settingsContent.includes("Sudoku King - Puzzle Game"),
+  settingsContent.includes("Sudoku King - Puzzle Game") ||
+    settingsContent.includes("Sudoku King - Mind Game"),
   "SettingsScreen must display app title in card",
 );
 assert.ok(

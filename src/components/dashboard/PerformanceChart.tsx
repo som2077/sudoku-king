@@ -313,16 +313,42 @@ export function PerformanceChart() {
         </View>
       </View>
 
-      {/* Metric Filter Legend Pills (All | Win Rate | Best Time) */}
+      {/* Metric Filter Legend Pills (All | Win Rate | Best Time | Won) & Difficulty Filter */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
           gap: 6,
           marginBottom: 14,
+          flexWrap: "wrap",
         }}
       >
-
+        {/* Difficulty Filter Pill */}
+        <TouchableOpacity
+          onPress={() => setShowDifficultySheet(true)}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Filter performance by difficulty"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 12,
+            backgroundColor: "#F3F4F6",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: "600",
+              color: "#4B5563",
+            }}
+          >
+            {selectedDifficulty === "All" ? "All Diff" : selectedDifficulty}
+          </Text>
+        </TouchableOpacity>
 
         {/* All */}
         <TouchableOpacity

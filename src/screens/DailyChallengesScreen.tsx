@@ -72,12 +72,7 @@ function DayProgressRing({
 
         {/* Solid fill for selected circle */}
         {fillColor !== "transparent" && (
-          <Circle
-            cx={center}
-            cy={center}
-            r={size / 2}
-            fill={fillColor}
-          />
+          <Circle cx={center} cy={center} r={size / 2} fill={fillColor} />
         )}
 
         {/* Progress Arc */}
@@ -215,8 +210,10 @@ export function DailyChallengesScreen() {
     if (targetIdx < 0 || targetIdx > 11) return;
 
     isAnimating.current = true;
-    const exitOffset = direction === 1 ? -SCREEN_WIDTH * 0.45 : SCREEN_WIDTH * 0.45;
-    const enterOffset = direction === 1 ? SCREEN_WIDTH * 0.45 : -SCREEN_WIDTH * 0.45;
+    const exitOffset =
+      direction === 1 ? -SCREEN_WIDTH * 0.45 : SCREEN_WIDTH * 0.45;
+    const enterOffset =
+      direction === 1 ? SCREEN_WIDTH * 0.45 : -SCREEN_WIDTH * 0.45;
 
     Animated.parallel([
       Animated.timing(translateX, {
