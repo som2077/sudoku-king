@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "sudokuKing",
+    "jsEngine": "hermes",
     "slug": "sudoku-king",
     "version": "3.56.1",
     "orientation": "portrait",
@@ -51,7 +52,9 @@
           }
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      "expo-font",
+      "expo-image"
     ],
     "extra": {
       "eas": {
