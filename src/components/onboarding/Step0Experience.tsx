@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
+import { Easing } from "react-native-reanimated";
 import { Sparkles, Zap, Crown } from "lucide-react-native";
 import { Text } from "../Text";
+import SplitText from "../ui/SplitText";
 import { Difficulty } from "../../utils/sudokuLogic";
 import { haptics } from "../../utils/haptics";
 
@@ -129,9 +131,22 @@ export function Step0Experience({
 
   return (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>
-        How challenging do you want your Sudoku puzzles to be?
-      </Text>
+      <SplitText
+        text="How challenging do you want your Sudoku puzzles to be?"
+        splitType="words"
+        triggerOnVisible={false}
+        delay={40}
+        duration={500}
+        ease={Easing.out(Easing.cubic)}
+        from={{ opacity: 0, translateY: 10 }}
+        to={{ opacity: 1, translateY: 0 }}
+        fontSize={25}
+        fontWeight="800"
+        color="#111827"
+        lineHeightMultiplier={1.24}
+        textAlign="left"
+        containerStyle={styles.stepTitleContainer}
+      />
       <Text style={styles.stepSubtitle}>
         Choose a starting level that feels right for your daily practice.
       </Text>
@@ -306,12 +321,8 @@ const styles = StyleSheet.create({
     minHeight: 500,
     backgroundColor: "transparent",
   },
-  stepTitle: {
-    fontSize: 25,
-    fontWeight: "800",
-    color: "#111827",
+  stepTitleContainer: {
     marginBottom: 8,
-    lineHeight: 31,
   },
   stepSubtitle: {
     fontSize: 13,
@@ -390,7 +401,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 44,
     justifyContent: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 65,
   },
   trackMarker: {
     position: "absolute",

@@ -1,6 +1,8 @@
 import React from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { Easing } from "react-native-reanimated";
 import { Text } from "../Text";
+import SplitText from "../ui/SplitText";
 interface Step1DailyGoalProps {
   dailyMinutes: number;
   onSelectMinutes: (minutes: number) => void;
@@ -11,7 +13,22 @@ export function Step1DailyGoal({
 }: Step1DailyGoalProps) {
   return (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Daily Training Goal</Text>
+      <SplitText
+        text="Daily Training Goal"
+        splitType="words"
+        triggerOnVisible={false}
+        delay={60}
+        duration={500}
+        ease={Easing.out(Easing.cubic)}
+        from={{ opacity: 0, translateY: 18 }}
+        to={{ opacity: 1, translateY: 0 }}
+        fontSize={26}
+        fontWeight="800"
+        color="#111827"
+        lineHeightMultiplier={1.23}
+        textAlign="left"
+        containerStyle={styles.stepTitleContainer}
+      />
       <Text style={styles.stepSubtitle}>
         This will be used to calibrate your custom daily challenge plan.
       </Text>
@@ -72,12 +89,8 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "transparent",
   },
-  stepTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#111827",
+  stepTitleContainer: {
     marginBottom: 6,
-    lineHeight: 32,
   },
   stepSubtitle: {
     fontSize: 13,

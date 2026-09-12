@@ -1,7 +1,9 @@
 import React, { useRef } from "react";
 import { Animated, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Easing } from "react-native-reanimated";
 import { Star } from "lucide-react-native";
 import { Text } from "../Text";
+import SplitText from "../ui/SplitText";
 
 interface Step5RatingProps {
   rating: number;
@@ -42,7 +44,22 @@ export function Step5Rating({ rating, onSelectRating }: Step5RatingProps) {
 
   return (
     <View style={styles.stepContainer}>
-      <Text style={styles.title}>Give us a rating</Text>
+      <SplitText
+        text="Give us a rating"
+        splitType="words"
+        triggerOnVisible={false}
+        delay={60}
+        duration={500}
+        ease={Easing.out(Easing.cubic)}
+        from={{ opacity: 0, translateY: 18 }}
+        to={{ opacity: 1, translateY: 0 }}
+        fontSize={25}
+        fontWeight="800"
+        color="#111111"
+        lineHeightMultiplier={1.28}
+        textAlign="left"
+        containerStyle={styles.titleContainer}
+      />
 
       <View style={styles.ratingSummaryCard}>
         <Text style={styles.laurel}>❮</Text>
@@ -118,11 +135,7 @@ export function Step5Rating({ rating, onSelectRating }: Step5RatingProps) {
 
 const styles = StyleSheet.create({
   stepContainer: { width: "100%", paddingBottom: 22 },
-  title: {
-    color: "#111111",
-    fontSize: 25,
-    fontWeight: "800",
-    lineHeight: 32,
+  titleContainer: {
     marginBottom: 12,
   },
   ratingSummaryCard: {

@@ -1,7 +1,9 @@
 import React, { useRef } from "react";
 import { Animated, View, TouchableOpacity, StyleSheet } from "react-native";
+import { Easing } from "react-native-reanimated";
 import { Sun, Coffee, Moon, BellOff, Check } from "lucide-react-native";
 import { Text } from "../Text";
+import SplitText from "../ui/SplitText";
 
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
@@ -67,7 +69,22 @@ export function Step3Reminder({
 
   return (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Daily Challenge Reminder</Text>
+      <SplitText
+        text="Daily Challenge Reminder"
+        splitType="words"
+        triggerOnVisible={false}
+        delay={60}
+        duration={500}
+        ease={Easing.out(Easing.cubic)}
+        from={{ opacity: 0, translateY: 18 }}
+        to={{ opacity: 1, translateY: 0 }}
+        fontSize={26}
+        fontWeight="800"
+        color="#111827"
+        lineHeightMultiplier={1.23}
+        textAlign="left"
+        containerStyle={styles.stepTitleContainer}
+      />
       <Text style={styles.stepSubtitle}>
         Choose your preferred reminder time so your daily streak flame never
         dies.
@@ -131,12 +148,8 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "transparent",
   },
-  stepTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#111827",
+  stepTitleContainer: {
     marginBottom: 6,
-    lineHeight: 32,
   },
   stepSubtitle: {
     fontSize: 13,
@@ -159,11 +172,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    elevation: 2,
   },
   channelRowSelected: {
-    borderColor: "#2563EB",
-    backgroundColor: "#F8FAFC",
+    borderColor: "#000000",
+    // backgroundColor: "#F8FAFC",
   },
   channelIconBox: {
     width: 40,
@@ -178,7 +191,7 @@ const styles = StyleSheet.create({
     color: "#111827",
   },
   channelRowTextSelected: {
-    color: "#2563EB",
+    color: "#000000",
     fontWeight: "700",
   },
   channelRowSub: {
@@ -197,7 +210,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   goalRadioSelected: {
-    borderColor: "#2563EB",
-    backgroundColor: "#2563EB",
+    borderColor: "#000000",
+    backgroundColor: "#000000",
   },
 });

@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import { Animated, View, TouchableOpacity, StyleSheet } from "react-native";
+import { Easing } from "react-native-reanimated";
 import {
   Brain,
   HeartHandshake,
@@ -8,6 +9,7 @@ import {
   Check,
 } from "lucide-react-native";
 import { Text } from "../Text";
+import SplitText from "../ui/SplitText";
 
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
@@ -64,7 +66,22 @@ export function Step2PrimaryGoal({
 
   return (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>What is your primary goal?</Text>
+      <SplitText
+        text="What is your primary goal?"
+        splitType="words"
+        triggerOnVisible={false}
+        delay={60}
+        duration={500}
+        ease={Easing.out(Easing.cubic)}
+        from={{ opacity: 0, translateY: 18 }}
+        to={{ opacity: 1, translateY: 0 }}
+        fontSize={26}
+        fontWeight="800"
+        color="#111827"
+        lineHeightMultiplier={1.23}
+        textAlign="left"
+        containerStyle={styles.stepTitleContainer}
+      />
       <Text style={styles.stepSubtitle}>
         This helps us personalize your daily challenges, hints, and performance
         stats.
@@ -119,12 +136,8 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: "transparent",
   },
-  stepTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#111827",
+  stepTitleContainer: {
     marginBottom: 6,
-    lineHeight: 32,
   },
   stepSubtitle: {
     fontSize: 13,
@@ -147,11 +160,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    elevation: 2,
   },
   goalCardSelected: {
     borderColor: "#00000080",
-    backgroundColor: "#F8FAFC",
+    // backgroundColor: "#F8FAFC",
   },
   goalIconWrap: {
     width: 44,
