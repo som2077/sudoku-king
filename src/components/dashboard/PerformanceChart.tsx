@@ -308,105 +308,106 @@ export function PerformanceChart() {
         </View>
       </View>
 
-      {/* Metric Filter Legend Pills (Both | Win Rate | Best Time) */}
+      {/* Metric Filter Legend Pills (All | Win Rate | Best Time) */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          gap: 8,
+          gap: 6,
           marginBottom: 14,
         }}
       >
-        <TouchableOpacity
-          onPress={() => setShowDifficultySheet(true)}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Filter performance by difficulty"
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
-            paddingHorizontal: 10,
-            paddingVertical: 3,
-            borderRadius: 50,
-            backgroundColor: "#F1F5F9",
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 11,
-              fontWeight: "700",
-              color: "#1C1F2E",
-            }}
-          >
-            {selectedDifficulty === "All" ? t('home.all') : selectedDifficulty}
-          </Text>
-        </TouchableOpacity>
 
+
+        {/* All */}
         <TouchableOpacity
-          onPress={() =>
-            setMetricFilter(metricFilter === "WinRate" ? "Both" : "WinRate")
-          }
+          onPress={() => setMetricFilter("Both")}
           activeOpacity={0.7}
           style={{
             flexDirection: "row",
             alignItems: "center",
             gap: 5,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
+            paddingHorizontal: 9,
+            paddingVertical: 4,
+            borderRadius: 12,
+            backgroundColor: metricFilter === "Both" ? "#1C1F2E" : "transparent",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: metricFilter === "Both" ? "700" : "500",
+              color: metricFilter === "Both" ? "#FFFFFF" : "#9CA3AF",
+            }}
+          >
+            {t('home.all')}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Win Rate */}
+        <TouchableOpacity
+          onPress={() => setMetricFilter("WinRate")}
+          activeOpacity={0.7}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 5,
+            paddingHorizontal: 9,
+            paddingVertical: 4,
             borderRadius: 12,
             backgroundColor:
-              metricFilter === "WinRate" ? "#F1F5F9" : "transparent",
+              metricFilter === "WinRate" ? `${COLOR_WIN}22` : "transparent",
           }}
         >
           <View
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
+              width: 7,
+              height: 7,
+              borderRadius: 3.5,
               backgroundColor: COLOR_WIN,
+              opacity: metricFilter === "WinRate" ? 1 : 0.5,
             }}
           />
           <Text
             style={{
               fontSize: 11,
               fontWeight: metricFilter === "WinRate" ? "700" : "500",
-              color: metricFilter === "WinRate" ? "#1C1F2E" : "#64748B",
+              color: metricFilter === "WinRate" ? "#04B2F1" : "#9CA3AF",
             }}
           >
             {t('home.winRate')}
           </Text>
         </TouchableOpacity>
 
+        {/* Best Time */}
         <TouchableOpacity
-          onPress={() =>
-            setMetricFilter(metricFilter === "BestTime" ? "Both" : "BestTime")
-          }
+          onPress={() => setMetricFilter("BestTime")}
           activeOpacity={0.7}
           style={{
             flexDirection: "row",
             alignItems: "center",
             gap: 5,
-            paddingHorizontal: 8,
-            paddingVertical: 3,
+            paddingHorizontal: 9,
+            paddingVertical: 4,
             borderRadius: 12,
             backgroundColor:
-              metricFilter === "BestTime" ? "#F1F5F9" : "transparent",
+              metricFilter === "BestTime" ? `${COLOR_TIME}22` : "transparent",
           }}
         >
           <View
             style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
+              width: 7,
+              height: 7,
+              borderRadius: 3.5,
               backgroundColor: COLOR_TIME,
+              opacity: metricFilter === "BestTime" ? 1 : 0.5,
             }}
           />
           <Text
             style={{
               fontSize: 11,
               fontWeight: metricFilter === "BestTime" ? "700" : "500",
-              color: metricFilter === "BestTime" ? "#7C3AED" : "#64748B",
+              color: metricFilter === "BestTime" ? "#7C3AED" : "#9CA3AF",
             }}
           >
             {t('home.bestTime')}
