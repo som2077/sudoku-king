@@ -27,7 +27,6 @@ import {
 } from "lucide-react-native";
 import {
   FilledBell,
-  FilledGraduationCap,
   FilledBookOpen,
   FilledMail,
   FilledFileText,
@@ -84,6 +83,7 @@ export function SettingsScreen({
     (state) => state.settings?.notificationsEnabled ?? true,
   );
   const updateSetting = useGameStore((state) => state.updateSetting);
+  const resetWelcome = useGameStore((state) => state.resetWelcome);
   const { t, language, supportedLanguages } = useTranslation();
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [languageSheetVisible, setLanguageSheetVisible] = useState(false);
@@ -252,15 +252,20 @@ export function SettingsScreen({
             accessibilityRole="button"
             accessibilityLabel="Sudoku King VIP Upgrade"
           >
+            {/* Blurred background image */}
+            <Image
+              source={require("../../assets/upImage.jpg")}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              blurRadius={2}
+            />
+
             <LinearGradient
-              colors={["#1E1E24", "#26262E", "#16161B"]}
+              colors={["rgba(18, 20, 28, 0.55)", "rgba(12, 14, 20, 0.72)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.bannerGradient}
             >
-              {/* Subtle background glow circle */}
-              <View style={styles.bannerGlowCircle} />
-
               <View style={styles.bannerInner}>
                 <View style={styles.bannerTitleRow}>
                   {isPremium && (
@@ -328,28 +333,35 @@ export function SettingsScreen({
                 <ChevronRight size={18} color="#9CA3AF" />
               </View>
             </TouchableOpacity>
-          </View>
-
-          {/* ── 3. Guides & Rules Section ── */}
-          <View style={styles.card}>
-            {/* How to Play */}
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() => setActiveModal("how_to_play")}
-              activeOpacity={0.65}
-              accessibilityRole="button"
-              accessibilityLabel={t("settings.howToPlay", "How to Play")}
-            >
-              <View style={styles.rowLeft}>
-                <FilledGraduationCap size={20} color="#111827" />
-                <Text style={styles.rowLabel}>
-                  {t("settings.howToPlay", "How to Play")}
-                </Text>
-              </View>
-            </TouchableOpacity>
 
             <View style={styles.rowDivider} />
 
+            {/* Replay Onboarding Guide */}
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => {
+                haptics.impactMedium();
+                resetWelcome();
+              }}
+              activeOpacity={0.65}
+              accessibilityRole="button"
+              accessibilityLabel={t(
+                "settings.replayOnboarding",
+                "Replay Onboarding Guide",
+              )}
+            >
+              <View style={styles.rowLeft}>
+                <RotateCcw size={20} color="#111827" />
+                <Text style={styles.rowLabel}>
+                  {t("settings.replayOnboarding", "Replay Onboarding Guide")}
+                </Text>
+              </View>
+              <ChevronRight size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+
+          {/* ── 3. Support & Legal Section ── */}
+          <View style={styles.card}>
             {/* Rules */}
             <TouchableOpacity
               style={styles.row}
@@ -366,13 +378,9 @@ export function SettingsScreen({
               </View>
               <ExternalLink size={16} color="#9CA3AF" />
             </TouchableOpacity>
-          </View>
 
-          {/* ── 4. Support & Legal Section ── */}
-          {/* <Text style={styles.sectionHeader}>
-            {t("settings.aboutAndLegal", "Support & Legal")}
-          </Text> */}
-          <View style={styles.card}>
+            <View style={styles.rowDivider} />
+
             {/* Help */}
             <TouchableOpacity
               style={styles.row}
@@ -895,14 +903,20 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#FFFFFF",
     letterSpacing: -0.3,
+    textShadowColor: "rgba(0, 0, 0, 0.45)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   bannerSubtitle: {
     fontSize: 13,
-    color: "rgba(255, 255, 255, 0.82)",
+    color: "rgba(255, 255, 255, 0.90)",
     textAlign: "center",
     marginTop: 6,
     lineHeight: 18,
     paddingHorizontal: 10,
+    textShadowColor: "rgba(0, 0, 0, 0.40)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   bannerBtn: {
     backgroundColor: "#FFFFFF",

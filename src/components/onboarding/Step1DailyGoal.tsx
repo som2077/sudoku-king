@@ -3,18 +3,23 @@ import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { Easing } from "react-native-reanimated";
 import { Text } from "../Text";
 import SplitText from "../ui/SplitText";
+import { useTranslation } from "../../i18n";
+
 interface Step1DailyGoalProps {
   dailyMinutes: number;
   onSelectMinutes: (minutes: number) => void;
 }
+
 export function Step1DailyGoal({
   dailyMinutes,
   onSelectMinutes,
 }: Step1DailyGoalProps) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.stepContainer}>
       <SplitText
-        text="Daily Training Goal"
+        text={t("onboarding.s1Title", "Daily Training Goal")}
         splitType="words"
         triggerOnVisible={false}
         delay={60}
@@ -30,12 +35,12 @@ export function Step1DailyGoal({
         containerStyle={styles.stepTitleContainer}
       />
       <Text style={styles.stepSubtitle}>
-        This will be used to calibrate your custom daily challenge plan.
+        {t("onboarding.s1Subtitle", "This will be used to calibrate your custom daily challenge plan.")}
       </Text>
       <View style={styles.numberPickerContainer}>
         <View style={styles.numberBigRow}>
           <Text style={styles.numberBig}>{dailyMinutes}</Text>
-          <Text style={styles.numberUnit}>min / day</Text>
+          <Text style={styles.numberUnit}>{t("onboarding.s1MinPerDay", "min / day")}</Text>
         </View>
 
         {/* Small Pointer Arrow */}
@@ -56,7 +61,7 @@ export function Step1DailyGoal({
                 activeOpacity={0.7}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: isActive }}
-                accessibilityLabel={`${val} minutes per day`}
+                accessibilityLabel={`${val} ${t("onboarding.s1MinPerDay", "min / day")}`}
               >
                 <Text
                   style={[
@@ -72,12 +77,12 @@ export function Step1DailyGoal({
         </View>
 
         <Text style={styles.pickerHint}>
-          {dailyMinutes === 5 && "🌱 Casual: Quick 5-minute mental warm-up"}
+          {dailyMinutes === 5 && t("onboarding.s1Hint5", "🌱 Casual: Quick 5-minute mental warm-up")}
           {dailyMinutes === 10 &&
-            "⭐ Recommended: Perfect for 1 Daily Challenge"}
-          {dailyMinutes === 15 && "🧠 Brain Workout: 2 Puzzles + deeper focus"}
+            t("onboarding.s1Hint10", "⭐ Recommended: Perfect for 1 Daily Challenge")}
+          {dailyMinutes === 15 && t("onboarding.s1Hint15", "🧠 Brain Workout: 2 Puzzles + deeper focus")}
           {dailyMinutes === 20 &&
-            "👑 Master Level: Serious cognitive endurance"}
+            t("onboarding.s1Hint20", "👑 Master Level: Serious cognitive endurance")}
         </Text>
       </View>
     </View>

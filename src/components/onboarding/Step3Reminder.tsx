@@ -4,6 +4,7 @@ import { Easing } from "react-native-reanimated";
 import { Sun, Coffee, Moon, BellOff, Check } from "lucide-react-native";
 import { Text } from "../Text";
 import SplitText from "../ui/SplitText";
+import { useTranslation } from "../../i18n";
 
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
@@ -24,32 +25,33 @@ export function Step3Reminder({
   reminderSlot,
   onSelectSlot,
 }: Step3ReminderProps) {
+  const { t } = useTranslation();
   const reminderOptions = [
     {
       id: "morning" as const,
-      label: "Morning (9:00 AM)",
-      sub: "Start your day with an energized brain",
+      label: t("onboarding.remindMorning", "Morning (9:00 AM)"),
+      sub: t("onboarding.remindMorningSub", "Start your day with an energized brain"),
       icon: <Sun size={20} color="#D97706" />,
       bg: "#FEF3C7",
     },
     {
       id: "afternoon" as const,
-      label: "Afternoon (2:00 PM)",
-      sub: "Mid-day mental recharge break",
+      label: t("onboarding.remindAfternoon", "Afternoon (2:00 PM)"),
+      sub: t("onboarding.remindAfternoonSub", "Mid-day mental recharge break"),
       icon: <Coffee size={20} color="#2563EB" />,
       bg: "#EFF6FF",
     },
     {
       id: "evening" as const,
-      label: "Evening (8:00 PM)",
-      sub: "Calm unwinding before sleep",
+      label: t("onboarding.remindEvening", "Evening (8:00 PM)"),
+      sub: t("onboarding.remindEveningSub", "Calm unwinding before sleep"),
       icon: <Moon size={20} color="#7C3AED" />,
       bg: "#F5F3FF",
     },
     {
       id: "none" as const,
-      label: "No reminder",
-      sub: "I will open the game myself without alerts",
+      label: t("onboarding.remindNone", "No reminder"),
+      sub: t("onboarding.remindNoneSub", "I will open the game myself without alerts"),
       icon: <BellOff size={20} color="#6B7280" />,
       bg: "#F3F4F6",
     },
@@ -70,7 +72,7 @@ export function Step3Reminder({
   return (
     <View style={styles.stepContainer}>
       <SplitText
-        text="Daily Challenge Reminder"
+        text={t("onboarding.s3ReminderTitle", "Daily Challenge Reminder")}
         splitType="words"
         triggerOnVisible={false}
         delay={60}
@@ -86,8 +88,7 @@ export function Step3Reminder({
         containerStyle={styles.stepTitleContainer}
       />
       <Text style={styles.stepSubtitle}>
-        Choose your preferred reminder time so your daily streak flame never
-        dies.
+        {t("onboarding.s3ReminderSubtitle", "Choose your preferred reminder time so your daily streak flame never dies.")}
       </Text>
 
       <View style={styles.cardsList}>

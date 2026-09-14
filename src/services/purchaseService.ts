@@ -40,17 +40,22 @@ class PurchaseService {
       await this.fetchOfferings();
     } catch (error: any) {
       console.log('ℹ️ [RevenueCat] Initialization note:', error?.message || error);
-      try {
-        const fallbackKey = getRevenueCatTestKey();
-        if (fallbackKey) {
-          console.log('💳 [RevenueCat] Retrying with test store key...');
-          await Purchases.configure({ apiKey: fallbackKey });
-          this.isInitialized = true;
-          await this.checkSubscriptionStatus();
-          await this.fetchOfferings();
+      // In DEV only: retry with test store key for local testing convenience.
+      // In PRODUCTION: never fall back to a test key — real purchases must use
+      // the production Google Play key only.
+      if (__DEV__) {
+        try {
+          const fallbackKey = getRevenueCatTestKey();
+          if (fallbackKey) {
+            console.log('💳 [RevenueCat] DEV: Retrying with test store key...');
+            await Purchases.configure({ apiKey: fallbackKey });
+            this.isInitialized = true;
+            await this.checkSubscriptionStatus();
+            await this.fetchOfferings();
+          }
+        } catch (fallbackErr) {
+          console.log('ℹ️ [RevenueCat] DEV fallback key note:', fallbackErr);
         }
-      } catch (fallbackErr) {
-        console.log('ℹ️ [RevenueCat] Fallback key note:', fallbackErr);
       }
     }
   }

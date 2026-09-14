@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   InteractionManager,
   StyleSheet,
+  Modal,
 } from "react-native";
 import {
   SafeAreaView,
@@ -171,6 +172,7 @@ export default function App() {
   const [bannerLoaded, setBannerLoaded] = useState(false);
   const [foregroundNotification, setForegroundNotification] =
     useState<NotificationPayload | null>(null);
+  const [showRcPaywall, setShowRcPaywall] = useState(false);
   const [showCustomPaywall, setShowCustomPaywall] = useState(false);
   const [pendingOnboardingDiff, setPendingOnboardingDiff] =
     useState<Difficulty | null>(null);
@@ -292,8 +294,12 @@ export default function App() {
     }
   };
 
-  const buyPremium = () => {
-    setShowCustomPaywall(true);
+  const buyPremium = (onboardingDiff?: Difficulty | null) => {
+    if (onboardingDiff) {
+      setPendingOnboardingDiff(onboardingDiff);
+    }
+    NativeStatusBar.setBarStyle("dark-content", true);
+    setShowRcPaywall(true);
   };
 
   const restorePurchases = async () => {
@@ -382,8 +388,7 @@ export default function App() {
               resetWelcome();
             }}
             onFinish={(chosenDifficulty) => {
-              setPendingOnboardingDiff(chosenDifficulty);
-              setShowCustomPaywall(true);
+              buyPremium(chosenDifficulty);
             }}
           />
         </View>
@@ -559,6 +564,51 @@ export default function App() {
             </View>
           )}
         </View>
+      )}
+
+      {showRcPaywall && (
+        <Modal
+          visible={showRcPaywall}
+          animationType="slide"
+          presentationStyle="fullScreen"
+          statusBarTranslucent={true}
+          onRequestClose={() => {
+            setShowRcPaywall(false);
+            if (!hasCompletedOnboarding && pendingOnboardingDiff) {
+              completeOnboarding(pendingOnboardingDiff || "Easy");
+              setPendingOnboardingDiff(null);
+            }
+          }}
+        >
+          <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+            <NativeStatusBar barStyle="dark-content" translucent={true} backgroundColor="transparent" />
+            <RevenueCatUI.Paywall
+              onDismiss={() => {
+                setShowRcPaywall(false);
+                if (!hasCompletedOnboarding && pendingOnboardingDiff) {
+                  completeOnboarding(pendingOnboardingDiff || "Easy");
+                  setPendingOnboardingDiff(null);
+                }
+              }}
+              onPurchaseCompleted={({ customerInfo }) => {
+                setPremium(true);
+                setShowRcPaywall(false);
+                if (!hasCompletedOnboarding && pendingOnboardingDiff) {
+                  completeOnboarding(pendingOnboardingDiff || "Easy");
+                  setPendingOnboardingDiff(null);
+                }
+              }}
+              onRestoreCompleted={({ customerInfo }) => {
+                setPremium(true);
+                setShowRcPaywall(false);
+                if (!hasCompletedOnboarding && pendingOnboardingDiff) {
+                  completeOnboarding(pendingOnboardingDiff || "Easy");
+                  setPendingOnboardingDiff(null);
+                }
+              }}
+            />
+          </View>
+        </Modal>
       )}
 
       <Paywall

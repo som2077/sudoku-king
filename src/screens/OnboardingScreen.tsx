@@ -9,6 +9,7 @@ import { notificationService } from "../services/notificationService";
 import { localNotificationScheduler } from "../services/localNotificationScheduler";
 import { useGameStore } from "../store/useGameStore";
 import { haptics } from "../utils/haptics";
+import { useTranslation } from "../i18n";
 import {
   OnboardingHeader,
   Step0Experience,
@@ -28,6 +29,7 @@ export default function OnboardingScreen({
   onFinish,
   onBack,
 }: OnboardingScreenProps) {
+  const { t } = useTranslation();
   // 5 Step Flow (Matching Screenshot 2 inspiration)
   // Step 0: Choose Experience (Circular bubbles)
   // Step 1: Daily Training Time (Number wheel & selector bar)
@@ -180,10 +182,16 @@ export default function OnboardingScreen({
             ]}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel={step === 4 ? "Start Playing" : "Continue"}
+            accessibilityLabel={
+              step === 4
+                ? t("onboarding.startPlaying", "Start Playing")
+                : t("onboarding.continue", "Continue")
+            }
           >
             <Text style={styles.continueButtonText}>
-              {step === 4 ? "Start Playing" : "Continue"}
+              {step === 4
+                ? t("onboarding.startPlaying", "Start Playing")
+                : t("onboarding.continue", "Continue")}
             </Text>
             {step === 4 && (
               <Play

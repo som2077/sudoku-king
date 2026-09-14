@@ -67,11 +67,8 @@ const Cell = ({
               style={[
                 styles.noteText,
                 {
-                  color: active
-                    ? isSelected
-                      ? "#FFFFFF"
-                      : "#1D4ED8"
-                    : "transparent",
+                  color: isSelected ? "#FFFFFF" : "#1D4ED8",
+                  opacity: active ? 1 : 0,
                 },
               ]}
             >

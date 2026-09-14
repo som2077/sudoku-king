@@ -155,7 +155,7 @@ export default function WelcomeScreen({
                 justifyContent: "center",
                 // maxWidth: 540,
                 // maxHeight: 760,
-                marginTop: 390,
+                marginTop: 350,
                 marginLeft: 100,
                 marginBottom: 0,
               }}
@@ -233,19 +233,19 @@ export default function WelcomeScreen({
             </Text>
           </TouchableOpacity>
           <Text style={styles.legalNotice}>
-            By get started, you check our{" "}
+            {t("welcome.termsNoticePre", "By getting started, you check our ")}
             <Text
               style={styles.legalLink}
               onPress={() => setLegalModal("terms")}
             >
-              Terms of Service
-            </Text>{" "}
-            and acknowledge our{" "}
+              {t("settings.terms", "Terms of Service")}
+            </Text>
+            {t("welcome.termsNoticeMid", " and acknowledge our ")}
             <Text
               style={styles.legalLink}
               onPress={() => setLegalModal("privacy")}
             >
-              Privacy Policy
+              {t("settings.privacy", "Privacy Policy")}
             </Text>
             .
           </Text>
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     paddingHorizontal: 22,
     // paddingTop:0,
-    marginTop: 160,
+    marginTop: 140,
   },
   headline: {
     fontSize: 32,

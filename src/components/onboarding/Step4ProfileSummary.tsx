@@ -5,6 +5,7 @@ import { Text } from "../Text";
 import SplitText from "../ui/SplitText";
 import { Difficulty } from "../../utils/sudokuLogic";
 import { ReminderSlotType } from "./Step3Reminder";
+import { useTranslation } from "../../i18n";
 
 interface Step4ProfileSummaryProps {
   experience: Difficulty;
@@ -17,10 +18,16 @@ export function Step4ProfileSummary({
   dailyMinutes,
   reminderSlot,
 }: Step4ProfileSummaryProps) {
+  const { t } = useTranslation();
+  const titleText = t(
+    "onboarding.s4SummaryTitle",
+    "Building a {minutes}-minute Sudoku habit is a realistic goal. It's not hard at all!",
+  ).replace("{minutes}", String(dailyMinutes));
+
   return (
     <View style={styles.stepContainer}>
       <SplitText
-        text={`Building a ${dailyMinutes}-minute Sudoku habit is a realistic goal. It's not hard at all!`}
+        text={titleText}
         splitType="words"
         triggerOnVisible={false}
         delay={55}
@@ -34,11 +41,13 @@ export function Step4ProfileSummary({
         lineHeightMultiplier={1.26}
         textAlign="center"
         containerStyle={styles.stepTitleContainer}
-        highlightWords={[{ word: `${dailyMinutes}-minute`, color: "#D88955" }]}
+        highlightWords={[{ word: `${dailyMinutes}`, color: "#D88955" }]}
       />
       <Text style={styles.stepSubtitle}>
-        Small daily sessions sharpen your focus, improve your logic, and make
-        building a lasting streak feel effortless.
+        {t(
+          "onboarding.s4SummarySubtitle",
+          "Small daily sessions sharpen your focus, improve your logic, and make building a lasting streak feel effortless.",
+        )}
       </Text>
     </View>
   );

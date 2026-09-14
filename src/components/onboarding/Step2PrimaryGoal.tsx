@@ -10,6 +10,7 @@ import {
 } from "lucide-react-native";
 import { Text } from "../Text";
 import SplitText from "../ui/SplitText";
+import { useTranslation } from "../../i18n";
 
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
@@ -23,32 +24,33 @@ export function Step2PrimaryGoal({
   goal,
   onSelectGoal,
 }: Step2PrimaryGoalProps) {
+  const { t } = useTranslation();
   const goalItems = [
     {
       id: "focus",
-      title: "Sharpen Focus & Memory",
-      desc: "Boost mental agility and cognitive alertness daily.",
+      title: t("onboarding.goalFocusTitle", "Sharpen Focus & Memory"),
+      desc: t("onboarding.goalFocusDesc", "Boost mental agility and cognitive alertness daily."),
       icon: <Brain size={22} color="#2563EB" />,
       bg: "#EFF6FF",
     },
     {
       id: "relax",
-      title: "Relax & De-stress",
-      desc: "Calm, thoughtful problem-solving to unwind anytime.",
+      title: t("onboarding.goalRelaxTitle", "Relax & De-stress"),
+      desc: t("onboarding.goalRelaxDesc", "Calm, thoughtful problem-solving to unwind anytime."),
       icon: <HeartHandshake size={22} color="#10B981" />,
       bg: "#ECFDF5",
     },
     {
       id: "streak",
-      title: "Build a Winning Streak",
-      desc: "Maintain daily consistency and collect royal crowns.",
+      title: t("onboarding.goalStreakTitle", "Build a Winning Streak"),
+      desc: t("onboarding.goalStreakDesc", "Maintain daily consistency and collect royal crowns."),
       icon: <Flame size={22} color="#EA580C" fill="#EA580C" />,
       bg: "#FFF7ED",
     },
     {
       id: "master",
-      title: "Master Advanced Logic",
-      desc: "Learn advanced pencil candidates and beat personal bests.",
+      title: t("onboarding.goalMasterTitle", "Master Advanced Logic"),
+      desc: t("onboarding.goalMasterDesc", "Learn advanced pencil candidates and beat personal bests."),
       icon: <Crown size={22} color="#D97706" />,
       bg: "#FEF3C7",
     },
@@ -67,7 +69,7 @@ export function Step2PrimaryGoal({
   return (
     <View style={styles.stepContainer}>
       <SplitText
-        text="What is your primary goal?"
+        text={t("onboarding.s2GoalTitle", "What is your primary goal?")}
         splitType="words"
         triggerOnVisible={false}
         delay={60}
@@ -83,8 +85,7 @@ export function Step2PrimaryGoal({
         containerStyle={styles.stepTitleContainer}
       />
       <Text style={styles.stepSubtitle}>
-        This helps us personalize your daily challenges, hints, and performance
-        stats.
+        {t("onboarding.s2GoalSubtitle", "This helps us personalize your daily challenges, hints, and performance stats.")}
       </Text>
 
       <View style={styles.cardsList}>

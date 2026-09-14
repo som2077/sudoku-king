@@ -12,6 +12,7 @@ import { Text } from "../Text";
 import SplitText from "../ui/SplitText";
 import { Difficulty } from "../../utils/sudokuLogic";
 import { haptics } from "../../utils/haptics";
+import { useTranslation } from "../../i18n";
 
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
@@ -25,6 +26,7 @@ export function Step0Experience({
   experience,
   onSelectExperience,
 }: Step0ExperienceProps) {
+  const { t } = useTranslation();
   const bubbleScales = [
     useRef(new Animated.Value(1)).current,
     useRef(new Animated.Value(1)).current,
@@ -132,7 +134,7 @@ export function Step0Experience({
   return (
     <View style={styles.stepContainer}>
       <SplitText
-        text="How challenging do you want your Sudoku puzzles to be?"
+        text={t("onboarding.s0Title", "How challenging do you want your Sudoku puzzles to be?")}
         splitType="words"
         triggerOnVisible={false}
         delay={40}
@@ -148,17 +150,17 @@ export function Step0Experience({
         containerStyle={styles.stepTitleContainer}
       />
       <Text style={styles.stepSubtitle}>
-        Choose a starting level that feels right for your daily practice.
+        {t("onboarding.s0Subtitle", "Choose a starting level that feels right for your daily practice.")}
       </Text>
 
       <View style={styles.difficultySelector}>
-        <Text style={styles.selectorCaption}>Starting difficulty</Text>
+        <Text style={styles.selectorCaption}>{t("onboarding.s0StartingDiff", "Starting difficulty")}</Text>
         <Text style={styles.selectorValue}>
           {experience === "Easy"
-            ? "Beginner"
+            ? t("onboarding.s0Beginner", "Beginner")
             : experience === "Medium"
-              ? "Casual"
-              : "Expert"}
+              ? t("onboarding.s0Casual", "Casual")
+              : t("onboarding.s0Expert", "Expert")}
         </Text>
 
         <View style={styles.choiceRow}>
@@ -177,7 +179,7 @@ export function Step0Experience({
               activeOpacity={0.8}
               accessibilityRole="radio"
               accessibilityState={{ checked: experience === "Easy" }}
-              accessibilityLabel="Beginner, learning rules"
+              accessibilityLabel={`${t("onboarding.s0Beginner", "Beginner")}, ${t("onboarding.s0BeginnerSub", "Learning rules")}`}
             >
               <Sparkles
                 size={36}
@@ -192,9 +194,9 @@ export function Step0Experience({
                 experience === "Easy" && styles.circleLabelSelected,
               ]}
             >
-              Beginner
+              {t("onboarding.s0Beginner", "Beginner")}
             </Text>
-            <Text style={styles.circleSubLabel}>Learning rules</Text>
+            <Text style={styles.circleSubLabel}>{t("onboarding.s0BeginnerSub", "Learning rules")}</Text>
           </View>
 
           {/* Option 2: Casual */}
@@ -212,7 +214,7 @@ export function Step0Experience({
               activeOpacity={0.8}
               accessibilityRole="radio"
               accessibilityState={{ checked: experience === "Medium" }}
-              accessibilityLabel="Casual, play for fun"
+              accessibilityLabel={`${t("onboarding.s0Casual", "Casual")}, ${t("onboarding.s0CasualSub", "Play for fun")}`}
             >
               <Zap size={36} color="#365314" fill="#365314" strokeWidth={1.5} />
             </AnimatedTouchableOpacity>
@@ -222,9 +224,9 @@ export function Step0Experience({
                 experience === "Medium" && styles.circleLabelSelected,
               ]}
             >
-              Casual
+              {t("onboarding.s0Casual", "Casual")}
             </Text>
-            <Text style={styles.circleSubLabel}>Play for fun</Text>
+            <Text style={styles.circleSubLabel}>{t("onboarding.s0CasualSub", "Play for fun")}</Text>
           </View>
 
           {/* Option 3: Expert */}
@@ -242,7 +244,7 @@ export function Step0Experience({
               activeOpacity={0.8}
               accessibilityRole="radio"
               accessibilityState={{ checked: experience === "Hard" }}
-              accessibilityLabel="Expert, complex logic"
+              accessibilityLabel={`${t("onboarding.s0Expert", "Expert")}, ${t("onboarding.s0ExpertSub", "Complex logic")}`}
             >
               <Crown
                 size={36}
@@ -257,9 +259,9 @@ export function Step0Experience({
                 experience === "Hard" && styles.circleLabelSelected,
               ]}
             >
-              Expert
+              {t("onboarding.s0Expert", "Expert")}
             </Text>
-            <Text style={styles.circleSubLabel}>Complex logic</Text>
+            <Text style={styles.circleSubLabel}>{t("onboarding.s0ExpertSub", "Complex logic")}</Text>
           </View>
         </View>
 
@@ -273,7 +275,7 @@ export function Step0Experience({
           }}
           {...trackPanResponder.panHandlers}
           accessibilityRole="adjustable"
-          accessibilityLabel="Puzzle difficulty"
+          accessibilityLabel={t("onboarding.s0StartingDiff", "Starting difficulty")}
         >
           <View style={styles.difficultyTrack} pointerEvents="none">
             <Animated.View
@@ -293,20 +295,20 @@ export function Step0Experience({
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>
             {experience === "Easy"
-              ? "You will start with gentle puzzles"
+              ? t("onboarding.s0InfoGentle", "You will start with gentle puzzles")
               : experience === "Medium"
-                ? "You will start with balanced puzzles"
-                : "You will start with challenging puzzles"}
+                ? t("onboarding.s0InfoBalanced", "You will start with balanced puzzles")
+                : t("onboarding.s0InfoChallenging", "You will start with challenging puzzles")}
           </Text>
           <Text style={styles.infoText}>
             {experience === "Easy"
-              ? "Perfect for learning the rules and building confidence."
+              ? t("onboarding.s0InfoGentleDesc", "Perfect for learning the rules and building confidence.")
               : experience === "Medium"
-                ? "A thoughtful mix of focus, logic, and satisfying progress."
-                : "Designed to stretch your logic and sharpen advanced skills."}
+                ? t("onboarding.s0InfoBalancedDesc", "A thoughtful mix of focus, logic, and satisfying progress.")
+                : t("onboarding.s0InfoChallengingDesc", "Designed to stretch your logic and sharpen advanced skills.")}
           </Text>
           <Text style={styles.infoMeta}>
-            Smart assists will adjust as your skills improve.
+            {t("onboarding.s0InfoAssist", "Smart assists will adjust as your skills improve.")}
           </Text>
         </View>
       </View>
