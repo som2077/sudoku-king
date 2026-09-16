@@ -41,6 +41,9 @@ class PurchaseService {
       await this.fetchOfferings();
     } catch (error: any) {
       console.log('ℹ️ [RevenueCat] Initialization note:', error?.message || error);
+      // Fail closed if a previous persisted premium state cannot be verified.
+      const { checkTrialStatus, setPremium } = useGameStore.getState();
+      setPremium(checkTrialStatus());
       // In DEV only: retry with test store key for local testing convenience.
       // In PRODUCTION: never fall back to a test key — real purchases must use
       // the production Google Play key only.
@@ -66,7 +69,7 @@ class PurchaseService {
     const trialActive = checkTrialStatus();
 
     if (!this.isInitialized) {
-      if (trialActive) setPremium(true);
+      setPremium(trialActive);
       return trialActive;
     }
 
@@ -83,26 +86,20 @@ class PurchaseService {
       }
     } catch (err) {
       console.warn('⚠️ [RevenueCat] Failed to fetch customer info:', err);
+      // Do not keep a stale persisted premium flag when entitlement state
+      // cannot be confirmed. A still-active local trial remains valid.
+      setPremium(trialActive);
       return trialActive;
     }
   }
 
-  private hasActiveEntitlement(customerInfo: CustomerInfo): boolean {
+  /**
+   * RevenueCat's active entitlement map is the source of truth. A product
+   * purchase by itself must not unlock every premium feature.
+   */
+  hasActiveEntitlement(customerInfo?: CustomerInfo | null): boolean {
     const active = customerInfo?.entitlements?.active || {};
-    if (
-      typeof active[ENTITLEMENT_ID] !== 'undefined' ||
-      typeof active[FALLBACK_ENTITLEMENT_ID] !== 'undefined'
-    ) {
-      return true;
-    }
-    if (Object.keys(active).length > 0) {
-      return true;
-    }
-    const purchasedProducts = customerInfo?.allPurchasedProductIdentifiers || [];
-    if (purchasedProducts.length > 0) {
-      return true;
-    }
-    return false;
+    return Boolean(active[ENTITLEMENT_ID] || active[FALLBACK_ENTITLEMENT_ID]);
   }
 
   private handleCustomerInfoUpdate(customerInfo: CustomerInfo) {
@@ -110,7 +107,9 @@ class PurchaseService {
     const hasEntitlement = this.hasActiveEntitlement(customerInfo);
     const trialActive = checkTrialStatus();
 
-    console.log('💳 [RevenueCat] Customer info updated. Has entitlement:', hasEntitlement, 'Trial active:', trialActive);
+    if (__DEV__) {
+      console.log('💳 [RevenueCat] Customer info updated. Has entitlement:', hasEntitlement, 'Trial active:', trialActive);
+    }
     setPremium(hasEntitlement || trialActive);
   }
 

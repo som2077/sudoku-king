@@ -98,9 +98,6 @@ class NotificationService {
       const token = await getToken(messagingInstance);
       if (token) {
         storage.set(FCM_TOKEN_STORAGE_KEY, token);
-        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        console.log("📱 [FCM DEVICE TOKEN]:", token);
-        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       }
       return token;
     } catch (error) {
@@ -191,14 +188,11 @@ class NotificationService {
 
     // 3. Token refresh listener
     onTokenRefresh(messagingInstance, (newToken: string) => {
-      console.log("🔄 [FCM] Device token refreshed:", newToken);
       storage.set(FCM_TOKEN_STORAGE_KEY, newToken);
     });
 
     // 4. Foreground message listener (when app is open and in use)
     onMessage(messagingInstance, async (remoteMessage: RemoteMessage) => {
-      console.log("📩 [FCM] Foreground notification received:", remoteMessage);
-
       const title = remoteMessage.notification?.title || "Sudoku King";
       const body = remoteMessage.notification?.body || "";
       const payload: NotificationPayload = {
@@ -216,10 +210,6 @@ class NotificationService {
     onNotificationOpenedApp(
       messagingInstance,
       (remoteMessage: RemoteMessage) => {
-        console.log(
-          "📲 [FCM] App opened from background via notification:",
-          remoteMessage,
-        );
         this.handleNotificationTap({
           title: remoteMessage.notification?.title,
           body: remoteMessage.notification?.body,
@@ -233,10 +223,6 @@ class NotificationService {
       const initialNotification =
         await getInitialNotification(messagingInstance);
       if (initialNotification) {
-        console.log(
-          "🚀 [FCM] App launched from killed state via notification:",
-          initialNotification,
-        );
         this.handleNotificationTap({
           title: initialNotification.notification?.title,
           body: initialNotification.notification?.body,

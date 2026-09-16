@@ -155,7 +155,9 @@ export default function App() {
     useState<Difficulty | null>(null);
 
   const handleNotificationAction = (payload: NotificationPayload) => {
-    console.log("🎯 [Notification Action Handler]:", payload);
+    if (__DEV__) {
+      console.log("🎯 [Notification Action Handler] received");
+    }
     const action = payload.data?.action || payload.data?.screen;
     if (
       action === "daily" ||
@@ -596,6 +598,7 @@ export default function App() {
                 }
               }}
               onPurchaseCompleted={({ customerInfo }) => {
+                if (!purchaseService.hasActiveEntitlement(customerInfo)) return;
                 setPremium(true);
                 setShowRcPaywall(false);
                 if (!hasCompletedOnboarding && pendingOnboardingDiff) {
@@ -604,6 +607,7 @@ export default function App() {
                 }
               }}
               onRestoreCompleted={({ customerInfo }) => {
+                if (!purchaseService.hasActiveEntitlement(customerInfo)) return;
                 setPremium(true);
                 setShowRcPaywall(false);
                 if (!hasCompletedOnboarding && pendingOnboardingDiff) {

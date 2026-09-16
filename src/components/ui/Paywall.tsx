@@ -94,12 +94,10 @@ export default function Paywall({
 
   const handlePurchaseLifetime = async () => {
     if (!lifetimePackage) {
-      // Fallback direct VIP unlock in dev or test environment
-      haptics.success();
-      useGameStore.getState().setPremium(true);
-      Alert.alert("👑 VIP Unlocked", "Thank you for supporting Sudoku King!");
-      if (onSuccess) onSuccess();
-      onClose();
+      Alert.alert(
+        "VIP Unavailable",
+        "The purchase offer is not available right now. Please try again in a moment.",
+      );
       return;
     }
 
