@@ -7,6 +7,7 @@ import Purchases, {
 import { Platform } from 'react-native';
 import { getRevenueCatApiKey, getRevenueCatTestKey } from '../utils/secrets';
 import { useGameStore } from '../store/useGameStore';
+import { analyticsService } from './analyticsService';
 
 export const ENTITLEMENT_ID = 'suduko_king_unlimited';
 export const FALLBACK_ENTITLEMENT_ID = 'Premium';
@@ -138,12 +139,20 @@ class PurchaseService {
 
   async purchasePackage(pkg: PurchasesPackage): Promise<{ success: boolean; userCancelled?: boolean; error?: string }> {
     try {
+      analyticsService.logPurchaseStarted(pkg.product.identifier);
       const { customerInfo } = await Purchases.purchasePackage(pkg);
       const isSubscribed = this.hasActiveEntitlement(customerInfo);
       
       if (isSubscribed) {
         useGameStore.getState().setPremium(true);
         console.log('🎉 [RevenueCat] Purchase successful!');
+        analyticsService.logPurchaseSuccess({
+          productId: pkg.product.identifier,
+          price: pkg.product.price,
+          currency: pkg.product.currencyCode,
+          source: 'revenuecat',
+        });
+        analyticsService.setUserProperty('is_premium', 'true');
         return { success: true };
       }
       return { success: false, error: 'Entitlement not unlocked' };
@@ -168,6 +177,8 @@ class PurchaseService {
 
       if (isSubscribed) {
         setPremium(true);
+        analyticsService.logPurchaseRestored();
+        analyticsService.setUserProperty('is_premium', 'true');
         return { success: true, restored: true };
       } else {
         const trialActive = checkTrialStatus();
@@ -181,6 +192,7 @@ class PurchaseService {
   }
 
   activateFreeTrial(): void {
+    analyticsService.logTrialStarted('paywall', 3);
     useGameStore.getState().activateThreeDayTrial();
   }
 

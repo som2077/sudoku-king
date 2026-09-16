@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Modal, View, TouchableOpacity, StyleSheet } from "react-native";
 import { Text } from "../ui/Text";
-import { X, Calendar as CalendarIcon, Play } from "lucide-react-native";
+import { X, Play, Calendar } from "lucide-react-native";
 import { useGameStore, getDailyDifficulty } from "../../store/useGameStore";
 import { useTranslation } from "../../i18n";
 
@@ -60,8 +60,19 @@ export function DailyChallengePopup({ onStart }: DailyChallengePopupProps) {
             <X size={22} color="#6B7280" />
           </TouchableOpacity>
 
-          <View style={styles.iconContainer}>
-            <CalendarIcon size={32} color="#1D1A27" />
+          <View
+            style={[
+              styles.iconContainer,
+              {
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                marginBottom: 16,
+                marginTop: 8,
+              },
+            ]}
+          >
+            <Calendar size={32} color="#3B82F6" />
           </View>
 
           <Text style={styles.title}>{t("daily.title")}</Text>
@@ -115,14 +126,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    // width: 64,
+    // height: 64,
+    // borderRadius: 32,
+    // borderWidth :2,
     backgroundColor: "#F3F4F6",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
-    marginTop: 8,
+    // marginBottom: 16,
+    // marginTop: 8,
+    overflow: "hidden",
   },
   title: {
     fontSize: 22,

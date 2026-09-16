@@ -35,14 +35,18 @@ const TimerText = React.memo(function TimerText() {
   const timer = useGameStore((s) => s.timer);
   const timerVisible = useGameStore((s) => s.settings?.timerVisible ?? true);
   if (!timerVisible) return <Text style={styles.timerText}>{""}</Text>;
-  const m = Math.floor(timer / 60).toString().padStart(2, "0");
+  const m = Math.floor(timer / 60)
+    .toString()
+    .padStart(2, "0");
   const s = (timer % 60).toString().padStart(2, "0");
   return <Text style={styles.timerText}>{`${m}:${s}`}</Text>;
 });
 
 const PauseTimerText = React.memo(function PauseTimerText() {
   const timer = useGameStore((s) => s.timer);
-  const m = Math.floor(timer / 60).toString().padStart(2, "0");
+  const m = Math.floor(timer / 60)
+    .toString()
+    .padStart(2, "0");
   const s = (timer % 60).toString().padStart(2, "0");
   return <Text style={styles.pauseSubtitle}>{`${m}:${s}`}</Text>;
 });
@@ -145,10 +149,10 @@ export default function TopBar({
       useHint();
     } else {
       Alert.alert(
-        t('game.outOfHints'),
-        t('game.watchAdPrompt'),
+        t("game.outOfHints"),
+        t("game.watchAdPrompt"),
         [
-          { text: t('game.cancel'), style: "cancel" },
+          { text: t("game.cancel"), style: "cancel" },
           ...(onOpenPaywall
             ? [
                 {
@@ -158,7 +162,7 @@ export default function TopBar({
               ]
             : []),
           {
-            text: t('game.watchAd'),
+            text: t("game.watchAd"),
             onPress: () =>
               showRewardedAd(() => {
                 addHint();
@@ -240,7 +244,9 @@ export default function TopBar({
               : getDifficultyTitle(difficulty)}
           </Text>
 
-          <Text style={styles.mistakesText}>{t('game.mistakes')}: {mistakes}/3</Text>
+          <Text style={styles.mistakesText}>
+            {t("game.mistakes")}: {mistakes}/3
+          </Text>
 
           <TimerText />
         </View>
@@ -258,7 +264,7 @@ export default function TopBar({
             activeOpacity={0.7}
           >
             <RotateCcw size={22} color="#FFFFFF" strokeWidth={2.2} />
-            <Text style={styles.toolLabel}>{t('game.undo')}</Text>
+            <Text style={styles.toolLabel}>{t("game.undo")}</Text>
           </TouchableOpacity>
 
           {/* Eraser Card */}
@@ -272,7 +278,7 @@ export default function TopBar({
             activeOpacity={0.7}
           >
             <Eraser size={22} color="#FFFFFF" strokeWidth={2.2} />
-            <Text style={styles.toolLabel}>{t('game.eraser')}</Text>
+            <Text style={styles.toolLabel}>{t("game.eraser")}</Text>
           </TouchableOpacity>
 
           {/* Pencil (Notes) Card */}
@@ -293,7 +299,7 @@ export default function TopBar({
             <Text
               style={[styles.toolLabel, isNotesMode && styles.toolLabelActive]}
             >
-              {t('game.pencil')}
+              {t("game.pencil")}
             </Text>
           </TouchableOpacity>
 
@@ -311,7 +317,7 @@ export default function TopBar({
                 </Text>
               </View>
             </View>
-            <Text style={styles.toolLabel}>{t('game.hint')}</Text>
+            <Text style={styles.toolLabel}>{t("game.hint")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -323,14 +329,14 @@ export default function TopBar({
             <View style={styles.pauseIconCircle}>
               <Pause size={36} color="#2563EB" strokeWidth={2.5} />
             </View>
-            <Text style={styles.pauseTitle}>{t('game.paused')}</Text>
+            <Text style={styles.pauseTitle}>{t("game.paused")}</Text>
             <PauseTimerText />
             <TouchableOpacity
               onPress={() => setIsPaused(false)}
               style={styles.resumeBtn}
               activeOpacity={0.8}
             >
-              <Text style={styles.resumeBtnText}>{t('game.resume')}</Text>
+              <Text style={styles.resumeBtnText}>{t("game.resume")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
@@ -340,7 +346,7 @@ export default function TopBar({
               style={styles.leaveGameBtn}
               activeOpacity={0.8}
             >
-              <Text style={styles.leaveGameBtnText}>{t('game.saveQuit')}</Text>
+              <Text style={styles.leaveGameBtnText}>{t("game.saveQuit")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -351,7 +357,9 @@ export default function TopBar({
         <View style={styles.modalOverlay}>
           <View style={styles.settingsCard}>
             <View style={styles.settingsHeader}>
-              <Text style={styles.settingsTitle}>{t('game.settingsTitle')}</Text>
+              <Text style={styles.settingsTitle}>
+                {t("game.settingsTitle")}
+              </Text>
               <TouchableOpacity
                 onPress={() => setIsSettingsOpen(false)}
                 style={styles.closeBtn}
@@ -366,7 +374,7 @@ export default function TopBar({
               <View style={styles.settingRow}>
                 <View style={styles.settingLabelWrap}>
                   <Volume2 size={18} color="#2563EB" />
-                  <Text style={styles.settingLabel}>{t('settings.sound')}</Text>
+                  <Text style={styles.settingLabel}>{t("settings.sound")}</Text>
                 </View>
                 <Switch
                   value={settings?.soundEnabled ?? true}
@@ -384,7 +392,9 @@ export default function TopBar({
               <View style={styles.settingRow}>
                 <View style={styles.settingLabelWrap}>
                   <Vibrate size={18} color="#2563EB" />
-                  <Text style={styles.settingLabel}>{t('settings.vibration')}</Text>
+                  <Text style={styles.settingLabel}>
+                    {t("settings.vibration")}
+                  </Text>
                 </View>
                 <Switch
                   value={settings?.vibrationEnabled ?? true}
@@ -402,7 +412,9 @@ export default function TopBar({
               <View style={styles.settingRow}>
                 <View style={styles.settingLabelWrap}>
                   <Grid size={18} color="#2563EB" />
-                  <Text style={styles.settingLabel}>{t('settings.highlightAreas')}</Text>
+                  <Text style={styles.settingLabel}>
+                    {t("settings.highlightAreas")}
+                  </Text>
                 </View>
                 <Switch
                   value={settings?.highlightAreas ?? true}
@@ -421,7 +433,7 @@ export default function TopBar({
                 <View style={styles.settingLabelWrap}>
                   <Sparkles size={18} color="#2563EB" />
                   <Text style={styles.settingLabel}>
-                    {t('settings.highlightSameNumbers')}
+                    {t("settings.highlightSameNumbers")}
                   </Text>
                 </View>
                 <Switch
@@ -442,7 +454,9 @@ export default function TopBar({
               <View style={styles.settingRow}>
                 <View style={styles.settingLabelWrap}>
                   <Clock size={18} color="#2563EB" />
-                  <Text style={styles.settingLabel}>{t('settings.showTimer')}</Text>
+                  <Text style={styles.settingLabel}>
+                    {t("settings.showTimer")}
+                  </Text>
                 </View>
                 <Switch
                   value={settings?.timerVisible ?? true}
@@ -462,7 +476,7 @@ export default function TopBar({
               style={styles.doneBtn}
               activeOpacity={0.8}
             >
-              <Text style={styles.doneBtnText}>{t('game.done')}</Text>
+              <Text style={styles.doneBtnText}>{t("game.done")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -482,9 +496,9 @@ export default function TopBar({
             onPress={() => setIsLeaveModalOpen(false)}
           />
           <View style={styles.leaveDialogCard}>
-            <Text style={styles.leaveDialogTitle}>{t('game.leaveTitle')}</Text>
+            <Text style={styles.leaveDialogTitle}>{t("game.leaveTitle")}</Text>
             <Text style={styles.leaveDialogMessage}>
-              {t('game.leaveMessage')}
+              {t("game.leaveMessage")}
             </Text>
 
             <TouchableOpacity
@@ -495,7 +509,7 @@ export default function TopBar({
               style={styles.leaveDialogOkBtn}
               activeOpacity={0.85}
             >
-              <Text style={styles.leaveDialogOkText}>{t('game.ok')}</Text>
+              <Text style={styles.leaveDialogOkText}>{t("game.ok")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -503,7 +517,9 @@ export default function TopBar({
               style={styles.leaveDialogCancelBtn}
               activeOpacity={0.7}
             >
-              <Text style={styles.leaveDialogCancelText}>{t('game.cancel')}</Text>
+              <Text style={styles.leaveDialogCancelText}>
+                {t("game.cancel")}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

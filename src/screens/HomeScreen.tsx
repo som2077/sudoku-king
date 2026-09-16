@@ -27,6 +27,7 @@ const MemoizedSettingsScreen = React.memo(SettingsScreen);
 import { StatusBar as NativeStatusBar } from "react-native";
 import { Difficulty } from "../utils/sudokuLogic";
 import { useTranslation } from "../i18n";
+import { analyticsService } from "../services/analyticsService";
 
 type HomeScreenProps = {
   setScreen: (screen: "home" | "playing") => void;
@@ -330,7 +331,19 @@ export default function HomeScreen({
     } else {
       NativeStatusBar.setBarStyle("dark-content");
     }
+    const tabScreenNames: Record<Tab, string> = {
+      home: "DashboardScreen",
+      daily: "DailyChallengesScreen",
+      settings: "SettingsScreen",
+    };
+    analyticsService.logScreenView(tabScreenNames[activeTab] || activeTab);
   }, [activeTab]);
+
+  React.useEffect(() => {
+    if (showAwards) {
+      analyticsService.logScreenView("AwardsScreen");
+    }
+  }, [showAwards]);
 
   const activeTabRef = React.useRef(activeTab);
   React.useLayoutEffect(() => {

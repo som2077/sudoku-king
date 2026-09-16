@@ -6,6 +6,7 @@ import mobileAds, {
   AdEventType,
 } from 'react-native-google-mobile-ads';
 import { getBannerAdUnitId, getRewardedAdUnitId, getInterstitialAdUnitId } from '../utils/secrets';
+import { analyticsService } from './analyticsService';
 
 // Initialize Mobile Ads SDK
 mobileAds().initialize().then(() => {
@@ -50,6 +51,10 @@ function setupRewardedAd() {
 
   rewardedAd.addAdEventListener(RewardedAdEventType.EARNED_REWARD, (reward) => {
     console.log('🎉 [AdMob Rewarded] Reward earned:', reward);
+    analyticsService.logAdEvent('rewarded', 'earned', {
+      rewardType: (reward as any)?.type,
+      rewardAmount: (reward as any)?.amount,
+    });
     if (currentRewardCallback) {
       currentRewardCallback();
       currentRewardCallback = null;
@@ -102,6 +107,7 @@ export function showRewardedAd(
   if (isRewardedLoaded && rewardedAd) {
     currentRewardCallback = onEarned;
     currentErrorCallback = () => onError?.('Failed to display the rewarded ad.');
+    analyticsService.logAdEvent('rewarded', 'impression');
     rewardedAd.show().catch((err) => {
       console.log('⚠️ [AdMob Rewarded Show Error]:', err);
       currentRewardCallback = null;
@@ -192,6 +198,7 @@ export function showInterstitialAd(
 
   if (isInterstitialLoaded && interstitialAd) {
     currentInterstitialClosedCallback = onClosed || null;
+    analyticsService.logAdEvent('interstitial', 'impression');
     interstitialAd.show().catch((err) => {
       console.log('⚠️ [AdMob Interstitial Show Error]:', err);
       currentInterstitialClosedCallback = null;

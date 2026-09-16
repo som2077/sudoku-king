@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { View, useWindowDimensions, StyleSheet } from "react-native";
+import { View, Text, useWindowDimensions, StyleSheet } from "react-native";
 import Cell from "./Cell";
 import { useGameStore } from "../../store/useGameStore";
 import { haptics } from "../../utils/haptics";
@@ -32,7 +32,12 @@ function Board() {
 
   // Track completion of 3x3 blocks, rows, and columns
   const completedGroups = useMemo(() => {
-    if (!board || board.length !== 81) return { blocks: Array(9).fill(false), rows: Array(9).fill(false), cols: Array(9).fill(false) };
+    if (!board || board.length !== 81)
+      return {
+        blocks: Array(9).fill(false),
+        rows: Array(9).fill(false),
+        cols: Array(9).fill(false),
+      };
 
     const blocks = Array.from({ length: 9 }, (_, blockIndex) => {
       const blockRow = Math.floor(blockIndex / 3);
@@ -46,13 +51,13 @@ function Board() {
 
     const rows = Array.from({ length: 9 }, (_, r) => {
       return Array.from({ length: 9 }, (_, c) => board[r * 9 + c]).every(
-        (cell) => cell.value !== null && !cell.isError
+        (cell) => cell.value !== null && !cell.isError,
       );
     });
 
     const cols = Array.from({ length: 9 }, (_, c) => {
       return Array.from({ length: 9 }, (_, r) => board[r * 9 + c]).every(
-        (cell) => cell.value !== null && !cell.isError
+        (cell) => cell.value !== null && !cell.isError,
       );
     });
 
@@ -70,13 +75,13 @@ function Board() {
   useEffect(() => {
     if (previousCompleted.current) {
       const newBlock = completedGroups.blocks.some(
-        (done, idx) => done && !previousCompleted.current?.blocks[idx]
+        (done, idx) => done && !previousCompleted.current?.blocks[idx],
       );
       const newRow = completedGroups.rows.some(
-        (done, idx) => done && !previousCompleted.current?.rows[idx]
+        (done, idx) => done && !previousCompleted.current?.rows[idx],
       );
       const newCol = completedGroups.cols.some(
-        (done, idx) => done && !previousCompleted.current?.cols[idx]
+        (done, idx) => done && !previousCompleted.current?.cols[idx],
       );
 
       if (newBlock || newRow || newCol) {
@@ -99,12 +104,89 @@ function Board() {
     selectedCell !== null && board[selectedCell]
       ? board[selectedCell].value
       : null;
+  const difficulty = useGameStore((s) => s.difficulty);
   const selectedRow = selectedCell === null ? -1 : getRow(selectedCell);
   const selectedCol = selectedCell === null ? -1 : getCol(selectedCell);
   const selectedBlock = selectedCell === null ? -1 : getBlock(selectedCell);
 
+  let holesToDig = 47; // Default Medium
+  switch (difficulty) {
+    case "Fast":
+      holesToDig = 36;
+      break;
+    case "Easy":
+      holesToDig = 41;
+      break;
+    case "Medium":
+      holesToDig = 47;
+      break;
+    case "Hard":
+      holesToDig = 52;
+      break;
+    case "Expert":
+      holesToDig = 56;
+      break;
+    case "Master":
+      holesToDig = 58;
+      break;
+    case "Extreme":
+      holesToDig = 60;
+      break;
+  }
+
+  const initialClues = 81 - holesToDig;
+  const currentFilledCount = board.filter(
+    (c) => c.value !== null && !c.isError,
+  ).length;
+  const filledByUser = Math.max(0, currentFilledCount - initialClues);
+  const progressPercent = Math.max(
+    0,
+    Math.min(100, (filledByUser / holesToDig) * 100),
+  );
+
+  const score = filledByUser * 50;
+
   return (
     <View style={styles.boardWrapper}>
+      <View style={{ width: boardSize, marginBottom: 10 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginBottom: 4,
+            marginLeft:7,
+            marginRight:12
+          }}
+        >
+          <Text style={{ fontSize: 14, fontWeight: "600", color: "#000000" }}>
+            Sudoku Score
+          </Text>
+          <Text style={{ fontSize: 14, fontWeight: "700", color: "#1E293B" }}>
+            {Math.max(0, score)}
+          </Text>
+        </View>
+        <View
+          style={{
+            width: "96.5%",
+            marginLeft:5,
+            height: 10,
+            backgroundColor: "#F1F5F9",
+            borderRadius: 999,
+            overflow: "hidden",
+            borderWidth: 1,
+            borderColor: "#E2E8F0",
+          }}
+        >
+          <View
+            style={{
+              width: `${progressPercent}%`,
+              height: "100%",
+              backgroundColor: "#3B82F6",
+              borderRadius: 999,
+            }}
+          />
+        </View>
+      </View>
       <View
         style={[styles.boardContainer, { width: boardSize, height: boardSize }]}
       >

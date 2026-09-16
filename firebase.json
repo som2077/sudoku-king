@@ -1,0 +1,13 @@
+{
+  "react-native": {
+    "analytics_auto_collection_enabled": true,
+    "google_analytics_adid_collection_enabled": true,
+    "google_analytics_automatic_screen_reporting_enabled": true,
+    "analytics_default_allow_analytics_storage": true,
+    "analytics_default_allow_ad_storage": true,
+    "analytics_default_allow_ad_user_data": true,
+    "analytics_default_allow_ad_personalization_signals": true,
+    "crashlytics_auto_collection_enabled": true,
+    "crashlytics_is_error_generation_on_js_crash_enabled": true
+  }
+}

@@ -10,6 +10,7 @@ import { localNotificationScheduler } from "../services/localNotificationSchedul
 import { useGameStore } from "../store/useGameStore";
 import { haptics } from "../utils/haptics";
 import { useTranslation } from "../i18n";
+import { analyticsService } from "../services/analyticsService";
 import {
   OnboardingHeader,
   Step0Experience,
@@ -43,6 +44,10 @@ export default function OnboardingScreen({
   const [dailyMinutes, setDailyMinutes] = useState<number>(10);
   const [goal, setGoal] = useState<string>("focus");
   const [reminderSlot, setReminderSlot] = useState<ReminderSlotType>(null);
+
+  React.useEffect(() => {
+    analyticsService.logOnboardingStep(step);
+  }, [step]);
 
   const updateSetting = useGameStore((s) => s.updateSetting);
 

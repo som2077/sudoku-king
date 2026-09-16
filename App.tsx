@@ -17,7 +17,7 @@ import {
 import { useEffect, useState, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { StatusBar as NativeStatusBar } from "react-native";
-import { getAnalytics, logEvent } from "@react-native-firebase/analytics";
+import { analyticsService } from "./src/services/analyticsService";
 import Purchases from "react-native-purchases";
 import RevenueCatUI from "react-native-purchases-ui";
 import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
@@ -52,6 +52,7 @@ import {
   type NotificationPayload,
 } from "./src/services/notificationService";
 import { localNotificationScheduler } from "./src/services/localNotificationScheduler";
+import WinScreen from "./src/components/game/WinScreen";
 
 function BottomBannerAd({
   isPremium,
@@ -299,15 +300,41 @@ export default function App() {
       setPendingOnboardingDiff(onboardingDiff);
     }
     NativeStatusBar.setBarStyle("dark-content", true);
+    analyticsService.logPaywallViewed(onboardingDiff ? "onboarding" : "in_game");
     setShowRcPaywall(true);
   };
 
   const restorePurchases = async () => {
-    return await purchaseService.restorePurchases();
+    const result = await purchaseService.restorePurchases();
+    if (result) {
+      analyticsService.logPurchaseRestored();
+    }
+    return result;
   };
 
   const recordedWinRef = useRef<boolean>(false);
   const recordedLossRef = useRef<boolean>(false);
+
+  // ── GA4 Screen View Tracking ───────────────────────────────────────────────
+  useEffect(() => {
+    let activeScreen = "HomeScreen";
+    if (!hasSeenWelcome) {
+      activeScreen = "WelcomeScreen";
+    } else if (!hasCompletedOnboarding) {
+      activeScreen = "OnboardingScreen";
+    } else if (screen === "playing") {
+      activeScreen = "PlayingScreen";
+    } else {
+      activeScreen = "HomeScreen";
+    }
+    analyticsService.logScreenView(activeScreen);
+  }, [hasSeenWelcome, hasCompletedOnboarding, screen]);
+
+  useEffect(() => {
+    if (showRcPaywall || showCustomPaywall) {
+      analyticsService.logScreenView("PaywallScreen");
+    }
+  }, [showRcPaywall, showCustomPaywall]);
 
   useEffect(() => {
     if (!isGameWon && !isGameOver) {
@@ -325,7 +352,6 @@ export default function App() {
   }, [screen, isBoardEmpty, difficulty, startNewGame]);
 
   useEffect(() => {
-    const analytics = getAnalytics();
     if (isGameWon && !recordedWinRef.current) {
       recordedWinRef.current = true;
       const currentTimer = useGameStore.getState().timer;
@@ -333,10 +359,12 @@ export default function App() {
       const curDaily = useGameStore.getState().currentDailyChallenge;
       const curDiff = useGameStore.getState().difficulty;
 
-      console.log(
-        `🔥 [Firebase Analytics] Logging Event: game_won (Time: ${currentTimer}s)`,
-      );
-      logEvent(analytics, "game_won", { time_taken: currentTimer });
+      analyticsService.logGameWon({
+        difficulty: curDiff,
+        timeTaken: currentTimer,
+        mistakes: currentMistakes,
+        isDaily: !!curDaily,
+      });
 
       recordGameWon(curDiff, currentTimer);
 
@@ -346,10 +374,16 @@ export default function App() {
     } else if (isGameOver && !recordedLossRef.current) {
       recordedLossRef.current = true;
       const currentTimer = useGameStore.getState().timer;
-      console.log(
-        `🔥 [Firebase Analytics] Logging Event: game_lost (Time: ${currentTimer}s)`,
-      );
-      logEvent(analytics, "game_lost", { time_taken: currentTimer });
+      const currentMistakes = useGameStore.getState().mistakes;
+      const curDaily = useGameStore.getState().currentDailyChallenge;
+      const curDiff = useGameStore.getState().difficulty;
+
+      analyticsService.logGameLost({
+        difficulty: curDiff,
+        timeTaken: currentTimer,
+        mistakes: currentMistakes,
+        isDaily: !!curDaily,
+      });
     }
   }, [isGameWon, isGameOver, completeDailyChallenge, recordGameWon]);
 
@@ -434,7 +468,18 @@ export default function App() {
           </View>
 
           {/* ── Win / Game Over Modal ── */}
-          {(isGameOver || isGameWon) && (
+          {/* ── Win Screen ── */}
+          {isGameWon && (
+            <WinScreen 
+              onNewGame={() => {
+                startNewGame(difficulty || "Medium");
+              }}
+              onHome={handleBackToHome}
+            />
+          )}
+
+          {/* ── Game Over Modal ── */}
+          {(isGameOver && !isGameWon) && (
             <View
               style={{
                 position: "absolute",
@@ -469,19 +514,13 @@ export default function App() {
                     width: 80,
                     height: 80,
                     borderRadius: 999,
-                    backgroundColor: isGameWon
-                      ? currentDailyChallenge
-                        ? "#FEF3C7"
-                        : "#DCFCE7"
-                      : "#FEE2E2",
+                    backgroundColor: "#FEE2E2",
                     alignItems: "center",
                     justifyContent: "center",
                     marginBottom: 16,
                   }}
                 >
-                  <Text style={{ fontSize: 40 }}>
-                    {isGameWon ? (currentDailyChallenge ? "👑" : "🏆") : "💀"}
-                  </Text>
+                  <Text style={{ fontSize: 40 }}>💀</Text>
                 </View>
 
                 <Text
@@ -493,11 +532,7 @@ export default function App() {
                     textAlign: "center",
                   }}
                 >
-                  {isGameWon
-                    ? currentDailyChallenge
-                      ? "Daily Challenge Solved!"
-                      : "You Win!"
-                    : "Game Over"}
+                  Game Over
                 </Text>
                 <Text
                   style={{
@@ -507,37 +542,31 @@ export default function App() {
                     marginBottom: 28,
                   }}
                 >
-                  {isGameWon
-                    ? currentDailyChallenge
-                      ? `You solved ${currentDailyChallenge} in ${formatWinTime(useGameStore.getState().timer)}! Crown earned! 🎉`
-                      : "Excellent job solving this puzzle! 🎉"
-                    : "You made 3 mistakes. Better luck next time!"}
+                  You made 3 mistakes. Better luck next time!
                 </Text>
 
                 {/* Second Chance (only on game over) */}
-                {isGameOver && (
-                  <TouchableOpacity
-                    onPress={() => showRewardedAd(() => secondChance())}
+                <TouchableOpacity
+                  onPress={() => showRewardedAd(() => secondChance())}
+                  style={{
+                    backgroundColor: "#3B82F6",
+                    borderRadius: 999,
+                    paddingVertical: 14,
+                    width: "100%",
+                    alignItems: "center",
+                    marginBottom: 10,
+                  }}
+                >
+                  <Text
                     style={{
-                      backgroundColor: "#3B82F6",
-                      borderRadius: 999,
-                      paddingVertical: 14,
-                      width: "100%",
-                      alignItems: "center",
-                      marginBottom: 10,
+                      color: "#FFFFFF",
+                      fontWeight: "800",
+                      fontSize: 16,
                     }}
                   >
-                    <Text
-                      style={{
-                        color: "#FFFFFF",
-                        fontWeight: "800",
-                        fontSize: 16,
-                      }}
-                    >
-                      Second Chance {isPremium ? "" : "📺"}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                    Second Chance {isPremium ? "" : "📺"}
+                  </Text>
+                </TouchableOpacity>
 
                 {/* Home / New Game */}
                 <TouchableOpacity

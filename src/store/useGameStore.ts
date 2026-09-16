@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, StateStorage, createJSONStorage } from "zustand/middleware";
 import { createMMKV } from "react-native-mmkv";
-import { getAnalytics, logEvent } from "@react-native-firebase/analytics";
+import { analyticsService } from "../services/analyticsService";
 import {
   getRemoteConfig,
   fetchAndActivate,
@@ -294,15 +294,23 @@ export const useGameStore = create<GameState>()(
       completeWelcome: () => set({ hasSeenWelcome: true }),
       resetWelcome: () =>
         set({ hasSeenWelcome: false, hasCompletedOnboarding: false }),
-      completeOnboarding: (startingDifficulty) =>
+      completeOnboarding: (startingDifficulty) => {
+        analyticsService.logOnboardingCompleted(startingDifficulty);
         set((state) => ({
           hasSeenWelcome: true,
           hasCompletedOnboarding: true,
           difficulty: startingDifficulty || state.difficulty || "Easy",
-        })),
+        }));
+      },
       resetOnboarding: () => set({ hasCompletedOnboarding: false }),
-      completeTutorial: () => set({ hasCompletedTutorial: true }),
-      skipTutorial: () => set({ hasSkippedTutorial: true }),
+      completeTutorial: () => {
+        analyticsService.logTutorialCompleted();
+        set({ hasCompletedTutorial: true });
+      },
+      skipTutorial: () => {
+        analyticsService.logTutorialSkipped();
+        set({ hasSkippedTutorial: true });
+      },
       resetTutorial: () =>
         set({ hasCompletedTutorial: false, hasSkippedTutorial: false }),
 
@@ -314,6 +322,7 @@ export const useGameStore = create<GameState>()(
             "🎉 [GameStore] 3-Day Free Trial Activated until:",
             new Date(endsAt).toISOString(),
           );
+          analyticsService.logTrialStarted("in_app", 3);
           return {
             trialEndsAt: endsAt,
             hasUsedFreeTrial: true,
@@ -620,23 +629,18 @@ export const useGameStore = create<GameState>()(
           };
 
           // Log Analytics
-          try {
-            const analytics = getAnalytics();
-            console.log("🔥 [Firebase Analytics] Logging Event: hint_used");
-            logEvent(analytics, "hint_used", {
-              hints_remaining_after: state.isPremium
-                ? state.hintsRemaining
-                : state.hintsRemaining - 1,
-            });
-          } catch (e) {
-            console.log("🔥 [Firebase Analytics Error]:", e);
-          }
+          const hintsRemainingAfter = state.isPremium
+            ? state.hintsRemaining
+            : Math.max(0, state.hintsRemaining - 1);
+          analyticsService.logHintUsed({
+            difficulty: state.difficulty,
+            hintsRemaining: hintsRemainingAfter,
+            isDaily: !!state.currentDailyChallenge,
+          });
 
           return {
             board: newBoard,
-            hintsRemaining: state.isPremium
-              ? state.hintsRemaining
-              : state.hintsRemaining - 1,
+            hintsRemaining: hintsRemainingAfter,
             history: [...state.history, state.board],
           };
         }),
@@ -644,7 +648,14 @@ export const useGameStore = create<GameState>()(
       addHint: () =>
         set((state) => ({ hintsRemaining: state.hintsRemaining + 1 })),
 
-      secondChance: () => set({ mistakes: 2 }),
+      secondChance: () => {
+        const state = get();
+        analyticsService.logSecondChanceUsed({
+          difficulty: state.difficulty,
+          isDaily: !!state.currentDailyChallenge,
+        });
+        set({ mistakes: 2 });
+      },
 
       startNewGame: async (difficulty) => {
         const { puzzle, solution } = generatePuzzle(difficulty);
@@ -655,12 +666,10 @@ export const useGameStore = create<GameState>()(
           isError: false,
         }));
 
-        try {
-          const analytics = getAnalytics();
-          logEvent(analytics, "game_started", { difficulty });
-        } catch (e) {
-          console.log("Analytics Error:", e);
-        }
+        analyticsService.logGameStarted({
+          difficulty,
+          isDaily: false,
+        });
 
         set((state) => {
           // Save active daily challenge state before overwriting if one exists
@@ -737,6 +746,10 @@ export const useGameStore = create<GameState>()(
 
       startDailyChallenge: (dateStr) => {
         const difficulty = getDailyDifficulty(dateStr);
+        analyticsService.logDailyChallengeStarted({
+          date: dateStr,
+          difficulty,
+        });
         const { puzzle, solution } = generatePuzzle(
           difficulty,
           `daily-${dateStr}`,
@@ -839,6 +852,11 @@ export const useGameStore = create<GameState>()(
       },
 
       completeDailyChallenge: (dateStr, timeSec = 0, mistakes = 0) => {
+        analyticsService.logDailyChallengeCompleted({
+          date: dateStr,
+          timeTaken: timeSec,
+          mistakes,
+        });
         const todayStr = getLocalDateString();
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
