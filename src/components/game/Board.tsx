@@ -11,6 +11,7 @@ const COLOR_THIN = "#00000030"; // Clean, elegant divider between individual cel
 function Board() {
   const { width: screenWidth } = useWindowDimensions();
   const board = useGameStore((s) => s.board);
+  const solution = useGameStore((s) => s.solution);
   const selectedCell = useGameStore((s) => s.selectedCell);
   const selectCell = useGameStore((s) => s.selectCell);
   const highlightAreas = useGameStore(
@@ -45,24 +46,30 @@ function Board() {
       return Array.from({ length: 9 }, (_, cellOffset) => {
         const row = blockRow * 3 + Math.floor(cellOffset / 3);
         const col = blockCol * 3 + (cellOffset % 3);
-        return board[row * 9 + col];
-      }).every((cell) => cell.value !== null && !cell.isError);
+        const index = row * 9 + col;
+        const cell = board[index];
+        return cell.value !== null && !cell.isError && solution[index] === cell.value;
+      }).every(Boolean);
     });
 
     const rows = Array.from({ length: 9 }, (_, r) => {
-      return Array.from({ length: 9 }, (_, c) => board[r * 9 + c]).every(
-        (cell) => cell.value !== null && !cell.isError,
-      );
+      return Array.from({ length: 9 }, (_, c) => {
+        const index = r * 9 + c;
+        const cell = board[index];
+        return cell.value !== null && !cell.isError && solution[index] === cell.value;
+      }).every(Boolean);
     });
 
     const cols = Array.from({ length: 9 }, (_, c) => {
-      return Array.from({ length: 9 }, (_, r) => board[r * 9 + c]).every(
-        (cell) => cell.value !== null && !cell.isError,
-      );
+      return Array.from({ length: 9 }, (_, r) => {
+        const index = r * 9 + c;
+        const cell = board[index];
+        return cell.value !== null && !cell.isError && solution[index] === cell.value;
+      }).every(Boolean);
     });
 
     return { blocks, rows, cols };
-  }, [board]);
+  }, [board, solution]);
 
   const completedBlocks = completedGroups.blocks;
 
@@ -77,14 +84,7 @@ function Board() {
       const newBlock = completedGroups.blocks.some(
         (done, idx) => done && !previousCompleted.current?.blocks[idx],
       );
-      const newRow = completedGroups.rows.some(
-        (done, idx) => done && !previousCompleted.current?.rows[idx],
-      );
-      const newCol = completedGroups.cols.some(
-        (done, idx) => done && !previousCompleted.current?.cols[idx],
-      );
-
-      if (newBlock || newRow || newCol) {
+      if (newBlock) {
         haptics.success();
         haptics.blockCompleteSound();
       }
@@ -136,7 +136,8 @@ function Board() {
 
   const initialClues = 81 - holesToDig;
   const currentFilledCount = board.filter(
-    (c) => c.value !== null && !c.isError,
+    (c, index) =>
+      c.value !== null && !c.isError && solution[index] === c.value,
   ).length;
   const filledByUser = Math.max(0, currentFilledCount - initialClues);
   const progressPercent = Math.max(

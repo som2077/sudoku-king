@@ -5,6 +5,7 @@ import { Trophy, Zap, TrendingUp } from "lucide-react-native";
 import { useGameStore, getDailyChallengeItem } from "../../store/useGameStore";
 import { useTranslation } from "../../i18n";
 import { Difficulty } from "../../utils/sudokuLogic";
+import { calculateWinRate } from "../../utils/gameStats";
 import { DifficultyBottomSheet } from "../game/DifficultyBottomSheet";
 
 type TimeTab = "Day" | "Week" | "Month";
@@ -53,9 +54,7 @@ export function PerformanceChart() {
 
   const dailyHistory = useGameStore((s) => s.dailyHistory) || {};
   const dailyChallengesProgress = useGameStore((s) => s.dailyChallengesProgress) || {};
-  const difficultyStats = useGameStore((s) => s.difficultyStats) || {};
-  const todaySolved = useGameStore((s) => s.todaySolved) || 0;
-  const bestTimeSec = useGameStore((s) => s.bestTimeSec) || 0;
+  const dailyDifficultyStats = useGameStore((s) => s.dailyDifficultyStats) || {};
 
   const data: ChartItem[] = useMemo(() => {
     const toDateKey = (d: Date): string => {
@@ -65,9 +64,9 @@ export function PerformanceChart() {
       return `${y}-${m}-${day}`;
     };
 
-    const getDayStat = (dateStr: string, isTodayDate: boolean) => {
+    const getDayStat = (dateStr: string) => {
       if (selectedDifficulty !== "All") {
-        const dStat = difficultyStats[selectedDifficulty];
+        const dStat = dailyDifficultyStats[dateStr]?.[selectedDifficulty];
         const played = dStat?.played || 0;
         const solved = dStat?.solved || 0;
         const best = dStat?.bestSec || 0;
@@ -94,14 +93,6 @@ export function PerformanceChart() {
         }
       }
 
-      if (isTodayDate && todaySolved > 0) {
-        solved = Math.max(solved, todaySolved);
-        played = Math.max(played, solved);
-        if (bestTimeSec > 0) {
-          best = best === null ? bestTimeSec : Math.min(best, bestTimeSec);
-        }
-      }
-
       return {
         played,
         solved,
@@ -122,11 +113,8 @@ export function PerformanceChart() {
         const d = new Date(monday);
         d.setDate(monday.getDate() + i);
         const key = toDateKey(d);
-        const isToday = key === toDateKey(now);
-        const s = getDayStat(key, isToday);
-        const winRate = s.played > 0
-          ? Math.min(100, Math.round((s.solved / s.played) * 100))
-          : (s.solved > 0 ? 100 : 0);
+        const s = getDayStat(key);
+        const winRate = calculateWinRate(s.solved, s.played);
 
         return {
           label: lbl,
@@ -157,8 +145,7 @@ export function PerformanceChart() {
           const dayDate = new Date(weekMon);
           dayDate.setDate(weekMon.getDate() + d);
           const key = toDateKey(dayDate);
-          const isToday = key === toDateKey(now);
-          const s = getDayStat(key, isToday);
+          const s = getDayStat(key);
 
           weekPlayed += s.played;
           weekSolved += s.solved;
@@ -168,9 +155,7 @@ export function PerformanceChart() {
         }
 
         const hasPlayed = weekPlayed > 0 || weekSolved > 0;
-        const winRate = weekPlayed > 0
-          ? Math.min(100, Math.round((weekSolved / weekPlayed) * 100))
-          : (weekSolved > 0 ? 100 : 0);
+        const winRate = calculateWinRate(weekSolved, weekPlayed);
         const label = w === 0 ? "Now" : `${w}w`;
 
         weeks.push({
@@ -202,8 +187,7 @@ export function PerformanceChart() {
       for (let d = 1; d <= daysInMonth; d++) {
         const dayDate = new Date(targetYear, targetMonth, d);
         const key = toDateKey(dayDate);
-        const isToday = key === toDateKey(now);
-        const s = getDayStat(key, isToday);
+        const s = getDayStat(key);
 
         monthPlayed += s.played;
         monthSolved += s.solved;
@@ -213,9 +197,7 @@ export function PerformanceChart() {
       }
 
       const hasPlayed = monthPlayed > 0 || monthSolved > 0;
-      const winRate = monthPlayed > 0
-        ? Math.min(100, Math.round((monthSolved / monthPlayed) * 100))
-        : (monthSolved > 0 ? 100 : 0);
+      const winRate = calculateWinRate(monthSolved, monthPlayed);
 
       months.push({
         label: monthNames[targetMonth],
@@ -226,7 +208,7 @@ export function PerformanceChart() {
       });
     }
     return months;
-  }, [activeTimeTab, dailyHistory, dailyChallengesProgress, todaySolved, bestTimeSec, selectedDifficulty, difficultyStats]);
+  }, [activeTimeTab, dailyHistory, dailyChallengesProgress, selectedDifficulty, dailyDifficultyStats]);
 
   const playedItems = data.filter((d) => d.hasPlayed);
   const maxTimeSec = playedItems.length > 0 ? Math.max(...playedItems.filter(d => d.bestSec > 0).map((d) => d.bestSec), 1) : 1;

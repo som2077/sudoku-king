@@ -9,21 +9,17 @@ import {
   StyleSheet,
   Modal,
 } from "react-native";
-import {
-  SafeAreaView,
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useEffect, useState, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { StatusBar as NativeStatusBar } from "react-native";
 import { analyticsService } from "./src/services/analyticsService";
 import Purchases from "react-native-purchases";
 import RevenueCatUI from "react-native-purchases-ui";
-import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
 import Board from "./src/components/Board";
 import Keypad from "./src/components/Keypad";
 import TopBar from "./src/components/TopBar";
+import BottomBannerAd from "./src/components/BottomBannerAd";
 import HomeScreen from "./src/screens/HomeScreen";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import OnboardingScreen from "./src/screens/OnboardingScreen";
@@ -41,7 +37,6 @@ import {
   BricolageGrotesque_800ExtraBold,
 } from "@expo-google-fonts/bricolage-grotesque";
 import {
-  BANNER_AD_UNIT_ID,
   showRewardedAd as adManagerShowRewarded,
   showInterstitialAd as adManagerShowInterstitial,
 } from "./src/services/adManager";
@@ -54,46 +49,22 @@ import {
 import { localNotificationScheduler } from "./src/services/localNotificationScheduler";
 import WinScreen from "./src/components/game/WinScreen";
 
-function BottomBannerAd({
-  isPremium,
-  bannerLoaded,
-  setBannerLoaded,
-}: {
-  isPremium: boolean;
-  bannerLoaded: boolean;
-  setBannerLoaded: (loaded: boolean) => void;
-}) {
-  const insets = useSafeAreaInsets();
-  if (isPremium) return null;
+const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
-  return (
-    <View
-      style={[
-        styles.bannerAdSlot,
-        { paddingBottom: Math.max(insets.bottom, 6) },
-      ]}
-    >
-      <BannerAd
-        unitId={BANNER_AD_UNIT_ID}
-        size={BannerAdSize.BANNER}
-        requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-        onAdLoaded={() => {
-          setBannerLoaded(true);
-          console.log("🔥 [BannerAd] Loaded successfully");
-        }}
-        onAdFailedToLoad={(error) => {
-          setBannerLoaded(false);
-          console.log("⚠️ [BannerAd] Failed to load:", error);
-        }}
-      />
-      {!bannerLoaded && (
-        <View style={styles.bannerPlaceholder}>
-          <Text style={styles.bannerPlaceholderText}>Banner Ad (320×50)</Text>
-        </View>
-      )}
-    </View>
-  );
-}
+const normalizeDifficulty = (value: unknown): Difficulty => {
+  if (typeof value !== "string") return "Easy";
+  const normalized = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+  return ["Fast", "Easy", "Medium", "Hard", "Expert", "Master", "Extreme"].includes(
+    normalized,
+  )
+    ? (normalized as Difficulty)
+    : "Easy";
+};
 
 export default function App() {
   const {
@@ -159,7 +130,12 @@ export default function App() {
   const isGameWon = useGameStore(
     (state) =>
       state.board.length > 0 &&
-      state.board.every((cell) => cell.value !== null && !cell.isError) &&
+      state.board.every(
+        (cell, index) =>
+          cell.value !== null &&
+          !cell.isError &&
+          state.solution[index] === cell.value,
+      ) &&
       state.mistakes < 3,
   );
   const isBoardEmpty = useGameStore(
@@ -187,10 +163,10 @@ export default function App() {
       payload.data?.slotId?.includes("streak") ||
       payload.data?.slotId?.includes("morning")
     ) {
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = getLocalDateString();
       startDailyChallenge(todayStr);
     } else if (action === "quick_game" || action === "play") {
-      const diff = (payload.data?.difficulty as any) || "easy";
+      const diff = normalizeDifficulty(payload.data?.difficulty);
       startNewGame(diff);
     } else {
       setScreen("home");
@@ -696,29 +672,5 @@ const styles = StyleSheet.create({
   gameContentContainer: {
     width: "100%",
     alignItems: "center",
-  },
-  bannerAdSlot: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 52,
-    backgroundColor: "#F8FAFC",
-  },
-  bannerPlaceholder: {
-    width: 320,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1.5,
-    borderColor: "#CBD5E1",
-    borderStyle: "dashed",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bannerPlaceholderText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#94A3B8",
-    letterSpacing: 0.3,
   },
 });

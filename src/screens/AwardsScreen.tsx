@@ -8,7 +8,7 @@ import {
   BackHandler,
 } from "react-native";
 import { Text } from "../components/Text";
-import LottieView from "lottie-react-native";
+import LottieAnimation from "../components/LottieAnimation";
 import Svg, { Path } from "react-native-svg";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { Image } from "expo-image";
@@ -224,7 +224,7 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
                   justifyContent: "center",
                 }}
               >
-                <LottieView
+                <LottieAnimation
                   source={require("../../assets/badge/Fire.json")}
                   autoPlay
                   loop
@@ -253,7 +253,7 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
                   justifyContent: "center",
                 }}
               >
-                <LottieView
+                <LottieAnimation
                   source={require("../../assets/badge/Trophy.json")}
                   autoPlay
                   loop
@@ -286,7 +286,7 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
                   gap: 5,
                 }}
               >
-                <LottieView
+                <LottieAnimation
                   source={require("../../assets/badge/Fire.json")}
                   autoPlay
                   loop

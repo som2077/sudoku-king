@@ -2,6 +2,7 @@ import React from 'react';
 import { Text } from '../ui/Text';
 import { View } from 'react-native';
 import { useGameStore } from '../../store/useGameStore';
+import { calculateAverageTime, normalizeGameStats } from '../../utils/gameStats';
 
 export interface LevelStat {
   level: string;
@@ -13,6 +14,7 @@ export interface LevelStat {
 }
 
 const LEVEL_CONFIGS = [
+  { level: 'Fast',    pillColor: '#F1F5F9', pillTextColor: '#475569' },
   { level: 'Easy',    pillColor: '#D9F5D6', pillTextColor: '#3A7D44' },
   { level: 'Medium',  pillColor: '#FFF0DC', pillTextColor: '#B06A00' },
   { level: 'Hard',    pillColor: '#FFE5E5', pillTextColor: '#C0392B' },
@@ -98,14 +100,9 @@ export function LevelStatsTable({ stats: propStats }: { stats?: LevelStat[] } = 
   const stats = React.useMemo(() => {
     if (propStats && propStats.length > 0) return propStats;
     return LEVEL_CONFIGS.map((cfg) => {
-      const rec = difficultyStats?.[cfg.level] || {
-        solved: 0,
-        played: 0,
-        bestSec: null,
-        totalSec: 0,
-      };
-      const solved = rec.solved || 0;
-      const avgSec = solved > 0 ? Math.round(rec.totalSec / solved) : 0;
+      const rec = normalizeGameStats(difficultyStats?.[cfg.level]);
+      const solved = rec.solved;
+      const avgSec = calculateAverageTime(rec.totalSec, solved);
       return {
         ...cfg,
         solved,

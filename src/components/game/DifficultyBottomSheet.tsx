@@ -21,6 +21,7 @@ export type DifficultyBottomSheetProps = {
 );
 
 const OPTIONS: Difficulty[] = [
+  'Fast',
   'Easy',
   'Medium',
   'Hard',

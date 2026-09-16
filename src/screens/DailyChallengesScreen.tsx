@@ -17,7 +17,7 @@ import {
   Lock,
   Crown,
 } from "lucide-react-native";
-import LottieView from "lottie-react-native";
+import LottieAnimation from "../components/LottieAnimation";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -388,7 +388,7 @@ export function DailyChallengesScreen() {
                     isBronze && { backgroundColor: "rgba(245, 158, 11, 0.25)" },
                   ]}
                 />
-                <LottieView
+                <LottieAnimation
                   source={require("../../assets/badge/Trophy.json")}
                   autoPlay={true}
                   loop={false}

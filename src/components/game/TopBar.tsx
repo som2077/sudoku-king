@@ -64,6 +64,7 @@ export default function TopBar({
   const difficulty = useGameStore((s) => s.difficulty);
   const currentDailyChallenge = useGameStore((s) => s.currentDailyChallenge);
   const board = useGameStore((s) => s.board);
+  const solution = useGameStore((s) => s.solution);
   const settings = useGameStore((s) => s.settings);
   const updateSetting = useGameStore((s) => s.updateSetting);
   const undo = useGameStore((s) => s.undo);
@@ -83,7 +84,10 @@ export default function TopBar({
   const isGameOver = mistakes >= 3;
   const isGameWon =
     board.length > 0 &&
-    board.every((cell) => cell.value !== null && !cell.isError) &&
+    board.every(
+      (cell, index) =>
+        cell.value !== null && !cell.isError && solution[index] === cell.value,
+    ) &&
     mistakes < 3;
 
   const hasPlayedWinSound = useRef(false);
@@ -466,6 +470,26 @@ export default function TopBar({
                   trackColor={{ false: "#E2E8F0", true: "#93C5FD" }}
                   thumbColor={
                     (settings?.timerVisible ?? true) ? "#2563EB" : "#F8FAFC"
+                  }
+                />
+              </View>
+
+              {/* Auto-check mistakes */}
+              <View style={styles.settingRow}>
+                <View style={styles.settingLabelWrap}>
+                  <Eye size={18} color="#2563EB" />
+                  <Text style={styles.settingLabel}>
+                    {t("settings.autoCheckMistakes")}
+                  </Text>
+                </View>
+                <Switch
+                  value={settings?.autoCheckMistakes ?? true}
+                  onValueChange={(val) =>
+                    handleToggleSetting("autoCheckMistakes", val)
+                  }
+                  trackColor={{ false: "#E2E8F0", true: "#93C5FD" }}
+                  thumbColor={
+                    (settings?.autoCheckMistakes ?? true) ? "#2563EB" : "#F8FAFC"
                   }
                 />
               </View>

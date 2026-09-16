@@ -15,6 +15,14 @@ import {
   getCol,
   getBlock,
 } from "../utils/sudokuLogic";
+import {
+  emptyGameStats,
+  markDailyChallengeSolved,
+  normalizeGameTime,
+  recordDailyGameSolved,
+  recordPlayed,
+  recordSolved,
+} from "../utils/gameStats";
 
 const storage = createMMKV({ id: "sudoku-storage" });
 
@@ -51,12 +59,36 @@ export type CellState = {
   isError: boolean;
 };
 
+export type HistoryEntry = {
+  board: CellState[];
+  mistakes: number;
+  hintsRemaining: number;
+  isNotesMode: boolean;
+};
+
+const createHistoryEntry = (state: {
+  board: CellState[];
+  mistakes: number;
+  hintsRemaining: number;
+  isNotesMode: boolean;
+}): HistoryEntry => ({
+  board: state.board,
+  mistakes: state.mistakes,
+  hintsRemaining: state.hintsRemaining,
+  isNotesMode: state.isNotesMode,
+});
+
 export interface DifficultyStatsRecord {
   solved: number;
   played: number;
   bestSec: number | null;
   totalSec: number;
 }
+
+export type DailyDifficultyStats = Record<
+  string,
+  Record<string, DifficultyStatsRecord>
+>;
 
 export interface DailyGameStat {
   played: number;
@@ -75,7 +107,7 @@ export interface DailyProgressItem {
     timer: number;
     mistakes: number;
     hintsRemaining: number;
-    history: any[];
+    history: HistoryEntry[];
   };
 }
 
@@ -161,13 +193,14 @@ type GameState = {
   hintsRemaining: number;
   initialHints: number; // Stored from remote config
   isPremium: boolean;
-  history: CellState[][];
+  history: HistoryEntry[];
   screen: "home" | "playing";
   difficulty: Difficulty;
   settings: GameSettings;
 
   // Real Persistent Stats
   difficultyStats: Record<string, DifficultyStatsRecord>;
+  dailyDifficultyStats: DailyDifficultyStats;
   dailyHistory: Record<string, DailyGameStat>;
   totalSolved: number;
   totalPlayed: number;
@@ -245,13 +278,13 @@ const getLocalDateString = (d: Date = new Date()): string => {
 };
 
 const initialDifficultyStats: Record<string, DifficultyStatsRecord> = {
-  Easy: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
-  Medium: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
-  Hard: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
-  Expert: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
-  Master: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
-  Extreme: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
-  Fast: { solved: 0, played: 0, bestSec: null, totalSec: 0 },
+  Fast: emptyGameStats(),
+  Easy: emptyGameStats(),
+  Medium: emptyGameStats(),
+  Hard: emptyGameStats(),
+  Expert: emptyGameStats(),
+  Master: emptyGameStats(),
+  Extreme: emptyGameStats(),
 };
 
 export const useGameStore = create<GameState>()(
@@ -273,6 +306,7 @@ export const useGameStore = create<GameState>()(
 
       // Real Persistent Stats
       difficultyStats: initialDifficultyStats,
+      dailyDifficultyStats: {},
       dailyHistory: {},
       totalSolved: 0,
       totalPlayed: 0,
@@ -355,66 +389,71 @@ export const useGameStore = create<GameState>()(
           const yesterday = new Date();
           yesterday.setDate(yesterday.getDate() - 1);
           const yesterdayStr = getLocalDateString(yesterday);
-
-          let newStreak = state.streak || 0;
-          if (state.lastSolvedDate === yesterdayStr) {
-            newStreak += 1;
-          } else if (state.lastSolvedDate !== todayStr) {
-            newStreak = 1;
-          }
+          const activityDate = state.currentDailyChallenge || todayStr;
+          const safeTime = normalizeGameTime(timeSec);
 
           const prevStats = state.difficultyStats || initialDifficultyStats;
-          const prevDiff = prevStats[difficulty] || {
-            solved: 0,
-            played: 0,
-            bestSec: null,
-            totalSec: 0,
-          };
-
-          const newBest =
-            prevDiff.bestSec === null
-              ? timeSec
-              : Math.min(prevDiff.bestSec, timeSec);
+          const prevDiff = prevStats[difficulty] || emptyGameStats();
+          const nextDiff = recordSolved(prevDiff, safeTime);
           const newOverallBest =
-            state.bestTimeSec === null
-              ? timeSec
-              : Math.min(state.bestTimeSec, timeSec);
-          const isToday = state.lastSolvedDate === todayStr;
-          const newTodaySolved = isToday ? (state.todaySolved || 0) + 1 : 1;
+            safeTime > 0 && state.bestTimeSec !== null
+              ? Math.min(state.bestTimeSec, safeTime)
+              : safeTime > 0
+                ? safeTime
+                : state.bestTimeSec;
+          const isToday = activityDate === todayStr;
+          const newStreak = isToday
+            ? state.lastSolvedDate === yesterdayStr
+              ? (state.streak || 0) + 1
+              : state.lastSolvedDate === todayStr
+                ? state.streak || 0
+                : 1
+            : state.streak;
+          const newTodaySolved = isToday
+            ? state.lastSolvedDate === todayStr
+              ? (state.todaySolved || 0) + 1
+              : 1
+            : state.todaySolved;
 
-          const prevDaily = state.dailyHistory?.[todayStr] || {
-            played: 1,
+          const prevDaily = state.dailyHistory?.[activityDate] || {
+            played: 0,
             solved: 0,
             bestSec: null,
           };
-          const newDailyBest =
-            prevDaily.bestSec === null
-              ? timeSec
-              : Math.min(prevDaily.bestSec, timeSec);
+          const nextDaily = recordDailyGameSolved(prevDaily, safeTime);
+
+          const prevDailyDifficultyStats = state.dailyDifficultyStats || {};
+          const prevDateStats = prevDailyDifficultyStats[activityDate] || {};
+          const prevDateDifficulty =
+            prevDateStats[difficulty] || emptyGameStats();
 
           return {
             isGameCompleted: true,
             totalSolved: (state.totalSolved || 0) + 1,
+            totalPlayed: Math.max(
+              state.totalPlayed || 0,
+              (state.totalSolved || 0) + 1,
+            ),
             bestTimeSec: newOverallBest,
             todaySolved: newTodaySolved,
-            lastSolvedDate: todayStr,
+            lastSolvedDate: isToday ? todayStr : state.lastSolvedDate,
             streak: newStreak,
             difficultyStats: {
               ...prevStats,
               [difficulty]: {
-                ...prevDiff,
-                solved: prevDiff.solved + 1,
-                bestSec: newBest,
-                totalSec: prevDiff.totalSec + timeSec,
+                ...nextDiff,
+              },
+            },
+            dailyDifficultyStats: {
+              ...prevDailyDifficultyStats,
+              [activityDate]: {
+                ...prevDateStats,
+                [difficulty]: recordSolved(prevDateDifficulty, safeTime),
               },
             },
             dailyHistory: {
               ...(state.dailyHistory || {}),
-              [todayStr]: {
-                played: Math.max(prevDaily.played, prevDaily.solved + 1),
-                solved: prevDaily.solved + 1,
-                bestSec: newDailyBest,
-              },
+              [activityDate]: nextDaily,
             },
           };
         }),
@@ -423,25 +462,30 @@ export const useGameStore = create<GameState>()(
         set((state) => {
           const todayStr = getLocalDateString();
           const prevStats = state.difficultyStats || initialDifficultyStats;
-          const prevDiff = prevStats[difficulty] || {
-            solved: 0,
-            played: 0,
-            bestSec: null,
-            totalSec: 0,
-          };
+          const prevDiff = prevStats[difficulty] || emptyGameStats();
           const prevDaily = state.dailyHistory?.[todayStr] || {
             played: 0,
             solved: 0,
             bestSec: null,
           };
+          const prevDailyDifficultyStats = state.dailyDifficultyStats || {};
+          const prevDateStats = prevDailyDifficultyStats[todayStr] || {};
 
           return {
             totalPlayed: (state.totalPlayed || 0) + 1,
             difficultyStats: {
               ...prevStats,
               [difficulty]: {
-                ...prevDiff,
-                played: prevDiff.played + 1,
+                ...recordPlayed(prevDiff),
+              },
+            },
+            dailyDifficultyStats: {
+              ...prevDailyDifficultyStats,
+              [todayStr]: {
+                ...prevDateStats,
+                [difficulty]: recordPlayed(
+                  prevDateStats[difficulty] || emptyGameStats(),
+                ),
               },
             },
             dailyHistory: {
@@ -454,7 +498,36 @@ export const useGameStore = create<GameState>()(
           };
         }),
 
-      setScreen: (screen) => set({ screen }),
+      setScreen: (screen) =>
+        set((state) => {
+          if (screen !== "home" || !state.currentDailyChallenge) {
+            return { screen };
+          }
+
+          const activeDate = state.currentDailyChallenge;
+          const currentProgress = getDailyChallengeItem(
+            state.dailyChallengesProgress,
+            activeDate,
+          );
+          if (currentProgress?.completed) return { screen };
+
+          return {
+            screen,
+            dailyChallengesProgress: {
+              ...(state.dailyChallengesProgress || {}),
+              [activeDate]: {
+                ...(currentProgress || { completed: false }),
+                savedState: {
+                  board: state.board,
+                  timer: state.timer,
+                  mistakes: state.mistakes,
+                  hintsRemaining: state.hintsRemaining,
+                  history: state.history,
+                },
+              },
+            },
+          };
+        }),
       setPremium: (status) =>
         set((state) => {
           const isTrialActive = Boolean(
@@ -479,6 +552,7 @@ export const useGameStore = create<GameState>()(
           streak: 0,
           todaySolved: 0,
           difficultyStats: initialDifficultyStats,
+          dailyDifficultyStats: {},
           dailyHistory: {},
         }),
 
@@ -499,41 +573,63 @@ export const useGameStore = create<GameState>()(
       },
 
       selectCell: (index) =>
-        set((state) =>
-          state.selectedCell === index ? state : { selectedCell: index },
-        ),
+        set((state) => {
+          if (!Number.isInteger(index) || index < 0 || index >= 81) return state;
+          return state.selectedCell === index ? state : { selectedCell: index };
+        }),
 
       toggleNotesMode: () =>
         set((state) => ({ isNotesMode: !state.isNotesMode })),
 
       placeNumber: (num) =>
         set((state) => {
-          if (state.selectedCell === null || state.mistakes >= 3) return state;
-          const cell = state.board[state.selectedCell];
-          if (cell.isLocked || (cell.value !== null && !cell.isError))
+          if (
+            state.selectedCell === null ||
+            state.mistakes >= 3 ||
+            !Number.isInteger(num) ||
+            num < 1 ||
+            num > 9
+          )
+            return state;
+          const selectedCell = state.selectedCell;
+          const cell = state.board[selectedCell];
+          if (!cell || cell.isLocked) return state;
+          const autoCheckMistakes = state.settings?.autoCheckMistakes ?? true;
+          if (
+            state.isNotesMode &&
+            cell.value !== null
+          )
+            return state;
+          if (
+            !state.isNotesMode &&
+            cell.value !== null &&
+            !cell.isError &&
+            autoCheckMistakes
+          )
             return state;
 
           const newBoard = [...state.board];
 
           if (state.isNotesMode) {
             const bit = 1 << num;
-            newBoard[state.selectedCell] = {
+            newBoard[selectedCell] = {
               ...cell,
               notes: cell.notes ^ bit,
             };
             return {
               board: newBoard,
-              history: [...state.history, state.board],
+              history: [...state.history, createHistoryEntry(state)],
             };
           }
 
-          const isCorrect = state.solution[state.selectedCell] === num;
+          const isCorrect = state.solution[selectedCell] === num;
+          const isError = !isCorrect && autoCheckMistakes;
 
           // Auto-remove this number from notes in the same row, col, and block
           if (isCorrect) {
-            const row = getRow(state.selectedCell);
-            const col = getCol(state.selectedCell);
-            const block = getBlock(state.selectedCell);
+            const row = getRow(selectedCell);
+            const col = getCol(selectedCell);
+            const block = getBlock(selectedCell);
 
             for (let i = 0; i < 81; i++) {
               if (
@@ -552,25 +648,31 @@ export const useGameStore = create<GameState>()(
             }
           }
 
-          newBoard[state.selectedCell] = {
+          newBoard[selectedCell] = {
             ...cell,
             value: num,
-            isError: !isCorrect,
+            isError,
             notes: 0, // Clear notes when a number is placed
           };
 
           return {
             board: newBoard,
-            mistakes: isCorrect ? state.mistakes : state.mistakes + 1,
-            history: [...state.history, state.board],
+            mistakes: isError ? state.mistakes + 1 : state.mistakes,
+            history: [...state.history, createHistoryEntry(state)],
           };
         }),
 
       toggleNote: (num) =>
         set((state) => {
-          if (state.selectedCell === null) return state;
+          if (
+            state.selectedCell === null ||
+            !Number.isInteger(num) ||
+            num < 1 ||
+            num > 9
+          )
+            return state;
           const cell = state.board[state.selectedCell];
-          if (cell.isLocked || cell.value !== null) return state;
+          if (!cell || cell.isLocked || cell.value !== null) return state;
 
           const bit = 1 << num;
           const newBoard = [...state.board];
@@ -578,14 +680,14 @@ export const useGameStore = create<GameState>()(
             ...cell,
             notes: cell.notes ^ bit,
           };
-          return { board: newBoard, history: [...state.history, state.board] };
+          return { board: newBoard, history: [...state.history, createHistoryEntry(state)] };
         }),
 
       erase: () =>
         set((state) => {
           if (state.selectedCell === null) return state;
           const cell = state.board[state.selectedCell];
-          if (cell.isLocked) return state;
+          if (!cell || cell.isLocked || (cell.value === null && cell.notes === 0)) return state;
 
           const newBoard = [...state.board];
           newBoard[state.selectedCell] = {
@@ -594,15 +696,27 @@ export const useGameStore = create<GameState>()(
             isError: false,
             notes: 0,
           };
-          return { board: newBoard, history: [...state.history, state.board] };
+          return { board: newBoard, history: [...state.history, createHistoryEntry(state)] };
         }),
 
       undo: () =>
         set((state) => {
           if (state.history.length === 0) return state;
           const newHistory = [...state.history];
-          const previousBoard = newHistory.pop()!;
-          return { board: previousBoard, history: newHistory };
+          const previousEntry = newHistory.pop()!;
+
+          // Older persisted versions stored only the board in history.
+          if (Array.isArray(previousEntry)) {
+            return { board: previousEntry as unknown as CellState[], history: newHistory };
+          }
+
+          return {
+            board: previousEntry.board,
+            mistakes: previousEntry.mistakes,
+            hintsRemaining: previousEntry.hintsRemaining,
+            isNotesMode: previousEntry.isNotesMode,
+            history: newHistory,
+          };
         }),
 
       useHint: () =>
@@ -641,7 +755,7 @@ export const useGameStore = create<GameState>()(
           return {
             board: newBoard,
             hintsRemaining: hintsRemainingAfter,
-            history: [...state.history, state.board],
+            history: [...state.history, createHistoryEntry(state)],
           };
         }),
 
@@ -650,6 +764,7 @@ export const useGameStore = create<GameState>()(
 
       secondChance: () => {
         const state = get();
+        if (state.mistakes < 3) return;
         analyticsService.logSecondChanceUsed({
           difficulty: state.difficulty,
           isDaily: !!state.currentDailyChallenge,
@@ -696,17 +811,14 @@ export const useGameStore = create<GameState>()(
 
           const todayStr = getLocalDateString();
           const prevStats = state.difficultyStats || initialDifficultyStats;
-          const prevDiff = prevStats[difficulty] || {
-            solved: 0,
-            played: 0,
-            bestSec: null,
-            totalSec: 0,
-          };
+          const prevDiff = prevStats[difficulty] || emptyGameStats();
           const prevDaily = state.dailyHistory?.[todayStr] || {
             played: 0,
             solved: 0,
             bestSec: null,
           };
+          const prevDailyDifficultyStats = state.dailyDifficultyStats || {};
+          const prevDateStats = prevDailyDifficultyStats[todayStr] || {};
 
           return {
             dailyChallengesProgress: newDailyProgress,
@@ -725,8 +837,16 @@ export const useGameStore = create<GameState>()(
             difficultyStats: {
               ...prevStats,
               [difficulty]: {
-                ...prevDiff,
-                played: prevDiff.played + 1,
+                ...recordPlayed(prevDiff),
+              },
+            },
+            dailyDifficultyStats: {
+              ...prevDailyDifficultyStats,
+              [todayStr]: {
+                ...prevDateStats,
+                [difficulty]: recordPlayed(
+                  prevDateStats[difficulty] || emptyGameStats(),
+                ),
               },
             },
             dailyHistory: {
@@ -745,6 +865,14 @@ export const useGameStore = create<GameState>()(
       currentDailyChallenge: null,
 
       startDailyChallenge: (dateStr) => {
+        const activeState = get();
+        if (
+          activeState.currentDailyChallenge === dateStr &&
+          activeState.screen === "playing"
+        ) {
+          return;
+        }
+
         const difficulty = getDailyDifficulty(dateStr);
         analyticsService.logDailyChallengeStarted({
           date: dateStr,
@@ -807,17 +935,14 @@ export const useGameStore = create<GameState>()(
           }));
 
           const prevStats = state.difficultyStats || initialDifficultyStats;
-          const prevDiff = prevStats[difficulty] || {
-            solved: 0,
-            played: 0,
-            bestSec: null,
-            totalSec: 0,
-          };
+          const prevDiff = prevStats[difficulty] || emptyGameStats();
           const prevDaily = state.dailyHistory?.[dateStr] || {
             played: 0,
             solved: 0,
             bestSec: null,
           };
+          const prevDailyDifficultyStats = state.dailyDifficultyStats || {};
+          const prevDateStats = prevDailyDifficultyStats[dateStr] || {};
 
           return {
             dailyChallengesProgress: newDailyProgress,
@@ -836,8 +961,16 @@ export const useGameStore = create<GameState>()(
             difficultyStats: {
               ...prevStats,
               [difficulty]: {
-                ...prevDiff,
-                played: prevDiff.played + 1,
+                ...recordPlayed(prevDiff),
+              },
+            },
+            dailyDifficultyStats: {
+              ...prevDailyDifficultyStats,
+              [dateStr]: {
+                ...prevDateStats,
+                [difficulty]: recordPlayed(
+                  prevDateStats[difficulty] || emptyGameStats(),
+                ),
               },
             },
             dailyHistory: {
@@ -852,9 +985,10 @@ export const useGameStore = create<GameState>()(
       },
 
       completeDailyChallenge: (dateStr, timeSec = 0, mistakes = 0) => {
+        const safeTime = normalizeGameTime(timeSec);
         analyticsService.logDailyChallengeCompleted({
           date: dateStr,
-          timeTaken: timeSec,
+          timeTaken: safeTime,
           mistakes,
         });
         const todayStr = getLocalDateString();
@@ -868,9 +1002,12 @@ export const useGameStore = create<GameState>()(
             state.dailyChallengesProgress,
             dateStr,
           );
-          const bestTime = currentItem?.timeSec
-            ? Math.min(currentItem.timeSec, timeSec)
-            : timeSec || undefined;
+          const bestTime =
+            safeTime > 0
+              ? currentItem?.timeSec && currentItem.timeSec > 0
+                ? Math.min(currentItem.timeSec, safeTime)
+                : safeTime
+              : currentItem?.timeSec;
 
           let newStreak = state.streak || 0;
           if (dateStr === todayStr) {
@@ -882,16 +1019,11 @@ export const useGameStore = create<GameState>()(
           }
 
           const prevDaily = state.dailyHistory?.[dateStr] || {
-            played: 1,
+            played: 0,
             solved: 0,
             bestSec: null,
           };
-          const newDailyBest =
-            timeSec > 0
-              ? prevDaily.bestSec === null
-                ? timeSec
-                : Math.min(prevDaily.bestSec, timeSec)
-              : prevDaily.bestSec;
+          const nextDaily = markDailyChallengeSolved(prevDaily, safeTime);
 
           return {
             lastSolvedDate:
@@ -900,6 +1032,7 @@ export const useGameStore = create<GameState>()(
             dailyChallengesProgress: {
               ...state.dailyChallengesProgress,
               [dateStr]: {
+                ...(currentItem || {}),
                 completed: true,
                 timeSec: bestTime,
                 mistakes,
@@ -909,11 +1042,9 @@ export const useGameStore = create<GameState>()(
             },
             dailyHistory: {
               ...(state.dailyHistory || {}),
-              [dateStr]: {
-                played: Math.max(prevDaily.played, prevDaily.solved + 1),
-                solved: prevDaily.solved + 1,
-                bestSec: newDailyBest,
-              },
+              // recordGameWon owns the game-wide win count. Keep this action
+              // idempotent so a daily win is not counted twice.
+              [dateStr]: nextDaily,
             },
           };
         });

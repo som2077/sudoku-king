@@ -15,6 +15,8 @@ async function run() {
   assert(hapticsCode.includes('impactLight()'), 'impactLight() method must exist');
   assert(hapticsCode.includes('impactMedium()'), 'impactMedium() method must exist');
   assert(hapticsCode.includes('success()'), 'success() method must exist');
+  assert(hapticsCode.includes('ERROR_SOUND'), 'Error sound asset must be configured');
+  assert(hapticsCode.includes('createAudioPlayer(ERROR_SOUND)'), 'Error sound must use expo-audio');
   assert(hapticsCode.includes('vibrationEnabled'), 'vibrationEnabled setting must be checked');
   assert(hapticsCode.includes('Vibration.vibrate'), 'Vibration.vibrate must be called safely');
   console.log('  ✔ Haptics utility verified with all impact & selection levels');

@@ -1,27 +1,28 @@
 import React from "react";
-import { View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import { View, TouchableOpacity, StyleSheet, useWindowDimensions } from "react-native";
 import { Text } from "../ui/Text";
 import { useGameStore } from "../../store/useGameStore";
 import { haptics } from "../../utils/haptics";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-// Max card width ~380, padding 16 each side = 348 available width.
-// 5 buttons with 8px gap: (348 - 32) / 5 = ~63px
-const CONTAINER_MAX_WIDTH = Math.min(SCREEN_WIDTH - 32, 400);
 const GAP = 10;
-const BTN_WIDTH = Math.floor((CONTAINER_MAX_WIDTH - GAP * 4) / 5);
-const BTN_HEIGHT = Math.min(Math.max(BTN_WIDTH * 0.95, 54), 62);
 
 function Keypad({
   showRewardedAd,
 }: {
   showRewardedAd?: (cb: () => void) => void;
 }) {
+  const { width: screenWidth } = useWindowDimensions();
+  const containerMaxWidth = Math.min(Math.max(screenWidth - 32, 280), 400);
+  const buttonWidth = Math.floor((containerMaxWidth - GAP * 4) / 5);
+  const buttonHeight = Math.min(Math.max(buttonWidth * 0.95, 54), 62);
   const board = useGameStore((s) => s.board);
   const solution = useGameStore((s) => s.solution);
   const selectedCell = useGameStore((s) => s.selectedCell);
   const placeNumber = useGameStore((s) => s.placeNumber);
   const isNotesMode = useGameStore((s) => s.isNotesMode);
+  const autoCheckMistakes = useGameStore(
+    (s) => s.settings?.autoCheckMistakes ?? true,
+  );
   const toggleNote = useGameStore((s) => s.toggleNote);
 
   // Count how many times each number appears correctly on the board (to dim completed numbers)
@@ -29,12 +30,16 @@ function Keypad({
     const counts = Array(10).fill(0);
     for (let i = 0; i < board.length; i++) {
       const cell = board[i];
-      if (cell.value !== null && !cell.isError) {
+      if (
+        cell.value !== null &&
+        !cell.isError &&
+        solution[i] === cell.value
+      ) {
         counts[cell.value]++;
       }
     }
     return counts;
-  }, [board]);
+  }, [board, solution]);
   const isComplete = (num: number) => numberCounts[num] >= 9;
 
   const handleNumberPress = (num: number) => {
@@ -51,7 +56,7 @@ function Keypad({
         solution[selectedCell] !== 0 &&
         solution[selectedCell] !== num;
 
-      if (isEditableCell && isKnownIncorrectEntry) {
+      if (isEditableCell && autoCheckMistakes && isKnownIncorrectEntry) {
         haptics.error();
       }
       placeNumber(num);
@@ -66,7 +71,7 @@ function Keypad({
         onPress={() => handleNumberPress(num)}
         style={[
           styles.numBtn,
-          { width: BTN_WIDTH, height: BTN_HEIGHT },
+          { width: buttonWidth, height: buttonHeight },
           done && styles.numBtnDone,
         ]}
         disabled={done}
@@ -95,7 +100,7 @@ export default React.memo(Keypad);
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    maxWidth: CONTAINER_MAX_WIDTH,
+    maxWidth: 400,
     alignItems: "center",
     gap: 10,
     marginTop: 15,

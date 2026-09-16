@@ -11,108 +11,213 @@ export type Difficulty =
 export type Board = number[];
 
 // Helper functions to get coordinates
-export const getRow = (index: number) => Math.floor(index / 9);
-export const getCol = (index: number) => index % 9;
-export const getBlock = (index: number) =>
-  Math.floor(getRow(index) / 3) * 3 + Math.floor(getCol(index) / 3);
+export function getRow(index: number): number {
+  return Math.floor(index / 9);
+}
+export function getCol(index: number): number {
+  return index % 9;
+}
+export function getBlock(index: number): number {
+  return Math.floor(getRow(index) / 3) * 3 + Math.floor(getCol(index) / 3);
+}
 
-// Check if placing 'num' at 'index' is valid
-export const isValid = (board: Board, index: number, num: number): boolean => {
+const ALL_DIGITS_MASK = 0b1111111110;
+
+const ROW_INDICES = Array.from({ length: 9 }, (_, row) =>
+  Array.from({ length: 9 }, (_, col) => row * 9 + col),
+);
+const COLUMN_INDICES = Array.from({ length: 9 }, (_, col) =>
+  Array.from({ length: 9 }, (_, row) => row * 9 + col),
+);
+const BLOCK_INDICES = Array.from({ length: 9 }, (_, block) => {
+  const startRow = Math.floor(block / 3) * 3;
+  const startCol = (block % 3) * 3;
+  return Array.from(
+    { length: 9 },
+    (_, offset) =>
+      (startRow + Math.floor(offset / 3)) * 9 + startCol + (offset % 3),
+  );
+});
+
+const PEER_INDICES = Array.from({ length: 81 }, (_, index) => {
+  const peers = new Set<number>();
   const row = getRow(index);
   const col = getCol(index);
   const block = getBlock(index);
 
-  for (let i = 0; i < 81; i++) {
-    if (board[i] === num && i !== index) {
-      if (getRow(i) === row || getCol(i) === col || getBlock(i) === block) {
-        return false;
-      }
+  for (const peer of ROW_INDICES[row]) peers.add(peer);
+  for (const peer of COLUMN_INDICES[col]) peers.add(peer);
+  for (const peer of BLOCK_INDICES[block]) peers.add(peer);
+  peers.delete(index);
+  return Array.from(peers);
+});
+
+const bitCount = (mask: number): number => {
+  let count = 0;
+  for (; mask !== 0; mask &= mask - 1) count++;
+  return count;
+};
+
+type SolverMasks = {
+  rows: number[];
+  columns: number[];
+  blocks: number[];
+};
+
+const createSolverMasks = (board: Board): SolverMasks | null => {
+  if (board.length !== 81) return null;
+
+  const masks: SolverMasks = {
+    rows: Array(9).fill(0),
+    columns: Array(9).fill(0),
+    blocks: Array(9).fill(0),
+  };
+
+  for (let index = 0; index < 81; index++) {
+    const value = board[index];
+    if (value === 0) continue;
+    if (!Number.isInteger(value) || value < 1 || value > 9) return null;
+
+    const bit = 1 << value;
+    const row = getRow(index);
+    const col = getCol(index);
+    const block = getBlock(index);
+    if (
+      (masks.rows[row] & bit) !== 0 ||
+      (masks.columns[col] & bit) !== 0 ||
+      (masks.blocks[block] & bit) !== 0
+    ) {
+      return null;
     }
+    masks.rows[row] |= bit;
+    masks.columns[col] |= bit;
+    masks.blocks[block] |= bit;
   }
-  return true;
+
+  return masks;
+};
+
+// Check if placing 'num' at 'index' is valid
+export const isValid = (board: Board, index: number, num: number): boolean => {
+  if (
+    board.length !== 81 ||
+    index < 0 ||
+    index >= 81 ||
+    !Number.isInteger(num) ||
+    num < 1 ||
+    num > 9
+  ) {
+    return false;
+  }
+  return !PEER_INDICES[index].some((peer) => board[peer] === num);
 };
 
 // Backtracking solver using MRV (Minimum Remaining Values) for high performance
 export const solveBoard = (board: Board): boolean => {
-  let minCandidates = 10;
-  let bestIndex = -1;
-  let bestCandidates: number[] = [];
+  const masks = createSolverMasks(board);
+  if (!masks) return false;
 
-  for (let i = 0; i < 81; i++) {
-    if (board[i] === 0) {
-      const candidates: number[] = [];
-      for (let num = 1; num <= 9; num++) {
-        if (isValid(board, i, num)) {
-          candidates.push(num);
-        }
-      }
-      if (candidates.length === 0) {
-        return false; // Dead end branch
-      }
-      if (candidates.length < minCandidates) {
-        minCandidates = candidates.length;
-        bestIndex = i;
-        bestCandidates = candidates;
-        if (minCandidates === 1) break;
+  const search = (): boolean => {
+    let bestIndex = -1;
+    let bestMask = 0;
+    let minCandidates = 10;
+
+    for (let index = 0; index < 81; index++) {
+      if (board[index] !== 0) continue;
+      const row = getRow(index);
+      const col = getCol(index);
+      const block = getBlock(index);
+      const candidates =
+        ALL_DIGITS_MASK &
+        ~(masks.rows[row] | masks.columns[col] | masks.blocks[block]);
+      const candidateCount = bitCount(candidates);
+      if (candidateCount === 0) return false;
+      if (candidateCount < minCandidates) {
+        minCandidates = candidateCount;
+        bestIndex = index;
+        bestMask = candidates;
+        if (candidateCount === 1) break;
       }
     }
-  }
 
-  if (bestIndex === -1) {
-    return true; // All cells filled!
-  }
+    if (bestIndex === -1) return true;
 
-  for (const num of bestCandidates) {
-    board[bestIndex] = num;
-    if (solveBoard(board)) {
-      return true;
+    const row = getRow(bestIndex);
+    const col = getCol(bestIndex);
+    const block = getBlock(bestIndex);
+    for (let num = 1; num <= 9; num++) {
+      const bit = 1 << num;
+      if ((bestMask & bit) === 0) continue;
+      board[bestIndex] = num;
+      masks.rows[row] |= bit;
+      masks.columns[col] |= bit;
+      masks.blocks[block] |= bit;
+      if (search()) return true;
+      masks.rows[row] &= ~bit;
+      masks.columns[col] &= ~bit;
+      masks.blocks[block] &= ~bit;
+      board[bestIndex] = 0;
     }
-    board[bestIndex] = 0;
-  }
+    return false;
+  };
 
-  return false;
+  return search();
 };
 
 // Count solutions (stops immediately when count > 1) with MRV forward checking
 export const countSolutions = (board: Board, count = { value: 0 }): number => {
   if (count.value > 1) return count.value;
+  const masks = createSolverMasks(board);
+  if (!masks) return count.value;
 
-  let minCandidates = 10;
-  let bestIndex = -1;
-  let bestCandidates: number[] = [];
+  const search = (): void => {
+    if (count.value > 1) return;
 
-  for (let i = 0; i < 81; i++) {
-    if (board[i] === 0) {
-      const candidates: number[] = [];
-      for (let num = 1; num <= 9; num++) {
-        if (isValid(board, i, num)) {
-          candidates.push(num);
-        }
-      }
-      if (candidates.length === 0) {
-        return count.value; // Dead end, prune branch immediately
-      }
-      if (candidates.length < minCandidates) {
-        minCandidates = candidates.length;
-        bestIndex = i;
-        bestCandidates = candidates;
-        if (minCandidates === 1) break;
+    let bestIndex = -1;
+    let bestMask = 0;
+    let minCandidates = 10;
+    for (let index = 0; index < 81; index++) {
+      if (board[index] !== 0) continue;
+      const row = getRow(index);
+      const col = getCol(index);
+      const block = getBlock(index);
+      const candidates =
+        ALL_DIGITS_MASK &
+        ~(masks.rows[row] | masks.columns[col] | masks.blocks[block]);
+      const candidateCount = bitCount(candidates);
+      if (candidateCount === 0) return;
+      if (candidateCount < minCandidates) {
+        minCandidates = candidateCount;
+        bestIndex = index;
+        bestMask = candidates;
+        if (candidateCount === 1) break;
       }
     }
-  }
 
-  if (bestIndex === -1) {
-    count.value++;
-    return count.value;
-  }
+    if (bestIndex === -1) {
+      count.value++;
+      return;
+    }
 
-  for (const num of bestCandidates) {
-    board[bestIndex] = num;
-    countSolutions(board, count);
-    board[bestIndex] = 0;
-    if (count.value > 1) break;
-  }
+    const row = getRow(bestIndex);
+    const col = getCol(bestIndex);
+    const block = getBlock(bestIndex);
+    for (let num = 1; num <= 9 && count.value <= 1; num++) {
+      const bit = 1 << num;
+      if ((bestMask & bit) === 0) continue;
+      board[bestIndex] = num;
+      masks.rows[row] |= bit;
+      masks.columns[col] |= bit;
+      masks.blocks[block] |= bit;
+      search();
+      masks.rows[row] &= ~bit;
+      masks.columns[col] &= ~bit;
+      masks.blocks[block] &= ~bit;
+      board[bestIndex] = 0;
+    }
+  };
 
+  search();
   return count.value;
 };
 
@@ -145,6 +250,18 @@ export function mulberry32(a: number) {
   };
 }
 
+function shuffleInPlace<T>(items: T[], randomFn: () => number): T[] {
+  for (let index = items.length - 1; index > 0; index--) {
+    const swapIndex = Math.floor(randomFn() * (index + 1));
+    [items[index], items[swapIndex]] = [items[swapIndex], items[index]];
+  }
+  return items;
+}
+
+function shuffle<T>(items: T[], randomFn: () => number): T[] {
+  return shuffleInPlace([...items], randomFn);
+}
+
 // Generate a fully valid random board
 export const generateFullBoard = (
   randomFn: () => number = Math.random,
@@ -153,7 +270,7 @@ export const generateFullBoard = (
 
   // Fill diagonal 3x3 blocks first for maximum randomness and solver speed
   for (let block = 0; block < 9; block += 4) {
-    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => randomFn() - 0.5);
+    const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9], randomFn);
     let i = 0;
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
@@ -221,7 +338,8 @@ export const generatePuzzle = (
     const filledIndices = puzzle
       .map((val, idx) => (val !== 0 ? idx : -1))
       .filter((idx) => idx !== -1)
-      .sort(() => randomFn() - 0.5);
+      .sort((a, b) => a - b);
+    shuffleInPlace(filledIndices, randomFn);
 
     let dugInThisPass = 0;
 
@@ -248,7 +366,7 @@ export const generatePuzzle = (
   return { puzzle, solution };
 };
 
-export type HintType = 'error' | 'naked_single' | 'hidden_single' | 'reveal';
+export type HintType = "error" | "naked_single" | "hidden_single" | "reveal";
 
 export interface SmartHint {
   type: HintType;
@@ -270,7 +388,10 @@ export const getPeerIndices = (index: number): number[] => {
   const peers = new Set<number>();
 
   for (let i = 0; i < 81; i++) {
-    if (i !== index && (getRow(i) === row || getCol(i) === col || getBlock(i) === block)) {
+    if (
+      i !== index &&
+      (getRow(i) === row || getCol(i) === col || getBlock(i) === block)
+    ) {
       peers.add(i);
     }
   }
@@ -281,7 +402,7 @@ export const getPeerIndices = (index: number): number[] => {
 // Calculate legal candidates (1-9) for a cell given the current board
 export const getCandidates = (
   board: (number | null)[],
-  index: number
+  index: number,
 ): number[] => {
   if (board[index] !== null && board[index] !== 0) {
     return [];
@@ -315,7 +436,7 @@ export const getCandidates = (
 export const getSmartHint = (
   currentBoard: (number | null)[],
   solution: Board,
-  selectedCellIndex?: number | null
+  selectedCellIndex?: number | null,
 ): SmartHint | null => {
   // Step 1: Detect user errors (highest priority)
   for (let i = 0; i < 81; i++) {
@@ -325,15 +446,17 @@ export const getSmartHint = (
       const col = getCol(i);
       const block = getBlock(i);
       return {
-        type: 'error',
+        type: "error",
         cellIndex: i,
         value: val,
         row,
         col,
         block,
-        title: 'Incorrect Cell',
+        title: "Incorrect Cell",
         explanation: `The number ${val} at Row ${row + 1}, Col ${col + 1} is incorrect. Remove or change it to proceed.`,
-        relatedIndices: getPeerIndices(i).filter((p) => currentBoard[p] === val),
+        relatedIndices: getPeerIndices(i).filter(
+          (p) => currentBoard[p] === val,
+        ),
       };
     }
   }
@@ -357,7 +480,8 @@ export const getSmartHint = (
     selectedCellIndex !== undefined &&
     selectedCellIndex >= 0 &&
     selectedCellIndex < 81 &&
-    (currentBoard[selectedCellIndex] === null || currentBoard[selectedCellIndex] === 0)
+    (currentBoard[selectedCellIndex] === null ||
+      currentBoard[selectedCellIndex] === 0)
   ) {
     const candidates = getCandidates(currentBoard, selectedCellIndex);
     if (candidates.length === 1) {
@@ -371,13 +495,13 @@ export const getSmartHint = (
       });
 
       return {
-        type: 'naked_single',
+        type: "naked_single",
         cellIndex: selectedCellIndex,
         value: val,
         row,
         col,
         block,
-        title: 'Naked Single',
+        title: "Naked Single",
         explanation: `Row ${row + 1}, Col ${col + 1} can only be ${val} because all other numbers (1-9) are eliminated by its row, column, or block.`,
         relatedIndices: peers,
       };
@@ -398,13 +522,13 @@ export const getSmartHint = (
       });
 
       return {
-        type: 'naked_single',
+        type: "naked_single",
         cellIndex: idx,
         value: val,
         row,
         col,
         block,
-        title: 'Naked Single',
+        title: "Naked Single",
         explanation: `Row ${row + 1}, Col ${col + 1} can only be ${val} because all other numbers (1-9) are eliminated by its row, column, or block.`,
         relatedIndices: peers,
       };
@@ -422,7 +546,9 @@ export const getSmartHint = (
       // If number already in row, skip
       if (rowCells.some((idx) => currentBoard[idx] === num)) continue;
       const possibleCells = rowCells.filter(
-        (idx) => (currentBoard[idx] === null || currentBoard[idx] === 0) && getCandidates(currentBoard, idx).includes(num)
+        (idx) =>
+          (currentBoard[idx] === null || currentBoard[idx] === 0) &&
+          getCandidates(currentBoard, idx).includes(num),
       );
       if (possibleCells.length === 1) {
         const target = possibleCells[0];
@@ -430,13 +556,13 @@ export const getSmartHint = (
         const col = getCol(target);
         const block = getBlock(target);
         return {
-          type: 'hidden_single',
+          type: "hidden_single",
           cellIndex: target,
           value: num,
           row,
           col,
           block,
-          title: 'Hidden Single (Row)',
+          title: "Hidden Single (Row)",
           explanation: `In Row ${row + 1}, number ${num} can only fit at Col ${col + 1}.`,
           relatedIndices: rowCells.filter((i) => i !== target),
         };
@@ -453,7 +579,9 @@ export const getSmartHint = (
     for (let num = 1; num <= 9; num++) {
       if (colCells.some((idx) => currentBoard[idx] === num)) continue;
       const possibleCells = colCells.filter(
-        (idx) => (currentBoard[idx] === null || currentBoard[idx] === 0) && getCandidates(currentBoard, idx).includes(num)
+        (idx) =>
+          (currentBoard[idx] === null || currentBoard[idx] === 0) &&
+          getCandidates(currentBoard, idx).includes(num),
       );
       if (possibleCells.length === 1) {
         const target = possibleCells[0];
@@ -461,13 +589,13 @@ export const getSmartHint = (
         const col = getCol(target);
         const block = getBlock(target);
         return {
-          type: 'hidden_single',
+          type: "hidden_single",
           cellIndex: target,
           value: num,
           row,
           col,
           block,
-          title: 'Hidden Single (Column)',
+          title: "Hidden Single (Column)",
           explanation: `In Column ${col + 1}, number ${num} can only fit at Row ${row + 1}.`,
           relatedIndices: colCells.filter((i) => i !== target),
         };
@@ -488,7 +616,9 @@ export const getSmartHint = (
     for (let num = 1; num <= 9; num++) {
       if (blockCells.some((idx) => currentBoard[idx] === num)) continue;
       const possibleCells = blockCells.filter(
-        (idx) => (currentBoard[idx] === null || currentBoard[idx] === 0) && getCandidates(currentBoard, idx).includes(num)
+        (idx) =>
+          (currentBoard[idx] === null || currentBoard[idx] === 0) &&
+          getCandidates(currentBoard, idx).includes(num),
       );
       if (possibleCells.length === 1) {
         const target = possibleCells[0];
@@ -496,13 +626,13 @@ export const getSmartHint = (
         const col = getCol(target);
         const block = getBlock(target);
         return {
-          type: 'hidden_single',
+          type: "hidden_single",
           cellIndex: target,
           value: num,
           row,
           col,
           block,
-          title: 'Hidden Single (Block)',
+          title: "Hidden Single (Block)",
           explanation: `In 3x3 Block ${b + 1}, number ${num} can only fit at Row ${row + 1}, Col ${col + 1}.`,
           relatedIndices: blockCells.filter((i) => i !== target),
         };
@@ -538,13 +668,13 @@ export const getSmartHint = (
   const val = solution[fallbackIndex];
 
   return {
-    type: 'reveal',
+    type: "reveal",
     cellIndex: fallbackIndex,
     value: val,
     row,
     col,
     block,
-    title: 'Smart Reveal',
+    title: "Smart Reveal",
     explanation: `Placing ${val} at Row ${row + 1}, Col ${col + 1} advances the puzzle.`,
     relatedIndices: getPeerIndices(fallbackIndex),
   };

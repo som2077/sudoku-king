@@ -4,6 +4,7 @@ import Svg, { Circle, Line, G } from "react-native-svg";
 import { Text } from "../ui/Text";
 import { Trophy, Zap, Clock, Puzzle } from "lucide-react-native";
 import { useGameStore } from "../../store/useGameStore";
+import { calculateAverageTime, normalizeGameStats } from "../../utils/gameStats";
 
 export interface DifficultyStat {
   level: string;
@@ -18,6 +19,12 @@ export interface DifficultyStat {
 }
 
 export const DIFFICULTY_CONFIGS = [
+  {
+    level: "Fast",
+    color: "#64748B",
+    lightBg: "#F1F5F9",
+    textDark: "#475569",
+  },
   {
     level: "Easy",
     color: "#16A34A",
@@ -96,14 +103,9 @@ export function DifficultyBreakdownChart({
     if (overrideStats && overrideStats.length > 0) return overrideStats;
 
     return DIFFICULTY_CONFIGS.map((cfg) => {
-      const rec = storeDifficultyStats?.[cfg.level] || {
-        solved: 0,
-        played: 0,
-        bestSec: null,
-        totalSec: 0,
-      };
-      const solved = rec.solved || 0;
-      const avgSec = solved > 0 ? Math.round(rec.totalSec / solved) : 0;
+      const rec = normalizeGameStats(storeDifficultyStats?.[cfg.level]);
+      const solved = rec.solved;
+      const avgSec = calculateAverageTime(rec.totalSec, solved);
       return {
         ...cfg,
         solved,

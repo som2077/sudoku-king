@@ -3,10 +3,12 @@ import { createAudioPlayer, preload, setAudioModeAsync } from "expo-audio";
 import { useGameStore } from "../store/useGameStore";
 
 const TAP_SOUND = require("../../assets/taps.mp3");
+const ERROR_SOUND = require("../../assets/error.mp3");
 const BLOCK_COMPLETE_SOUND = require("../../assets/blockComplete.mp3");
 const GAME_WIN_SOUND = require("../../assets/gameWin.mp3");
 
 let tapAudio: ReturnType<typeof createAudioPlayer> | null = null;
+let errorAudio: ReturnType<typeof createAudioPlayer> | null = null;
 let blockCompleteAudio: ReturnType<typeof createAudioPlayer> | null = null;
 let gameWinAudio: ReturnType<typeof createAudioPlayer> | null = null;
 let audioModeConfigured = false;
@@ -122,6 +124,9 @@ class HapticsEngine {
    * Distinct double impact for an incorrect Sudoku entry.
    */
   error() {
+    this.configureAudioMode();
+    errorAudio ??= createAudioPlayer(ERROR_SOUND);
+    this.playSound(errorAudio);
     if (!this.isEnabled()) return;
     try {
       Vibration.vibrate([0, 35, 45, 35]);

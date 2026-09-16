@@ -12,7 +12,7 @@ import { useGameStore } from "../../store/useGameStore";
 import { BarChart2, Star, Clock, XCircle } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getRow, getCol, getBlock } from "../../utils/sudokuLogic";
-import LottieView from "lottie-react-native";
+import LottieAnimation from "../LottieAnimation";
 
 export default function WinScreen({
   onNewGame,
@@ -24,6 +24,7 @@ export default function WinScreen({
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const board = useGameStore((s) => s.board);
+  const solution = useGameStore((s) => s.solution);
   const timer = useGameStore((s) => s.timer);
   const difficulty = useGameStore((s) => s.difficulty);
   const streak = useGameStore((s) => s.streak);
@@ -63,7 +64,10 @@ export default function WinScreen({
   }
 
   const currentFilledCount = board
-    ? board.filter((c) => c.value !== null && !c.isError).length
+    ? board.filter(
+        (c, index) =>
+          c.value !== null && !c.isError && solution[index] === c.value,
+      ).length
     : 0;
   const initialClues = 81 - holesToDig;
   const filledByUser = Math.max(0, currentFilledCount - initialClues);
@@ -84,7 +88,7 @@ export default function WinScreen({
         style={[StyleSheet.absoluteFill, { zIndex: 50 }]}
         pointerEvents="none"
       >
-        <LottieView
+        <LottieAnimation
           source={require("../../../assets/Confetti.json")}
           autoPlay
           loop={false}
