@@ -1,4 +1,3 @@
-import { Image } from "expo-image";
 import { Text } from '../ui/Text';
 import type { ReactNode } from "react";
 import React, { useMemo, useRef, useEffect } from "react";

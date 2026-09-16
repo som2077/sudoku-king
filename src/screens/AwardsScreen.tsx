@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
-  Dimensions,
   ScrollView,
   TouchableOpacity,
   View,
@@ -17,7 +16,6 @@ import { StreakFlame } from "../components/StreakFlame";
 import { CARD_SHADOW } from "../components/dashboard/StatsCards";
 import { useTranslation } from "../i18n";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const H_PAD = 20;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -32,21 +30,6 @@ const T = {
   accent: "#1D1A27",
   accentFg: "#FFFFFF",
 } as const;
-
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
 
 // ─── StatCard ──────────────────────────────────────────────────────────────────
 
@@ -162,7 +145,7 @@ export function AwardsScreen({ onBack }: AwardsScreenProps) {
         isBronze,
       };
     });
-  }, [selectedYear, currentYear, currentMonthIdx, dailyChallengesProgress]);
+  }, [selectedYear, currentYear, currentMonthIdx, dailyChallengesProgress, language]);
 
   const earnedCount = useMemo(
     () => monthsData.filter((m) => m.isGold || m.isSilver || m.isBronze).length,

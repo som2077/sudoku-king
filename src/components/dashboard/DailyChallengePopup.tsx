@@ -81,7 +81,7 @@ export function DailyChallengePopup({ onStart }: DailyChallengePopupProps) {
           </Text>
 
           <Text style={styles.body}>
-            Play today's unique Sudoku challenge, keep your streak alive, and
+            Play today&apos;s unique Sudoku challenge, keep your streak alive, and
             track your performance on the calendar!
           </Text>
 

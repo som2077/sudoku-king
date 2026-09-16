@@ -7,7 +7,6 @@ import {
   setAnalyticsCollectionEnabled as firebaseSetAnalyticsCollectionEnabled,
   resetAnalyticsData as firebaseResetAnalyticsData,
 } from "@react-native-firebase/analytics";
-import { Platform } from "react-native";
 
 export interface GameEventParams {
   difficulty: string;

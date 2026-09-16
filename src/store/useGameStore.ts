@@ -10,7 +10,6 @@ import {
 import {
   generatePuzzle,
   Difficulty,
-  isValid,
   getRow,
   getCol,
   getBlock,

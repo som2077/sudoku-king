@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Text } from "../ui/Text";
 import { View, TouchableOpacity } from "react-native";
-import { Trophy, Zap, TrendingUp } from "lucide-react-native";
 import { useGameStore, getDailyChallengeItem } from "../../store/useGameStore";
 import { useTranslation } from "../../i18n";
 import { Difficulty } from "../../utils/sudokuLogic";
@@ -52,11 +51,14 @@ export function PerformanceChart() {
     return day === 0 ? 6 : day - 1;
   });
 
-  const dailyHistory = useGameStore((s) => s.dailyHistory) || {};
-  const dailyChallengesProgress = useGameStore((s) => s.dailyChallengesProgress) || {};
-  const dailyDifficultyStats = useGameStore((s) => s.dailyDifficultyStats) || {};
+  const dailyHistory = useGameStore((s) => s.dailyHistory);
+  const dailyChallengesProgress = useGameStore((s) => s.dailyChallengesProgress);
+  const dailyDifficultyStats = useGameStore((s) => s.dailyDifficultyStats);
 
   const data: ChartItem[] = useMemo(() => {
+    const history = dailyHistory || {};
+    const challengeProgress = dailyChallengesProgress || {};
+    const difficultyStats = dailyDifficultyStats || {};
     const toDateKey = (d: Date): string => {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -66,7 +68,7 @@ export function PerformanceChart() {
 
     const getDayStat = (dateStr: string) => {
       if (selectedDifficulty !== "All") {
-        const dStat = dailyDifficultyStats[dateStr]?.[selectedDifficulty];
+        const dStat = difficultyStats[dateStr]?.[selectedDifficulty];
         const played = dStat?.played || 0;
         const solved = dStat?.solved || 0;
         const best = dStat?.bestSec || 0;
@@ -78,8 +80,8 @@ export function PerformanceChart() {
         };
       }
 
-      let stat = dailyHistory[dateStr];
-      const challengeItem = getDailyChallengeItem(dailyChallengesProgress, dateStr);
+      let stat = history[dateStr];
+      const challengeItem = getDailyChallengeItem(challengeProgress, dateStr);
 
       let played = stat?.played || 0;
       let solved = stat?.solved || 0;

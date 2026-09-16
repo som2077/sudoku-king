@@ -1,4 +1,5 @@
 import React, {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -74,7 +75,7 @@ export const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>
   }, [panY, backdropOpacity]);
 
   // Open animation: Spring sheet up from bottom + fade in backdrop
-  const animateOpen = () => {
+  const animateOpen = useCallback(() => {
     isClosingRef.current = false;
     panY.setValue(defaultHeight);
     backdropOpacity.setValue(0);
@@ -93,10 +94,10 @@ export const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>
         useNativeDriver: true,
       }),
     ]).start();
-  };
+  }, [backdropOpacity, defaultHeight, panY]);
 
   // Close animation: Slide sheet down + fade out backdrop, then trigger callbacks
-  const animateClose = (callback?: () => void) => {
+  const animateClose = useCallback((callback?: () => void) => {
     if (isClosingRef.current) return;
     isClosingRef.current = true;
 
@@ -120,11 +121,11 @@ export const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>
         callback();
       }
     });
-  };
+  }, [backdropOpacity, defaultHeight, onClose, panY]);
 
   useImperativeHandle(ref, () => ({
     close: animateClose,
-  }));
+  }), [animateClose]);
 
   // Sync with parent `visible` prop
   useEffect(() => {
@@ -133,7 +134,7 @@ export const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>
     } else if (modalVisible && !isClosingRef.current) {
       animateClose();
     }
-  }, [visible]);
+  }, [animateClose, modalVisible, visible]);
 
   // Handle hardware back on Android
   useEffect(() => {
@@ -146,7 +147,7 @@ export const AppBottomSheet = forwardRef<AppBottomSheetRef, AppBottomSheetProps>
 
     const sub = BackHandler.addEventListener("hardwareBackPress", onBackPress);
     return () => sub.remove();
-  }, [modalVisible]);
+  }, [animateClose, modalVisible]);
 
   // PanResponder for drag-down gestures on the sheet
   const panResponder = useRef(

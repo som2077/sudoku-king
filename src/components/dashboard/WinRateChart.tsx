@@ -99,12 +99,11 @@ export function WinRateChart({ data: propData }: WinRateChartProps = {}) {
   const [activeTab, setActiveTab] = useState<ChartTab>("Day");
   const [selectedDay, setSelectedDay] = useState(TODAY_INDEX);
 
-  const dailyHistory = useGameStore((s) => s.dailyHistory) || {};
-  const totalSolved = useGameStore((s) => s.totalSolved) || 0;
-  const totalPlayed = useGameStore((s) => s.totalPlayed) || 0;
+  const dailyHistory = useGameStore((s) => s.dailyHistory);
 
   const data = useMemo(() => {
     if (propData) return propData[activeTab];
+    const history = dailyHistory || {};
 
     const now = new Date();
     const nowDay = now.getDay();
@@ -119,7 +118,7 @@ export function WinRateChart({ data: propData }: WinRateChartProps = {}) {
       const m = String(d.getMonth() + 1).padStart(2, "0");
       const day = String(d.getDate()).padStart(2, "0");
       const key = `${y}-${m}-${day}`;
-      const stat = dailyHistory[key];
+      const stat = history[key];
       if (stat && stat.played > 0) {
         return Math.min(100, Math.round((stat.solved / stat.played) * 100));
       }

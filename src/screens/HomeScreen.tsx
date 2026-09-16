@@ -6,7 +6,7 @@ import {
   ScrollView,
   useWindowDimensions,
   StyleSheet,
-} from "react-native";
+ StatusBar as NativeStatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Calendar, Settings, Play } from "lucide-react-native";
 import { Image } from "expo-image";
@@ -21,13 +21,12 @@ import { DailyChallengesScreen } from "./DailyChallengesScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { AwardsScreen } from "./AwardsScreen";
 import { DailyChallengePopup } from "../components/dashboard/DailyChallengePopup";
-
-const MemoizedDailyChallengesScreen = React.memo(DailyChallengesScreen);
-const MemoizedSettingsScreen = React.memo(SettingsScreen);
-import { StatusBar as NativeStatusBar } from "react-native";
 import { Difficulty } from "../utils/sudokuLogic";
 import { useTranslation } from "../i18n";
 import { analyticsService } from "../services/analyticsService";
+
+const MemoizedDailyChallengesScreen = React.memo(DailyChallengesScreen);
+const MemoizedSettingsScreen = React.memo(SettingsScreen);
 
 type HomeScreenProps = {
   setScreen: (screen: "home" | "playing") => void;
@@ -233,7 +232,6 @@ export default function HomeScreen({
     totalSolved,
     totalPlayed,
     bestTimeSec,
-    todaySolved,
     streak = 0,
     timer = 0,
     difficulty = "Easy",
@@ -246,7 +244,6 @@ export default function HomeScreen({
       totalSolved: s.totalSolved,
       totalPlayed: s.totalPlayed,
       bestTimeSec: s.bestTimeSec,
-      todaySolved: s.todaySolved,
       streak: s.streak,
       timer: s.timer,
       difficulty: s.difficulty,
@@ -321,8 +318,6 @@ export default function HomeScreen({
       ? Math.round(((totalSolved || 0) / totalPlayed) * 100)
       : 0;
   const BEST_TIME = formatBestTime(bestTimeSec);
-  const STREAK = streak;
-
   const insets = useSafeAreaInsets();
 
   React.useEffect(() => {

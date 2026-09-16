@@ -4,10 +4,8 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  Modal,
   Linking,
   StyleSheet,
-  Pressable,
   TextInput,
   ActivityIndicator,
   Alert,
@@ -294,6 +292,27 @@ export function SettingsScreen({
               </View>
             </LinearGradient>
           </TouchableOpacity>
+
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.row}
+              onPress={handleRestorePurchases}
+              disabled={restoring}
+              activeOpacity={0.65}
+              accessibilityRole="button"
+              accessibilityLabel="Restore purchases"
+            >
+              <View style={styles.rowLeft}>
+                <RotateCcw size={20} color="#111827" />
+                <Text style={styles.rowLabel}>Restore Purchases</Text>
+              </View>
+              {restoring ? (
+                <ActivityIndicator size="small" color="#2563EB" />
+              ) : (
+                <ChevronRight size={18} color="#9CA3AF" />
+              )}
+            </TouchableOpacity>
+          </View>
 
           {/* ── 2. Preferences Section (Notification Switch) ── */}
           <View style={styles.card}>
