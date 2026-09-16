@@ -119,10 +119,11 @@ export function BestTimeChart({
   const [activeTab, setActiveTab] = useState<ChartTab>("Day");
   const [selectedDay, setSelectedDay] = useState(TODAY_INDEX);
 
-  const dailyHistory = useGameStore((s) => s.dailyHistory) || {};
+  const dailyHistory = useGameStore((s) => s.dailyHistory);
 
   const data = useMemo(() => {
     if (propData) return propData[activeTab];
+    const history = dailyHistory || {};
 
     const now = new Date();
     const nowDay = now.getDay();
@@ -137,7 +138,7 @@ export function BestTimeChart({
       const m = String(d.getMonth() + 1).padStart(2, "0");
       const day = String(d.getDate()).padStart(2, "0");
       const key = `${y}-${m}-${day}`;
-      const stat = dailyHistory[key];
+      const stat = history[key];
       return stat?.bestSec || 0;
     });
   }, [propData, activeTab, dailyHistory]);

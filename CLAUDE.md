@@ -4,6 +4,7 @@
 # Project Instructions
 
 ## Tech Stack
+
 - **Framework**: React Native 0.86.3 / Expo SDK 57 (~57.0.19)
 - **Language**: TypeScript 6.x
 - **State Management**: Zustand 5.x with MMKV persistence
@@ -12,12 +13,14 @@
 - **Backend & Cloud**: Firebase Analytics, Remote Config, Crashlytics
 
 ## Critical Invariants & Conventions
+
 - **Text Component**: Always import `Text` from `src/components/Text` (or relative path), never directly from `react-native`.
 - **SDK Reference**: Expo SDK 57 changed significantly. Consult https://docs.expo.dev/versions/v57.0.0/ before modifying Expo configurations or APIs.
-- **Secrets**: Store sensitive API keys or Ad IDs obfuscated via hex in `src/utils/secrets.ts`.
+- **Secrets**: Client-side identifiers such as AdMob app/unit IDs and RevenueCat public SDK keys are not private secrets; keep them centralized in `src/utils/secrets.ts` when the app needs obfuscation or platform selection. Never commit `.env` files, service-account credentials, signing keys, or local assistant configuration. Use EAS/CI secret storage for values that must remain private.
 - **Game State**: In `src/store/useGameStore.ts`, board cells contain `{ value, notes, isLocked, isError }`. Pencil marks use bitmask representation (`1 << num`).
 
 ## Build & Run
+
 - Dev Server: `npm run start` (or `npx expo start`)
 - Android: `npm run android`
 - iOS: `npm run ios`
@@ -25,6 +28,7 @@
 - Run Tests: `npm test`
 
 ## Key Directories
+
 - `src/components/game/` - Sudoku game components (Board, Cell, Keypad, TopBar, DifficultyBottomSheet)
 - `src/components/dashboard/` - Stats, calendar, and analytics widgets (DashboardPager, StatsCards, etc.)
 - `src/components/ui/` - Primitives and common wrappers (Text, AppGradientBackground, Paywall)

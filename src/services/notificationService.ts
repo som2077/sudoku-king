@@ -11,7 +11,7 @@ import {
   AuthorizationStatus,
 } from "@react-native-firebase/messaging";
 import type { RemoteMessage } from "@react-native-firebase/messaging";
-import { Platform, PermissionsAndroid, Alert } from "react-native";
+import { Platform, PermissionsAndroid } from "react-native";
 import { createMMKV } from "react-native-mmkv";
 
 const storage = createMMKV({ id: "sudoku-notifications" });

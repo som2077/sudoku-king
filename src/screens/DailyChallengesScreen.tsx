@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import { Text } from "../components/Text";
 import {
   View,
@@ -152,7 +152,6 @@ export function DailyChallengesScreen() {
     startDailyChallenge,
     dailyChallengesProgress,
     currentDailyChallenge,
-    streak = 0,
     settings,
   } = useGameStore();
   const language = settings?.language || "en";
@@ -204,7 +203,7 @@ export function DailyChallengesScreen() {
   const opacityAnim = useRef(new Animated.Value(1)).current;
   const isAnimating = useRef(false);
 
-  const animateMonthChange = (direction: 1 | -1) => {
+  const animateMonthChange = useCallback((direction: 1 | -1) => {
     if (isAnimating.current) return;
     const targetIdx = visibleMonthIdx + direction;
     if (targetIdx < 0 || targetIdx > 11) return;
@@ -245,7 +244,7 @@ export function DailyChallengesScreen() {
         isAnimating.current = false;
       });
     });
-  };
+  }, [opacityAnim, translateX, visibleMonthIdx]);
 
   const changeMonth = (direction: 1 | -1) => {
     animateMonthChange(direction);
@@ -271,7 +270,7 @@ export function DailyChallengesScreen() {
           }
         },
       }),
-    [visibleMonthIdx],
+    [animateMonthChange],
   );
 
   const grid = useMemo(
@@ -647,7 +646,7 @@ export function DailyChallengesScreen() {
                 </Text>
               ) : isTodaySelected ? (
                 <Text style={styles.statusActiveText}>
-                  🔥 Solve today's puzzle to maintain your active streak!
+                  🔥 Solve today&apos;s puzzle to maintain your active streak!
                 </Text>
               ) : (
                 <Text style={styles.statusMissedText}>
