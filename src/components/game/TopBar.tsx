@@ -72,7 +72,7 @@ export default function TopBar({
   const isNotesMode = useGameStore((s) => s.isNotesMode);
   const toggleNotesMode = useGameStore((s) => s.toggleNotesMode);
   const hintsRemaining = useGameStore((s) => s.hintsRemaining);
-  const useHint = useGameStore((s) => s.useHint);
+  const hintAction = useGameStore((s) => s.useHint);
   const isPremium = useGameStore((s) => s.isPremium);
   const addHint = useGameStore((s) => s.addHint);
 
@@ -134,14 +134,6 @@ export default function TopBar({
     return () => sub.remove();
   }, [isSettingsOpen, isPaused, isLeaveModalOpen]);
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
-    const s = (seconds % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  };
-
   const confirmBack = () => {
     setIsLeaveModalOpen(true);
   };
@@ -150,7 +142,7 @@ export default function TopBar({
     haptics.impactLight();
     haptics.tapSound();
     if (isPremium || hintsRemaining > 0) {
-      useHint();
+      hintAction();
     } else {
       Alert.alert(
         t("game.outOfHints"),
@@ -170,7 +162,7 @@ export default function TopBar({
             onPress: () =>
               showRewardedAd(() => {
                 addHint();
-                setTimeout(useHint, 500);
+                setTimeout(hintAction, 500);
               }),
           },
         ],

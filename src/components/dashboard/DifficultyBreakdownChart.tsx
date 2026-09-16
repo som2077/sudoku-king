@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import Svg, { Circle, Line, G } from "react-native-svg";
 import { Text } from "../ui/Text";
-import { Trophy, Zap, Clock, Puzzle } from "lucide-react-native";
+import { Puzzle } from "lucide-react-native";
 import { useGameStore } from "../../store/useGameStore";
 import { calculateAverageTime, normalizeGameStats } from "../../utils/gameStats";
 

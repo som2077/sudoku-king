@@ -69,7 +69,7 @@ export interface SplitTextProps {
    * Each entry matches a word (trim-compared) and applies a custom color.
    * Example: [{ word: '10-minute', color: '#D88955' }]
    */
-  highlightWords?: Array<{ word: string; color: string }>;
+  highlightWords?: { word: string; color: string }[];
 }
 
 // ─────────────────────────────────────────────
@@ -177,7 +177,24 @@ const AnimatedUnit: React.FC<UnitProps> = ({
     } else {
       rotate.value = timing(to.rotate);
     }
-  }, [play]);
+  }, [
+    duration,
+    ease,
+    isLast,
+    onComplete,
+    opacity,
+    play,
+    rotate,
+    scale,
+    staggerDelay,
+    to.opacity,
+    to.rotate,
+    to.scale,
+    to.translateX,
+    to.translateY,
+    translateX,
+    translateY,
+  ]);
 
   const animStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

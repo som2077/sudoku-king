@@ -8,19 +8,20 @@ interface StreakFlameProps {
   color?: string;
 }
 
-export const StreakFlame: React.FC<StreakFlameProps> = React.memo(
-  ({ size = 20, color = "#F97316" }) => {
-    if (Platform.OS === "web") {
-      return <Flame size={size} color={color} fill={color} />;
-    }
-
-    return (
-      <LottieAnimation
-        source={require("../../assets/fire.json")}
-        autoPlay
-        loop
-        style={{ width: size, height: size }}
-      />
-    );
+export const StreakFlame = React.memo(function StreakFlame({
+  size = 20,
+  color = "#F97316",
+}: StreakFlameProps) {
+  if (Platform.OS === "web") {
+    return <Flame size={size} color={color} fill={color} />;
   }
-);
+
+  return (
+    <LottieAnimation
+      source={require("../../assets/fire.json")}
+      autoPlay
+      loop
+      style={{ width: size, height: size }}
+    />
+  );
+});

@@ -13,7 +13,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Crown,
-  Check,
   X,
   Sparkles,
   Zap,
@@ -43,10 +42,8 @@ export default function Paywall({
   const [loading, setLoading] = useState(false);
   const [lifetimePackage, setLifetimePackage] = useState<PurchasesPackage | null>(null);
 
-  const isPremium = useGameStore((s) => s.isPremium);
   const trialEndsAt = useGameStore((s) => s.trialEndsAt);
   const hasUsedFreeTrial = useGameStore((s) => s.hasUsedFreeTrial);
-  const activateThreeDayTrial = useGameStore((s) => s.activateThreeDayTrial);
   const getTrialDaysRemaining = useGameStore((s) => s.getTrialDaysRemaining);
 
   const isTrialActive = Boolean(trialEndsAt && trialEndsAt > Date.now());

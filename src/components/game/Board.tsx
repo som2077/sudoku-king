@@ -20,6 +20,7 @@ function Board() {
   const highlightSameNumbers = useGameStore(
     (s) => s.settings?.highlightSameNumbers ?? true,
   );
+  const difficulty = useGameStore((s) => s.difficulty);
 
   // Pixel-perfect cell, block and board calculation to guarantee 100% square cells with no sub-pixel jitter
   const { cellSize, blockSize, boardSize } = useMemo(() => {
@@ -104,7 +105,6 @@ function Board() {
     selectedCell !== null && board[selectedCell]
       ? board[selectedCell].value
       : null;
-  const difficulty = useGameStore((s) => s.difficulty);
   const selectedRow = selectedCell === null ? -1 : getRow(selectedCell);
   const selectedCol = selectedCell === null ? -1 : getCol(selectedCell);
   const selectedBlock = selectedCell === null ? -1 : getBlock(selectedCell);

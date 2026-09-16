@@ -11,7 +11,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useGameStore } from "../../store/useGameStore";
 import { BarChart2, Star, Clock, XCircle } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getRow, getCol, getBlock } from "../../utils/sudokuLogic";
 import LottieAnimation from "../LottieAnimation";
 
 export default function WinScreen({
@@ -159,7 +158,7 @@ export default function WinScreen({
         {mistakes === 0 ? (
           <View style={styles.streakCard}>
             <Text style={styles.streakText}>
-              You've solved{" "}
+              You&apos;ve solved{" "}
               <Text style={{ color: "#FDE047", fontWeight: "bold" }}>
                 {streak} puzzles
               </Text>{" "}
